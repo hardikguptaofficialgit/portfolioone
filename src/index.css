@@ -1,0 +1,223 @@
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Desktop OS Theme - Windows 11 Inspired */
+    --desktop-bg: 222 47% 11%;
+    --desktop-accent: 217 91% 60%;
+    --desktop-accent-glow: 217 91% 70%;
+
+    --glass-bg: 222 47% 15%;
+    --glass-border: 217 50% 30%;
+    --glass-text: 210 40% 98%;
+    --glass-text-muted: 215 20% 65%;
+
+    --taskbar-bg: 222 47% 8%;
+    --taskbar-hover: 217 50% 20%;
+    --taskbar-active: 217 91% 60%;
+
+    --window-bg: 222 47% 12%;
+    --window-border: 217 50% 25%;
+    --window-titlebar: 222 47% 10%;
+
+    --widget-bg: 222 47% 14%;
+    --widget-border: 217 50% 28%;
+
+    /* Standard Shadcn Colors */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 222 47% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 47% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 50% 25%;
+    --input: 217 50% 25%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    /* Animations */
+    --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dark {
+    /* Dark mode already defined in :root above */
+  }
+
+  .light {
+    /* Light Mode - Inverted colors for bright theme */
+    --desktop-bg: 210 20% 98%;
+    --desktop-accent: 217 91% 50%;
+    --desktop-accent-glow: 217 91% 60%;
+
+    --glass-bg: 210 20% 95%;
+    --glass-border: 217 30% 70%;
+    --glass-text: 222 47% 11%;
+    --glass-text-muted: 215 15% 40%;
+
+    --taskbar-bg: 210 20% 92%;
+    --taskbar-hover: 217 30% 85%;
+    --taskbar-active: 217 91% 50%;
+
+    --window-bg: 0 0% 100%;
+    --window-border: 217 30% 80%;
+    --window-titlebar: 210 20% 95%;
+
+    --widget-bg: 210 20% 96%;
+    --widget-border: 217 30% 85%;
+
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 217 91% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 20% 90%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 20% 93%;
+    --muted-foreground: 215 15% 40%;
+
+    --accent: 217 91% 50%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 30% 85%;
+    --input: 217 30% 85%;
+    --ring: 217 91% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground overflow-hidden;
+    font-family: "Quantico", sans-serif;
+  }
+
+  /* Custom Scrollbar - Modern & Sleek */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--desktop-accent));
+    box-shadow: 0 0 6px hsl(var(--desktop-accent-glow));
+  }
+
+  /* Firefox Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Glass Effect Utility */
+@layer utilities {
+  .glass-panel {
+    background: hsl(var(--glass-bg) / 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border) / 0.3);
+  }
+
+  .glass-strong {
+    background: hsl(var(--glass-bg) / 0.9);
+    backdrop-filter: blur(30px);
+    border: 1px solid hsl(var(--glass-border) / 0.5);
+  }
+
+  .taskbar-glass {
+    background: hsl(var(--taskbar-bg) / 0.8);
+    backdrop-filter: blur(40px) saturate(180%);
+    border-top: 1px solid hsl(var(--glass-border) / 0.2);
+  }
+
+  .audiowide-regular {
+    font-family: "Audiowide", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .quantico-regular {
+    font-family: "Quantico", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .quantico-bold {
+    font-family: "Quantico", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ---break---
+*/
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
