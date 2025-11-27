@@ -70,7 +70,7 @@ const Separator = ({ darkMode }: { darkMode: boolean }) => (
 );
 
 export const Taskbar = () => {
-  const { windows, restoreWindow, toggleStartMenu, showStartMenu, openOrFocusWindow, settings } = useDesktopStore();
+  const { windows, restoreWindow, minimizeWindow, activeWindowId, toggleStartMenu, showStartMenu, openOrFocusWindow, openStartMenuSearch, settings } = useDesktopStore();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Get pinned apps from JSON
@@ -118,9 +118,9 @@ export const Taskbar = () => {
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
           className={cn(
             "pointer-events-auto", // Re-enable clicks for the dock itself
-            "flex h-[5rem] items-center gap-2",
-            "backdrop-blur-2xl rounded-[2.5rem] px-4",
-            "w-auto max-w-[96vw]",
+            "flex h-[5.5rem] items-center gap-3",
+            "backdrop-blur-2xl rounded-[2.75rem] px-5",
+            "w-auto max-w-[98vw]",
             "transition-all duration-300 ease-out",
             settings.darkMode
               ? "bg-neutral-950/80 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
@@ -129,14 +129,14 @@ export const Taskbar = () => {
         >
 
           {/* --- LEFT: System Controls --- */}
-          <div className="flex items-center gap-2 shrink-0 z-20">
+          <div className="flex items-center gap-3 shrink-0 z-20">
             <Tooltip text="Start Menu">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={toggleStartMenu}
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 shadow-lg",
+                  "flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 shadow-lg",
                   showStartMenu
                     ? `${colorMap[settings.themeColor] || colorMap.blue} text-black`
                     : settings.darkMode
@@ -152,8 +152,9 @@ export const Taskbar = () => {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                onClick={openStartMenuSearch}
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg transition-colors",
+                  "flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-colors",
                   settings.darkMode
                     ? "bg-neutral-800/50 text-white/70 border border-white/5 hover:bg-neutral-700/50 hover:text-white"
                     : "bg-white/50 text-black border border-zinc-200 hover:bg-white/70 hover:text-black"
@@ -178,22 +179,31 @@ export const Taskbar = () => {
               <LayoutGroup>
 
                 {/* 1. Static Pinned Apps */}
-                <div className="flex items-center gap-3 shrink-0 pointer-events-auto pb-4">
+                <div className="flex items-center gap-4 shrink-0 pointer-events-auto pb-4">
                   {pinnedApps.map((app) => {
                     // Check if this app has an open window
-                    const hasOpenWindow = windows.some(w => w.appId === app.id);
+                    const existingWindow = windows.find(w => w.appId === app.id);
+                    const hasOpenWindow = !!existingWindow;
 
                     const handleAppClick = () => {
-                      openOrFocusWindow({
-                        title: app.name,
-                        icon: app.id,
-                        appId: app.id,
-                        x: 100 + Math.random() * 200,
-                        y: 50 + Math.random() * 100,
-                        width: 700,
-                        height: 500,
-                        content: app.content,
-                      });
+                      if (existingWindow) {
+                        if (activeWindowId === existingWindow.id && !existingWindow.isMinimized) {
+                          minimizeWindow(existingWindow.id);
+                        } else {
+                          restoreWindow(existingWindow.id);
+                        }
+                      } else {
+                        openOrFocusWindow({
+                          title: app.name,
+                          icon: app.id,
+                          appId: app.id,
+                          x: 100 + Math.random() * 200,
+                          y: 50 + Math.random() * 100,
+                          width: 700,
+                          height: 500,
+                          content: app.content,
+                        });
+                      }
                     };
 
                     // Get the icon component
@@ -209,12 +219,12 @@ export const Taskbar = () => {
                             transition={{ type: "spring", stiffness: 350, damping: 15 }}
                             onClick={handleAppClick}
                             className={cn(
-                              "relative flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg",
+                              "relative flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg",
                               "mx-0", // remove side spacing
                               `${colorMap[settings.themeColor] || colorMap.blue}`
                             )}
                           >
-                            <IconComponent className="h-6 w-6 text-black" />
+                            <IconComponent className="h-7 w-7 text-black" />
                             <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                             {/* Running indicator */}
                             {hasOpenWindow && (
@@ -230,62 +240,69 @@ export const Taskbar = () => {
                   })}
                 </div>
 
-                {windows.length > 0 && (
+                {/* Only show separator if there are unpinned windows */}
+                {windows.filter(w => !pinnedApps.some(app => app.id === w.appId)).length > 0 && (
                   <div className={cn(
-                    "mx-2 h-1 w-1 rounded-full shrink-0 mb-10 pointer-events-auto",
-                    settings.darkMode ? "bg-white/20" : "bg-zinc-300"
+                    "mx-3 h-1.5 w-1.5 rounded-full shrink-0 mb-10 pointer-events-auto",
+                    settings.darkMode ? "bg-white/30" : "bg-zinc-400"
                   )} />
                 )}
 
-                {/* 2. Active Windows */}
-                <div className="flex items-center gap-3 shrink-0 pointer-events-auto pb-4">
+                {/* 2. Active Windows (Only for unpinned apps) */}
+                <div className="flex items-center gap-4 shrink-0 pointer-events-auto pb-4">
                   <AnimatePresence mode='popLayout'>
-                    {windows.map((window) => {
-                      const isActive = !window.isMinimized;
-                      return (
-                        <Tooltip key={window.id} text={window.title}>
-                          <motion.button
-                            layout
-                            initial={{ opacity: 0, scale: 0.5, width: 0 }}
-                            animate={{ opacity: 1, scale: 1, width: "auto" }}
-                            exit={{ opacity: 0, scale: 0.5, width: 0 }}
-                            whileHover={{ scale: 1.05, y: -4 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => restoreWindow(window.id)}
-                            className={cn(
-                              "relative flex h-12 items-center gap-3 rounded-2xl px-4 transition-all duration-300 border shrink-0 min-w-[140px] max-w-[200px]",
-                              settings.darkMode
-                                ? isActive
-                                  ? "bg-white/10 border-white/10 text-white shadow-xl backdrop-blur-md"
-                                  : "bg-neutral-800/40 border-transparent text-white/50 hover:bg-white/5"
-                                : isActive
-                                  ? "bg-white/80 border-zinc-200 text-zinc-900 shadow-xl backdrop-blur-md"
-                                  : "bg-white/40 border-transparent text-zinc-500 hover:bg-white/60"
-                            )}
-                          >
-                            <div className={cn(
-                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl",
-                              isActive
-                                ? `${activeWindowColorMap[settings.themeColor] || activeWindowColorMap.blue} text-black`
-                                : settings.darkMode
-                                  ? "bg-white/5 text-white/50"
-                                  : "bg-zinc-200 text-zinc-500"
-                            )}>
-                              <FolderOpen className="h-4 w-4" />
-                            </div>
+                    {windows
+                      .filter(window => {
+                        // Only show windows for apps that are NOT pinned
+                        return !pinnedApps.some(app => app.id === window.appId);
+                      })
+                      .map((window) => {
+                        const isActive = !window.isMinimized;
+                        return (
+                          <Tooltip key={window.id} text={window.title}>
+                            <motion.button
+                              layout
+                              initial={{ opacity: 0, scale: 0.5, width: 0 }}
+                              animate={{ opacity: 1, scale: 1, width: "auto" }}
+                              exit={{ opacity: 0, scale: 0.5, width: 0 }}
+                              whileHover={{ scale: 1.03, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                if (activeWindowId === window.id && !window.isMinimized) {
+                                  minimizeWindow(window.id);
+                                } else {
+                                  restoreWindow(window.id);
+                                }
+                              }}
+                              aria-label={window.title}
+                              className={cn(
+                                "relative flex h-12 w-12 items-center justify-center rounded-xl p-0 transition-all duration-200 border shrink-0",
+                                settings.darkMode
+                                  ? isActive
+                                    ? "bg-white/10 border-white/10 text-white shadow-md backdrop-blur-sm"
+                                    : "bg-neutral-800/40 border-transparent text-white/60 hover:bg-white/5"
+                                  : isActive
+                                    ? "bg-white/90 border-zinc-200 text-zinc-900 shadow-md backdrop-blur-sm"
+                                    : "bg-white/40 border-transparent text-zinc-400 hover:bg-white/60"
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "flex h-9 w-9 items-center justify-center rounded-lg",
+                                  isActive
+                                    ? `${activeWindowColorMap[settings.themeColor] || activeWindowColorMap.blue} text-black`
+                                    : settings.darkMode
+                                      ? "bg-white/5 text-white/60"
+                                      : "bg-zinc-200 text-zinc-600"
+                                )}
+                              >
+                                <FolderOpen className="h-5 w-5" />
+                              </div>
+                            </motion.button>
 
-                            <div className="flex flex-col items-start min-w-0 overflow-hidden">
-                              <span className="truncate text-xs font-bold w-full text-left leading-tight">
-                                {window.title}
-                              </span>
-                              <span className="text-[10px] opacity-50 truncate w-full text-left">
-                                Running
-                              </span>
-                            </div>
-                          </motion.button>
-                        </Tooltip>
-                      );
-                    })}
+                          </Tooltip>
+                        );
+                      })}
                   </AnimatePresence>
                 </div>
               </LayoutGroup>
@@ -295,11 +312,11 @@ export const Taskbar = () => {
           <Separator darkMode={settings.darkMode} />
 
           {/* --- RIGHT: System Tray --- */}
-          <div className="flex items-center gap-2 shrink-0 z-20">
+          <div className="flex items-center gap-3 shrink-0 z-20">
             {/* Status Pill */}
             <motion.div
               className={cn(
-                "hidden sm:flex h-12 items-center gap-3 rounded-2xl px-4 shrink-0",
+                "hidden sm:flex h-14 items-center gap-3 rounded-2xl px-4 shrink-0",
                 settings.darkMode
                   ? "bg-neutral-800/50 border border-white/5 text-white/90"
                   : "bg-white/50 border border-zinc-200 text-zinc-900"
@@ -322,8 +339,24 @@ export const Taskbar = () => {
             {/* Clock */}
             <motion.button
               whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                const calendarApp = getAppById('calendar');
+                if (calendarApp) {
+                  openOrFocusWindow({
+                    title: calendarApp.name,
+                    icon: calendarApp.id,
+                    appId: calendarApp.id,
+                    x: 100,
+                    y: 50,
+                    width: 900,
+                    height: 600,
+                    content: calendarApp.content,
+                  });
+                }
+              }}
               className={cn(
-                "flex h-12 flex-col justify-center rounded-2xl px-3 text-right transition-colors shrink-0",
+                "flex h-14 flex-col justify-center rounded-2xl px-4 text-right transition-colors shrink-0 cursor-pointer",
                 settings.darkMode
                   ? "hover:bg-white/5 text-white"
                   : "hover:bg-white/50 text-zinc-900"
@@ -342,23 +375,6 @@ export const Taskbar = () => {
                 {format(currentTime, 'EEE dd')}
               </span>
             </motion.button>
-
-            {/* Notifications */}
-            <Tooltip text="Notifications">
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 10 }}
-                whileTap={{ scale: 0.9 }}
-                className={cn(
-                  "relative flex h-12 w-12 items-center justify-center rounded-full shadow-inner shrink-0 ml-1",
-                  settings.darkMode
-                    ? "border border-white/10 bg-neutral-800 text-white"
-                    : "border border-zinc-200 bg-white text-zinc-900"
-                )}
-              >
-                <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" />
-                <MessageSquare className="h-5 w-5" />
-              </motion.button>
-            </Tooltip>
           </div>
 
         </motion.div>

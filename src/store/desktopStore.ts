@@ -39,6 +39,10 @@ interface DesktopState {
   pinnedApps: PinnedApp[];
   settings: Settings;
 
+  shouldFocusSearch: boolean;
+  openStartMenuSearch: () => void;
+  setShouldFocusSearch: (shouldFocus: boolean) => void;
+
   openWindow: (window: Omit<Window, 'id' | 'isMinimized' | 'isMaximized' | 'zIndex'>) => void;
   closeWindow: (id: string) => void;
   minimizeWindow: (id: string) => void;
@@ -98,6 +102,7 @@ export const useDesktopStore = create<DesktopState>()(
       windows: [],
       activeWindowId: null,
       showStartMenu: false,
+      shouldFocusSearch: false,
       maxZIndex: 10,
       pinnedApps: DEFAULT_PINNED_APPS,
       settings: {
@@ -235,6 +240,10 @@ export const useDesktopStore = create<DesktopState>()(
         set((state) => ({ showStartMenu: !state.showStartMenu }));
       },
 
+      openStartMenuSearch: () => {
+        set({ showStartMenu: true, shouldFocusSearch: true });
+      },
+
       togglePinApp: (app: PinnedApp) => {
         set((state) => {
           const isAlreadyPinned = state.pinnedApps.some(p => p.id === app.id);
@@ -257,6 +266,10 @@ export const useDesktopStore = create<DesktopState>()(
         set((state) => ({
           settings: { ...state.settings, ...newSettings }
         }));
+      },
+
+      setShouldFocusSearch: (shouldFocus: boolean) => {
+        set({ shouldFocusSearch: shouldFocus });
       },
     }),
     {

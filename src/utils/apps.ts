@@ -14,6 +14,11 @@ import {
     Music,
     Briefcase,
     User,
+    Instagram,
+    Twitter,
+    Link,
+    Linkedin,
+    ExternalLink,
 } from 'lucide-react';
 
 import {
@@ -32,6 +37,11 @@ import {
     Spotify as SpotifyIconoir,
     Suitcase as SuitcaseIconoir,
     User as UserIconoir,
+    Instagram as InstagramIconoir,
+    Twitter as TwitterIconoir,
+    Link as LinkIconoir,
+    Linkedin as LinkedinIconoir,
+    OpenNewWindow as ExternalLinkIconoir,
 } from 'iconoir-react';
 import appsData from '@/data/apps.json';
 
@@ -60,6 +70,11 @@ const lucideMap: Record<string, any> = {
     Music,
     Briefcase,
     User,
+    Instagram,
+    Twitter,
+    Link,
+    Linkedin,
+    ExternalLink,
 };
 
 const iconoirMap: Record<string, any> = {
@@ -78,6 +93,11 @@ const iconoirMap: Record<string, any> = {
     Music: SpotifyIconoir,
     Briefcase: SuitcaseIconoir,
     User: UserIconoir,
+    Instagram: InstagramIconoir,
+    Twitter: TwitterIconoir,
+    Link: LinkIconoir,
+    Linkedin: LinkedinIconoir,
+    ExternalLink: ExternalLinkIconoir,
 };
 
 // Get the icon component from the icon name

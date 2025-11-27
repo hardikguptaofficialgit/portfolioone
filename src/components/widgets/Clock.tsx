@@ -50,7 +50,7 @@ export const Clock = () => {
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       // Adding a subtle "breathing/floating" animation to the container
-      whileHover={{ scale: 1.02 }}
+
       className="glass-panel rounded-2xl p-6 w-72 cursor-default select-none shadow-xl relative overflow-hidden"
     >
       {/* Optional: Subtle background shine effect */}

@@ -12,7 +12,7 @@
             "id": "vscode",
             "name": "VSCode",
             "icon": "Code2",
-            "content": "projects",
+            "content": "vscode",
             "pinned": true,
             "color": "from-sky-600 to-blue-700"
         },
@@ -20,7 +20,7 @@
             "id": "terminal",
             "name": "Terminal",
             "icon": "Terminal",
-            "content": "resume",
+            "content": "terminal",
             "pinned": true,
             "color": "from-neutral-800 to-neutral-900"
         },
@@ -49,6 +49,14 @@
             "color": "from-orange-500 to-orange-600"
         },
         {
+            "id": "mail",
+            "name": "Mail",
+            "icon": "Mail",
+            "content": "about",
+            "pinned": true,
+            "color": "from-orange-500 to-orange-600"
+        },
+        {
             "id": "projects",
             "name": "Projects",
             "icon": "Folder",
@@ -57,18 +65,10 @@
             "color": "from-emerald-500 to-emerald-600"
         },
         {
-            "id": "mail",
-            "name": "Mail",
-            "icon": "Mail",
-            "content": "about",
-            "pinned": false,
-            "color": "from-orange-500 to-orange-600"
-        },
-        {
             "id": "calendar",
             "name": "Calendar",
             "icon": "Calendar",
-            "content": "about",
+            "content": "calendar",
             "pinned": false,
             "color": "from-red-500 to-red-600"
         }

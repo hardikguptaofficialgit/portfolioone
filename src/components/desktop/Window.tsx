@@ -1,10 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rnd } from 'react-rnd';
-import { Minus, Square, X, ExternalLink, Mail, Github, Linkedin, Monitor, Eye, FileText } from 'lucide-react';
+import { Minus, Square, X, ExternalLink, Mail, Github, Linkedin, Monitor, Eye, FileText, Instagram, Twitter, Link } from 'lucide-react';
 import { useDesktopStore } from '@/store/desktopStore';
 import { cn } from '@/lib/utils';
 import filesData from '@/data/files.json';
+import Cal, { getCalApi } from "@calcom/embed-react";
+import { getIconComponent } from '@/utils/apps';
+import { SubstackFeed } from '@/components/apps/SubstackFeed';
+import { GamesApp } from '@/components/apps/GamesApp';
+
 
 interface WindowProps {
   id: string;
@@ -181,10 +186,15 @@ export const Window = (props: WindowProps) => {
                 {content === 'portfolio' && <div className="p-6"><PortfolioContent /></div>}
                 {content === 'resume' && <div className="p-6"><ResumeContent /></div>}
                 {content === 'projects' && <div className="p-6"><ProjectsContent /></div>}
+                {content === 'vscode' && <div className="p-6"><VSCodeContent /></div>}
                 {content === 'about' && <div className="p-6"><AboutContent /></div>}
                 {content === 'spotify' && <div className="p-6 h-full"><SpotifyContent /></div>}
                 {content === 'settings' && <div className="p-6"><SettingsContent /></div>}
                 {content === 'documents' && <div className="p-6"><DocumentsContent /></div>}
+                {content === 'terminal' && <TerminalContent />}
+                {content === 'calendar' && <div className="h-full"><CalendarContent /></div>}
+                {content === 'substack' && <div className="p-6"><SubstackFeed /></div>}
+                {content === 'games' && <GamesApp />}
                 {content === 'file-preview' && <FilePreviewContent file={data} />}
               </div>
             </div>
@@ -338,7 +348,7 @@ const ResumeContent = () => (
           <p
             className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
             onClick={() =>
-              window.open("https://nextround.tech", "_blank", "noopener,noreferrer")
+              window.open("https://nextround.tech/", "_blank", "noopener,noreferrer")
             }
           >
             nextround.tech
@@ -509,6 +519,7 @@ const ResumeContent = () => (
 );
 
 const ProjectsContent = () => {
+  const { settings } = useDesktopStore();
   const USERNAME = "hardikguptaofficialgit";
   const API_URL = `https://api.github.com/users/${USERNAME}/repos?per_page=100`;
 
@@ -516,270 +527,193 @@ const ProjectsContent = () => {
   const [filteredRepos, setFilteredRepos] = React.useState<any[]>([]);
   const [mode, setMode] = React.useState<'top' | 'latest' | 'pushed' | 'all'>('top');
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [minStars, setMinStars] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
-  const [userInfo, setUserInfo] = React.useState<any>(null);
+
+  // Dynamic Icons
+  const GithubIcon = getIconComponent('Github', settings.iconStyle);
+  const ExternalLinkIcon = getIconComponent('ExternalLink', settings.iconStyle);
+
+  // Theme Colors
+  const themeMap: Record<string, any> = {
+    blue: { text: 'text-blue-500', bg: 'bg-blue-600', border: 'border-blue-500', ring: 'focus:ring-blue-500/50' },
+    purple: { text: 'text-purple-500', bg: 'bg-purple-600', border: 'border-purple-500', ring: 'focus:ring-purple-500/50' },
+    green: { text: 'text-green-500', bg: 'bg-green-600', border: 'border-green-500', ring: 'focus:ring-green-500/50' },
+    orange: { text: 'text-orange-500', bg: 'bg-orange-600', border: 'border-orange-500', ring: 'focus:ring-orange-500/50' },
+    red: { text: 'text-red-500', bg: 'bg-red-600', border: 'border-red-500', ring: 'focus:ring-red-500/50' },
+    zinc: { text: 'text-zinc-500', bg: 'bg-zinc-600', border: 'border-zinc-500', ring: 'focus:ring-zinc-500/50' },
+  };
+  const theme = themeMap[settings.themeColor] || themeMap.blue;
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [reposRes, userRes] = await Promise.all([
-          fetch(API_URL),
-          fetch(`https://api.github.com/users/${USERNAME}`)
-        ]);
-
+        const reposRes = await fetch(API_URL);
         if (!reposRes.ok) throw new Error(`GitHub API error ${reposRes.status}`);
-
         const reposData = await reposRes.json();
-        const userData = await userRes.json();
-
         setRepos(Array.isArray(reposData) ? reposData : []);
-        setUserInfo(userData);
         setLoading(false);
       } catch (err: any) {
         setError(err.message || 'Failed to load repositories');
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   React.useEffect(() => {
-    applyFilters();
-  }, [repos, mode, searchQuery, minStars]);
-
-  const applyFilters = () => {
     let list = [...repos];
-
-    // Sort by mode
     if (mode === 'top') {
-      list.sort((a, b) => b.stargazers_count - a.stargazers_count || new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      list.sort((a, b) => b.stargazers_count - a.stargazers_count);
     } else if (mode === 'latest') {
       list.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     } else if (mode === 'pushed') {
       list.sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime());
     }
 
-    // Apply filters
-    list = list.filter(r => {
-      if (r.stargazers_count < minStars) return false;
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        return (r.name && r.name.toLowerCase().includes(q)) ||
-          (r.description && r.description.toLowerCase().includes(q)) ||
-          (r.language && r.language.toLowerCase().includes(q));
-      }
-      return true;
-    });
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(r =>
+        (r.name && r.name.toLowerCase().includes(q)) ||
+        (r.description && r.description.toLowerCase().includes(q))
+      );
+    }
 
-    // Limit top repos
     if (mode === 'top') list = list.slice(0, 20);
-
     setFilteredRepos(list);
-  };
+  }, [repos, mode, searchQuery]);
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-zinc-400">Loading repositories...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-400">Error: {error}</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Profile Section */}
-      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-lg">
-        <div className="flex items-start gap-6">
-          <img
-            src={`https://github.com/${USERNAME}.png`}
-            alt="avatar"
-            className="w-24 h-24 rounded-lg border border-zinc-800"
-          />
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-2xl font-bold text-white">{userInfo?.name || USERNAME}</h2>
-              <a
-                href={`https://github.com/${USERNAME}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 flex items-center justify-center border border-zinc-800 rounded-lg hover:border-zinc-600 hover:bg-zinc-900 transition-all group"
-                title="View GitHub Profile"
-              >
-                <Github className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
-              </a>
-              <a
-                href={`https://github.com/${USERNAME}?tab=followers`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2 border border-blue-500 hover:border-blue-400"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                Follow Me
-              </a>
-            </div>
-            <p className="text-zinc-400 mb-4">{userInfo?.bio || 'GitHub profile'}</p>
-
-            {/* Contributions Graph */}
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold text-zinc-400 mb-2">Contributions</h3>
-              <img
-                src={`https://ghchart.rshah.org/38bdf8/${USERNAME}`}
-                alt="contributions graph"
-                className="w-full rounded-lg border border-zinc-800 bg-black p-2"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://github-readme-stats.vercel.app/api?username=${USERNAME}&show_icons=true&theme=dark&hide_border=true&bg_color=000000&title_color=ffffff&text_color=9aa4b2&icon_color=38bdf8`;
-                }}
-              />
-              <p className="text-xs text-zinc-600 mt-2">
-                GitHub contribution activity
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Repositories Section */}
-      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-lg">
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className={cn(
+        "flex-shrink-0 p-6 border-b",
+        settings.darkMode ? "border-zinc-800" : "border-zinc-200"
+      )}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-white">Repositories</h2>
-            <p className="text-sm text-zinc-500">{repos.length} public repos — showing {filteredRepos.length}</p>
+            <h2 className={cn(
+              "text-2xl font-bold tracking-tight",
+              settings.darkMode ? "text-white" : "text-zinc-900"
+            )}>
+              Open Source
+            </h2>
+            <p className={cn(
+              "text-sm",
+              settings.darkMode ? "text-zinc-400" : "text-zinc-500"
+            )}>
+              {filteredRepos.length} repositories found
+            </p>
           </div>
+
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Filter by name or language"
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 bg-black border border-zinc-800 rounded text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="px-2 py-1.5 bg-black border border-zinc-800 rounded text-white hover:bg-zinc-900"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
-          <button
-            onClick={() => setMode('top')}
-            className={`px-3 py-1.5 text-sm border rounded transition-colors ${mode === 'top'
-              ? 'border-blue-500 bg-blue-500/10 text-white'
-              : 'border-zinc-800 text-zinc-400 hover:border-zinc-600'
-              }`}
-          >
-            Top (stars)
-          </button>
-          <button
-            onClick={() => setMode('latest')}
-            className={`px-3 py-1.5 text-sm border rounded transition-colors ${mode === 'latest'
-              ? 'border-blue-500 bg-blue-500/10 text-white'
-              : 'border-zinc-800 text-zinc-400 hover:border-zinc-600'
-              }`}
-          >
-            Latest (updated)
-          </button>
-          <button
-            onClick={() => setMode('pushed')}
-            className={`px-3 py-1.5 text-sm border rounded transition-colors ${mode === 'pushed'
-              ? 'border-blue-500 bg-blue-500/10 text-white'
-              : 'border-zinc-800 text-zinc-400 hover:border-zinc-600'
-              }`}
-          >
-            Most recently pushed
-          </button>
-          <button
-            onClick={() => setMode('all')}
-            className={`px-3 py-1.5 text-sm border rounded transition-colors ${mode === 'all'
-              ? 'border-blue-500 bg-blue-500/10 text-white'
-              : 'border-zinc-800 text-zinc-400 hover:border-zinc-600'
-              }`}
-          >
-            All
-          </button>
-
-          <div className="ml-auto flex items-center gap-2">
-            <label className="text-xs text-zinc-500">Min stars</label>
-            <input
-              type="number"
-              min="0"
-              value={minStars}
-              onChange={(e) => setMinStars(parseInt(e.target.value) || 0)}
-              className="w-20 px-2 py-1.5 bg-black border border-zinc-800 rounded text-sm text-white focus:outline-none focus:border-zinc-600"
+              className={cn(
+                "px-3 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-2",
+                theme.ring,
+                settings.darkMode
+                  ? "bg-zinc-900 border-zinc-800 text-white placeholder-zinc-600"
+                  : "bg-white border-zinc-200 text-zinc-900 placeholder-zinc-400"
+              )}
             />
           </div>
         </div>
 
-        {/* Repository List */}
-        <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
-          {filteredRepos.length === 0 ? (
-            <div className="text-center text-zinc-500 py-8">No repositories match the filters.</div>
-          ) : (
-            filteredRepos.map((repo) => (
-              <div
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          {[
+            { id: 'top', label: 'Top Rated' },
+            { id: 'latest', label: 'Latest' },
+            { id: 'pushed', label: 'Recently Pushed' },
+            { id: 'all', label: 'All Repos' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setMode(tab.id as any)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-full transition-colors whitespace-nowrap",
+                mode === tab.id
+                  ? cn(theme.bg, "text-white")
+                  : settings.darkMode
+                    ? "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className={cn("w-6 h-6 border-2 border-t-transparent rounded-full animate-spin", theme.border)} />
+          </div>
+        ) : error ? (
+          <div className="text-red-500 text-center p-4">{error}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredRepos.map((repo) => (
+              <a
                 key={repo.id}
-                className="p-4 border border-zinc-800 bg-black rounded-lg hover:border-zinc-600 transition-colors"
+                href={repo.html_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "group p-4 rounded-xl border transition-all duration-200 flex flex-col h-full",
+                  settings.darkMode
+                    ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900"
+                    : "bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+                )}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <a
-                      href={repo.html_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 font-semibold text-base"
-                    >
-                      {repo.name}
-                    </a>
-                    <p className="text-sm text-zinc-400 mt-1">
-                      {repo.description || <span className="text-zinc-600">No description</span>}
-                    </p>
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className={cn(
+                    "font-semibold truncate pr-4 transition-colors",
+                    theme.text
+                  )}>
+                    {repo.name}
+                  </h3>
+                  <div className={cn(
+                    "flex items-center gap-1 text-xs px-2 py-1 rounded-full",
+                    settings.darkMode ? "bg-zinc-800 text-zinc-400" : "bg-zinc-100 text-zinc-600"
+                  )}>
+                    <span>★</span>
+                    {repo.stargazers_count}
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <span className="px-2 py-1 text-xs border border-zinc-800 rounded text-zinc-400">
-                      ★ {repo.stargazers_count}
-                    </span>
-                    <span className="px-2 py-1 text-xs border border-zinc-800 rounded text-zinc-400">
-                      {repo.forks_count} forks
-                    </span>
+                </div>
+
+                <p className={cn(
+                  "text-sm line-clamp-2 flex-1 mb-4",
+                  settings.darkMode ? "text-zinc-400" : "text-zinc-600"
+                )}>
+                  {repo.description || "No description available"}
+                </p>
+
+                <div className="flex items-center justify-between text-xs text-zinc-500">
+                  <div className="flex items-center gap-2">
                     {repo.language && (
-                      <span className="px-2 py-1 text-xs border border-zinc-800 rounded text-zinc-400">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500" />
                         {repo.language}
                       </span>
                     )}
                   </div>
+                  <span>{formatDate(repo.updated_at)}</span>
                 </div>
-                <div className="flex gap-4 mt-3 text-xs text-zinc-600">
-                  <span>Updated: {formatDate(repo.updated_at)}</span>
-                  <span>Created: {formatDate(repo.created_at)}</span>
-                  <span>Pushed: {formatDate(repo.pushed_at)}</span>
-                  <span className="ml-auto">Size: {repo.size} KB</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -908,15 +842,7 @@ const SettingsContent = () => {
           settings.darkMode ? "border-zinc-800 bg-zinc-900/50" : "border-zinc-200 bg-white"
         )}>
           <div className="flex items-center gap-4">
-            <div className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center",
-              settings.darkMode ? "bg-zinc-800" : "bg-zinc-100"
-            )}>
-              <Monitor className={cn(
-                "w-5 h-5",
-                settings.darkMode ? "text-zinc-400" : "text-zinc-600"
-              )} />
-            </div>
+
             <div>
               <h4 className={cn(
                 "text-sm font-semibold",
@@ -961,7 +887,7 @@ const SettingsContent = () => {
               <span className={cn(
                 "font-mono",
                 settings.darkMode ? "text-white" : "text-zinc-900"
-              )}>2.0.0 (Theme Engine)</span>
+              )}>0.0.1</span>
             </div>
             <div className="flex justify-between">
               <span className="text-zinc-500">Build</span>
@@ -975,7 +901,7 @@ const SettingsContent = () => {
               <span className={cn(
                 "font-mono",
                 settings.darkMode ? "text-white" : "text-zinc-900"
-              )}>React + Tailwind</span>
+              )}>Purely React & Tailwind</span>
             </div>
           </div>
         </div>
@@ -984,36 +910,147 @@ const SettingsContent = () => {
   );
 };
 
-const AboutContent = () => (
-  <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-12">
-    <div className="w-32 h-32 bg-zinc-900 rounded-full border-2 border-white mb-8 flex items-center justify-center">
-      <span className="text-4xl">👋</span>
+const AboutContent = () => {
+  const { settings } = useDesktopStore();
+
+  const contactLinks = [
+    {
+      name: 'GitHub',
+      iconName: 'Github',
+      url: 'https://github.com/hardikguptaofficialgit',
+      description: 'Check out my code'
+    },
+    {
+      name: 'LinkedIn',
+      iconName: 'Linkedin',
+      url: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/',
+      description: 'Connect professionally'
+    },
+    {
+      name: 'Instagram',
+      iconName: 'Instagram',
+      url: 'https://www.instagram.com/stryker.inside/',
+      description: 'Personal updates'
+    },
+    {
+      name: 'Twitter',
+      iconName: 'Twitter',
+      url: 'https://x.com/stryker_inside',
+      description: 'Thoughts & threads'
+    },
+    {
+      name: 'LinkIT',
+      iconName: 'Link',
+      url: 'https://linkitapp.in/harvix',
+      description: 'All my links'
+    }
+  ];
+
+  const MailIcon = getIconComponent('Mail', settings.iconStyle);
+
+  // Theme Colors
+  const themeMap: Record<string, any> = {
+    blue: { text: 'text-blue-500', bg: 'bg-blue-500', border: 'border-blue-500', hoverText: 'hover:text-blue-500' },
+    purple: { text: 'text-purple-500', bg: 'bg-purple-500', border: 'border-purple-500', hoverText: 'hover:text-purple-500' },
+    green: { text: 'text-green-500', bg: 'bg-green-500', border: 'border-green-500', hoverText: 'hover:text-green-500' },
+    orange: { text: 'text-orange-500', bg: 'bg-orange-500', border: 'border-orange-500', hoverText: 'hover:text-orange-500' },
+    red: { text: 'text-red-500', bg: 'bg-red-500', border: 'border-red-500', hoverText: 'hover:text-red-500' },
+    zinc: { text: 'text-zinc-500', bg: 'bg-zinc-500', border: 'border-zinc-500', hoverText: 'hover:text-zinc-500' },
+  };
+  const theme = themeMap[settings.themeColor] || themeMap.blue;
+
+  return (
+    <div className="h-full flex flex-col max-w-4xl mx-auto">
+      <div className={cn(
+        "flex-shrink-0 p-8 text-center border-b",
+        settings.darkMode ? "border-zinc-800" : "border-zinc-200"
+      )}>
+        <div className={cn(
+          "w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-4 transition-colors",
+          settings.darkMode ? "bg-zinc-900" : "bg-zinc-100",
+          theme.text
+        )}>
+          <MailIcon className="w-10 h-10" />
+        </div>
+        <h2 className={cn(
+          "text-3xl font-bold mb-2",
+          settings.darkMode ? "text-white" : "text-zinc-900"
+        )}>
+          Get in Touch
+        </h2>
+        <p className={cn(
+          "text-lg",
+          settings.darkMode ? "text-zinc-400" : "text-zinc-500"
+        )}>
+          I'm always open to new opportunities and collaborations.
+        </p>
+        <a
+          href="mailto:hardikgupta8792@gmail.com"
+          className={cn(
+            "inline-block mt-4 px-6 py-2 rounded-full text-sm font-medium transition-colors",
+            settings.darkMode
+              ? "bg-white text-black hover:bg-zinc-200"
+              : "bg-black text-white hover:bg-zinc-800"
+          )}
+        >
+          hardikgupta8792@gmail.com
+        </a>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {contactLinks.map((link) => {
+            const Icon = getIconComponent(link.iconName, settings.iconStyle);
+            return (
+              <a
+                key={link.name}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "group flex items-center gap-4 p-4 rounded-xl border transition-all duration-200",
+                  settings.darkMode
+                    ? "bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700"
+                    : "bg-white border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300"
+                )}
+              >
+                <div className={cn(
+                  "w-12 h-12 rounded-lg flex items-center justify-center transition-colors",
+                  settings.darkMode ? "bg-zinc-800" : "bg-zinc-100",
+                  theme.text,
+                  "group-hover:text-white",
+                  `group-hover:${theme.bg}`
+                )}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className={cn(
+                    "font-semibold transition-colors",
+                    settings.darkMode ? "text-white" : "text-zinc-900",
+                    theme.hoverText
+                  )}>
+                    {link.name}
+                  </h3>
+                  <p className={cn(
+                    "text-sm",
+                    settings.darkMode ? "text-zinc-400" : "text-zinc-500"
+                  )}>
+                    {link.description}
+                  </p>
+                </div>
+                <ExternalLink className={cn(
+                  "w-4 h-4 ml-auto opacity-50 transition-colors",
+                  settings.darkMode ? "text-zinc-400" : "text-zinc-600",
+                  theme.hoverText
+                )} />
+              </a>
+            );
+          })}
+        </div>
+      </div>
     </div>
-
-    <h2 className="text-4xl font-bold text-white mb-6">Hello, I'm [Your Name]</h2>
-
-    <p className="text-zinc-400 text-lg leading-relaxed mb-10">
-      I am a software engineer passionate about minimalism and performance.
-      I build tools that help people work better and faster. This site is a playground
-      where I experiment with web technologies and interface design.
-    </p>
-
-    <div className="grid grid-cols-3 gap-4 w-full max-w-md">
-      <a href="#" className="flex flex-col items-center gap-2 p-4 border border-zinc-800 hover:bg-white hover:text-black transition-all">
-        <Mail size={24} />
-        <span className="text-sm font-bold">Email</span>
-      </a>
-      <a href="#" className="flex flex-col items-center gap-2 p-4 border border-zinc-800 hover:bg-white hover:text-black transition-all">
-        <Github size={24} />
-        <span className="text-sm font-bold">GitHub</span>
-      </a>
-      <a href="#" className="flex flex-col items-center gap-2 p-4 border border-zinc-800 hover:bg-white hover:text-black transition-all">
-        <Linkedin size={24} />
-        <span className="text-sm font-bold">LinkedIn</span>
-      </a>
-    </div>
-  </div>
-);
+  );
+};
 
 const DocumentsContent = () => {
   const { openWindow } = useDesktopStore();
@@ -1031,6 +1068,18 @@ const DocumentsContent = () => {
     });
   };
 
+  const handleResumeClick = () => {
+    openWindow({
+      title: 'Resume',
+      icon: 'FileText',
+      width: 900,
+      height: 700,
+      x: 150,
+      y: 50,
+      content: 'resume',
+    });
+  };
+
   return (
     <div className="h-full">
       <header className="border-b border-zinc-800 pb-6 mb-6">
@@ -1041,6 +1090,31 @@ const DocumentsContent = () => {
           Browse your files
         </p>
       </header>
+
+      {/* Resume PDF Container */}
+      <div
+        onClick={handleResumeClick}
+        className="mb-6 p-6 border-2 border-zinc-800 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all cursor-pointer group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 flex items-center justify-center bg-red-500/10 rounded-lg group-hover:bg-red-500/20 transition-colors border border-red-500/30">
+            <FileText className="w-8 h-8 text-red-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+              Hardik_Gupta_Resume_2025.pdf
+            </h3>
+            <p className="text-sm text-zinc-500 mt-1">
+              Click to view resume • 156 KB
+            </p>
+          </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <ExternalLink className="w-5 h-5 text-blue-400" />
+          </div>
+        </div>
+      </div>
+
+      {/* Other Files Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {filesData.files.map((file, index) => (
           <div
@@ -1107,6 +1181,455 @@ const FilePreviewContent = ({ file }: { file: any }) => {
           >
             Download <ExternalLink size={10} />
           </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TerminalContent = () => {
+  const [messages, setMessages] = React.useState<
+    Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+  >([
+    {
+      role: 'system',
+      content: `You are Hardik — an AI persona representing Hardik Gupta.
+
+Identity:
+Hardik Gupta
+Learner • Builder • Full Stack Developer
+Jaipur, Rajasthan, India
+harvix.tech
+hardikgupta8792@gmail.com
+
+Background:
+You have founded and built multiple AI-powered products and platforms across education, productivity, and consumer apps.
+
+Experience (Condensed):
+• Founder & CTO — NuviBrainz (AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools)
+• Full Stack Developer — LinkIT (AI-powered link manager; shipped fast and reached 100+ users in 15 days)
+• Web Developer — NextRound AI (interview-prep Chrome extension with summaries and insights)
+• Full Stack Developer — AstroNuvi (RatnAI-powered astrology platform serving 1,200+ users)
+• Freelance Developer — Socivo (London-based marketing agency)
+• Senior Technical Executive — FED KIIT
+• Web Developer — GeeksForGeeks KIIT
+
+Technical Expertise:
+ReactJS, Tailwind CSS, NodeJS, ExpressJS, Firebase, TypeScript, Git, Docker, Redis,
+Vercel, Render, PostHog, C, HTML, CSS, JavaScript.
+
+Education:
+KIIT University — CSE (AI/ML) — 2024–2028
+
+You speak, think, and respond as Hardik — with the technical depth, product background, and engineering experience he possesses.`
+    }
+  ]);
+
+  const [input, setInput] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  React.useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setError('');
+
+    // Add user message to chat
+    const newMessages = [...messages, { role: 'user' as const, content: userMessage }];
+    setMessages(newMessages);
+    setIsLoading(true);
+
+    try {
+      // Import the GitHub Models SDK dynamically
+      const ModelClient = (await import('@azure-rest/ai-inference')).default;
+      const { AzureKeyCredential } = await import('@azure/core-auth');
+      const { isUnexpected } = await import('@azure-rest/ai-inference');
+
+      const token = import.meta.env.VITE_GITHUB_TOKEN;
+      if (!token) {
+        throw new Error('GITHUB_TOKEN not found in environment variables');
+      }
+
+      const endpoint = "https://models.github.ai/inference";
+      const model = "openai/gpt-4o-mini";
+
+      const client = ModelClient(endpoint, new AzureKeyCredential(token));
+
+      const response = await client.path("/chat/completions").post({
+        body: {
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          temperature: 1,
+          top_p: 1,
+          model: model
+        }
+      });
+
+      if (isUnexpected(response)) {
+        throw new Error(response.body?.error?.message || 'API request failed');
+      }
+
+      const assistantMessage = response.body.choices[0].message.content;
+      setMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to get response from AI');
+      console.error('Chat error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-black text-green-400 font-mono">
+      {/* Terminal Header */}
+      <div className="px-4 py-2 bg-zinc-900 border-b border-zinc-800 flex items-center gap-2">
+        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        <span className="ml-4 text-zinc-400 text-sm">Talk with My AI Clone ( or email me :) )</span>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+        {messages.filter(m => m.role !== 'system').map((message, index) => (
+          <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] rounded-lg p-3 ${message.role === 'user'
+              ? 'bg-blue-600 text-white'
+              : 'bg-zinc-900 text-green-400 border border-zinc-800'
+              }`}>
+              <div className="text-xs opacity-70 mb-1">
+                {message.role === 'user' ? '$ user' : '> assistant'}
+              </div>
+              <div className="whitespace-pre-wrap break-words">{message.content}</div>
+            </div>
+          </div>
+        ))}
+
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-zinc-900 text-green-400 border border-zinc-800 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-900/20 border border-red-500 text-red-400 rounded-lg p-3">
+            <div className="text-xs opacity-70 mb-1">! error</div>
+            <div>{error}</div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="border-t border-zinc-800 bg-zinc-950 p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-green-400">$</span>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your message..."
+            disabled={isLoading}
+            className="flex-1 bg-transparent border-none outline-none text-green-400 placeholder-zinc-600 disabled:opacity-50"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={isLoading || !input.trim()}
+            className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-semibold rounded transition-colors"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CalendarContent = () => {
+  useEffect(() => {
+    (async function () {
+      const cal = await getCalApi({ namespace: "30min" });
+      cal("ui", { hideEventTypeDetails: false, layout: "month_view" });
+    })();
+  }, []);
+
+  return (
+    <Cal
+      namespace="30min"
+      calLink="hardik-stryker/30min"
+      style={{ width: "100%", height: "100%", overflow: "scroll" }}
+      config={{ layout: "month_view" }}
+    />
+  );
+};
+
+const VSCodeContent = () => {
+  const { settings } = useDesktopStore();
+  const GithubIcon = getIconComponent('Github', settings.iconStyle);
+  const ExternalLinkIcon = getIconComponent('ExternalLink', settings.iconStyle);
+
+  // Theme Colors
+  const themeMap: Record<string, any> = {
+    blue: { text: 'text-blue-500', bg: 'bg-blue-500', border: 'border-blue-500', hoverText: 'hover:text-blue-500', hoverBg: 'hover:bg-blue-500' },
+    purple: { text: 'text-purple-500', bg: 'bg-purple-500', border: 'border-purple-500', hoverText: 'hover:text-purple-500', hoverBg: 'hover:bg-purple-500' },
+    green: { text: 'text-green-500', bg: 'bg-green-500', border: 'border-green-500', hoverText: 'hover:text-green-500', hoverBg: 'hover:bg-green-500' },
+    orange: { text: 'text-orange-500', bg: 'bg-orange-500', border: 'border-orange-500', hoverText: 'hover:text-orange-500', hoverBg: 'hover:bg-orange-500' },
+    red: { text: 'text-red-500', bg: 'bg-red-500', border: 'border-red-500', hoverText: 'hover:text-red-500', hoverBg: 'hover:bg-red-500' },
+    zinc: { text: 'text-zinc-500', bg: 'bg-zinc-500', border: 'border-zinc-500', hoverText: 'hover:text-zinc-500', hoverBg: 'hover:bg-zinc-500' },
+  };
+  const theme = themeMap[settings.themeColor] || themeMap.blue;
+  const projects = [
+    {
+      id: 1,
+      name: "NuviBrainz",
+      description:
+        "AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools.",
+      tech: [
+        "ReactJS",
+        "Tailwind CSS",
+        "NodeJS",
+        "ExpressJS",
+        "Firebase",
+        "TypeScript",
+        "PostHog",
+        "Git",
+        "GitHub",
+        "Vercel"
+      ],
+      liveUrl: "https://nuvibrainz.in",
+      githubUrl: "#"
+    },
+    {
+      id: 2,
+      name: "LinkIT",
+      description:
+        "AI-powered link manager with smart suggestions and personal AI chatbot.",
+      tech: [
+        "ReactJS",
+        "Tailwind CSS",
+        "TypeScript",
+        "NodeJS",
+        "ExpressJS",
+        "Firebase",
+        "Git",
+        "GitHub",
+        "Vercel"
+      ],
+      liveUrl: "https://linkitapp.in",
+      githubUrl: "#"
+    },
+    {
+      id: 3,
+      name: "AstroNuvi",
+      description:
+        "RatnAI-powered astrology platform serving 1,200+ users with AI predictions.",
+      tech: [
+        "ReactJS",
+        "Tailwind CSS",
+        "NodeJS",
+        "ExpressJS",
+        "MongoDB",
+        "Git",
+        "GitHub",
+        "Render",
+        "TypeScript"
+      ],
+      liveUrl: "https://astronuvi.nuviverse.space",
+      githubUrl: "#"
+    },
+    {
+      id: 4,
+      name: "NextRound AI",
+      description:
+        "Interview-prep Chrome extension with smart summaries and insights.",
+      tech: [
+        "JavaScript",
+        "TypeScript",
+        "ReactJS",
+        "Tailwind CSS",
+        "Git",
+        "GitHub",
+        "Vercel"
+      ],
+      liveUrl: "https://nextround.tech",
+      githubUrl:
+        "https://github.com/hardikguptaofficialgit/nextround"
+    },
+    {
+      id: 5,
+      name: "Socivo Platform",
+      description:
+        "Freelancing and marketing platform for a London-based agency with analytics.",
+      tech: [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "PostgreSQL",
+        "Git",
+        "GitHub",
+        "Vercel",
+        "Render"
+      ],
+      liveUrl: "https://socivo.vercel.app",
+      githubUrl: "#"
+    },
+    {
+      id: 6,
+      name: "StrykerOS",
+      description:
+        "Windows 11-inspired portfolio website with a full desktop environment.",
+      tech: [
+        "ReactJS",
+        "TypeScript",
+        "Tailwind CSS",
+        "Framer Motion",
+        "Git",
+        "GitHub",
+        "Vercel"
+      ],
+      liveUrl: "https://strykerinside.vercel.app/",
+      githubUrl:
+        "https://github.com/hardikguptaofficialgit/portfolioone"
+    }
+  ];
+
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className={cn(
+        "flex-shrink-0 p-6 border-b",
+        settings.darkMode ? "border-zinc-800" : "border-zinc-200"
+      )}>
+        <h2 className={cn(
+          "text-2xl font-bold tracking-tight mb-1",
+          settings.darkMode ? "text-white" : "text-zinc-900"
+        )}>
+          Projects
+        </h2>
+        <p
+          className={cn(
+            "text-sm",
+            settings.darkMode ? "text-zinc-400" : "text-zinc-500"
+          )}
+        >
+          Selected works and experiments. some project github links are not shared as they are commercial projects.
+        </p>
+
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {projects.map((project) => (
+            <div
+              key={project.id}
+              className={cn(
+                "group rounded-xl border transition-all duration-200 flex flex-col overflow-hidden",
+                settings.darkMode
+                  ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900"
+                  : "bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+              )}
+            >
+              {/* Live Preview */}
+              <div className={cn(
+                "w-full h-48 border-b relative group-hover:opacity-100 transition-opacity overflow-hidden",
+                settings.darkMode ? "bg-zinc-800 border-zinc-800" : "bg-zinc-100 border-zinc-200"
+              )}>
+                <iframe
+                  src={project.liveUrl}
+                  title={project.name}
+                  className="w-[200%] h-[200%] origin-top-left scale-50 border-none pointer-events-none"
+                  loading="lazy"
+                  tabIndex={-1}
+                />
+              </div>
+
+              <div className="p-5 flex flex-col flex-1">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className={cn(
+                    "font-bold text-lg transition-colors",
+                    settings.darkMode ? "text-white" : "text-zinc-900",
+                    theme.hoverText
+                  )}>
+                    {project.name}
+                  </h3>
+                  <div className="flex gap-2">
+                    <a
+                      href={project.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "p-1.5 rounded-lg transition-colors",
+                        settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
+                        theme.hoverText
+                      )}
+                    >
+                      <GithubIcon size={16} />
+                    </a>
+                    <a
+                      href={project.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "p-1.5 rounded-lg transition-colors",
+                        settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
+                        theme.hoverText
+                      )}
+                    >
+                      <ExternalLinkIcon size={16} />
+                    </a>
+                  </div>
+                </div>
+
+                <p className={cn(
+                  "text-sm mb-4 flex-1",
+                  settings.darkMode ? "text-zinc-400" : "text-zinc-600"
+                )}>
+                  {project.description}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {project.tech.map((tech) => (
+                    <span
+                      key={tech}
+                      className={cn(
+                        "px-2 py-1 text-xs font-medium rounded-md",
+                        settings.darkMode
+                          ? "bg-zinc-800 text-zinc-300"
+                          : "bg-zinc-100 text-zinc-600"
+                      )}
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

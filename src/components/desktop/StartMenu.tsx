@@ -1,18 +1,29 @@
 // Force HMR update
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, Power, User, Settings } from 'lucide-react';
 import { useDesktopStore } from '@/store/desktopStore';
 import { cn } from '@/lib/utils';
-import { getIconComponent, getAllApps, getPinnedApps, App } from '@/utils/apps';
+import { getIconComponent, getAllApps, App } from '@/utils/apps';
 
 interface StartMenuProps {
   onSignOut?: () => void;
 }
 
 export const StartMenu = ({ onSignOut }: StartMenuProps) => {
-  const { showStartMenu, toggleStartMenu, openOrFocusWindow, togglePinApp, pinnedApps, settings } = useDesktopStore();
+  const { showStartMenu, toggleStartMenu, openOrFocusWindow, togglePinApp, pinnedApps, settings, shouldFocusSearch, setShouldFocusSearch } = useDesktopStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showStartMenu && shouldFocusSearch && inputRef.current) {
+      // Small timeout to ensure animation has started/input is mounted
+      setTimeout(() => {
+        inputRef.current?.focus();
+        setShouldFocusSearch(false);
+      }, 100);
+    }
+  }, [showStartMenu, shouldFocusSearch, setShouldFocusSearch]);
 
   // Get all apps from JSON
   const apps = getAllApps();
@@ -78,6 +89,7 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
                     : "text-muted-foreground group-focus-within:text-foreground"
                 )} />
                 <input
+                  ref={inputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -139,19 +151,6 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
                         }`}>
                         <IconComponent strokeWidth={1.5} className="w-6 h-6 text-black transition-colors relative z-10" />
                         <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
-                        {/* Pin indicator */}
-                        {isPinned && (
-                          <div className={cn(
-                            "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 z-20",
-                            settings.darkMode ? "border-zinc-900" : "border-white",
-                            settings.themeColor === 'blue' ? 'bg-blue-400' :
-                              settings.themeColor === 'purple' ? 'bg-purple-400' :
-                                settings.themeColor === 'green' ? 'bg-green-400' :
-                                  settings.themeColor === 'orange' ? 'bg-orange-400' :
-                                    settings.themeColor === 'red' ? 'bg-red-400' :
-                                      'bg-zinc-400'
-                          )} />
-                        )}
                       </div>
                       <span className={cn(
                         "text-[11px] font-medium transition-colors text-center truncate w-full",
@@ -214,10 +213,24 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
               </div>
 
               <div className="flex items-center gap-1">
-                <button className={cn(
-                  "p-2.5 rounded-lg transition-colors group",
-                  settings.darkMode ? "hover:bg-white/10" : "hover:bg-white/50"
-                )} title="Settings">
+                <button
+                  onClick={() => {
+                    openOrFocusWindow({
+                      title: 'Settings',
+                      icon: 'settings',
+                      appId: 'settings',
+                      x: 100 + Math.random() * 200,
+                      y: 50 + Math.random() * 100,
+                      width: 700,
+                      height: 500,
+                      content: 'settings',
+                    });
+                    toggleStartMenu();
+                  }}
+                  className={cn(
+                    "p-2.5 rounded-lg transition-colors group",
+                    settings.darkMode ? "hover:bg-white/10" : "hover:bg-white/50"
+                  )} title="Settings">
                   <Settings className={cn(
                     "w-4 h-4 transition-colors",
                     settings.darkMode
