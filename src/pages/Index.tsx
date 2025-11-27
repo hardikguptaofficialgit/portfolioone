@@ -235,17 +235,7 @@ const Index = () => {
     />
   </svg>
 
-  <svg viewBox="0 0 200 60" className="w-[120px] mt-2">
-    <text
-      x="0"
-      y="40"
-      fontSize="40"
-      fill="white"
-      fontFamily="monospace"
-    >
-      OS
-    </text>
-  </svg>
+ 
 </div>
 
 
