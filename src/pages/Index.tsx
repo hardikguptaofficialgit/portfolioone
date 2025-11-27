@@ -200,14 +200,13 @@ const Index = () => {
             className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden"
           >
             <ShaderAnimation />
-
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-              <svg
-                viewBox="0 0 600 100"
-                className="max-w-[600px] w-full h-auto flex-shrink-0"
-              >
-                <motion.path
-                  d="M 50 25 L 10 25 L 10 50 L 50 50 L 50 75 L 10 75 
+<div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 translate-x-10 scale-75">
+  <svg
+    viewBox="0 0 600 100"
+    className="max-w-[600px] w-full h-auto flex-shrink-0"
+  >
+    <motion.path
+      d="M 50 25 L 10 25 L 10 50 L 50 50 L 50 75 L 10 75 
          M 70 25 L 110 25 
          M 90 25 L 90 75 
          M 130 75 L 130 25 L 160 25 L 160 50 L 130 50 L 160 75 
@@ -221,21 +220,34 @@ const Index = () => {
          M 330 75 L 330 25 L 360 25 L 360 50 L 330 50 L 360 75 
          M 410 25 L 440 25 L 440 75 L 410 75 Z 
          M 490 25 L 460 25 L 460 50 L 490 50 L 490 75 L 460 75"
-                  fill="transparent"
-                  strokeWidth="5"
-                  stroke="white"
-                  strokeLinecap="square"
-                  strokeLinejoin="miter"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{
-                    duration: 3,
-                    ease: "easeInOut",
-                    delay: 0.5,
-                  }}
-                />
-              </svg>
-            </div>
+      fill="transparent"
+      strokeWidth="5"
+      stroke="white"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{
+        duration: 3,
+        ease: "easeInOut",
+        delay: 0.5
+      }}
+    />
+  </svg>
+
+  <svg viewBox="0 0 200 60" className="w-[120px] mt-2">
+    <text
+      x="0"
+      y="40"
+      fontSize="40"
+      fill="white"
+      fontFamily="monospace"
+    >
+      OS
+    </text>
+  </svg>
+</div>
+
 
           </motion.div>
         )}
