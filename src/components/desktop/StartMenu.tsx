@@ -35,8 +35,8 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
       appId: app.id,
       x: 100 + Math.random() * 200,
       y: 50 + Math.random() * 100,
-      width: 700,
-      height: 500,
+      width: 500,
+      height: 400,
       content: app.content,
     });
     toggleStartMenu();
@@ -221,8 +221,8 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
                       appId: 'settings',
                       x: 100 + Math.random() * 200,
                       y: 50 + Math.random() * 100,
-                      width: 700,
-                      height: 500,
+                      width: 500,
+                      height: 400,
                       content: 'settings',
                     });
                     toggleStartMenu();

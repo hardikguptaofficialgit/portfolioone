@@ -1,0 +1,56 @@
+[
+    {
+        "id": "growth-hackathon-banglore-2025",
+        "title": "Growth Hackathon Banglore - The Residency",
+        "description": "Recent participation in major tech hackathons and community meetups.",
+        "date": "Dec 2025",
+        "pinned": true,
+        "images": [
+            "https://media.licdn.com/dms/image/v2/D5622AQHfzO26zRSesA/feedshare-shrink_1280/B56ZsCT.yQHQAc-/0/1765270351214?e=1767830400&v=beta&t=-hYRi10N4ecDuD7mptufMhtfuej7sziFhtIpMIZWOLg",
+            "https://media.licdn.com/dms/image/v2/D5622AQEis02yW0UTWw/feedshare-shrink_1280/B56ZsCT.xzLAAc-/0/1765270351169?e=1767830400&v=beta&t=S6iYbnecv5XyorQOl2cUreucXNe3tO7Wg7Ub97Scg3Y",
+            "https://media.licdn.com/dms/image/v2/D5622AQEUdmtHaCXezA/feedshare-shrink_2048_1536/B56ZrvI5jVJwAo-/0/1764948681849?e=1767830400&v=beta&t=YNaPIGhIc6hlJcZIx_tszrOYJUj5174xSZGvsBvy6mk"
+        ]
+    },
+    {
+        "id": "gdg-hackathon-2025",
+        "title": "Google Dev Hackathon",
+        "description": "Building  Bad Hackathon, won ₹7,000 cash prize",
+        "date": "Nov 2025",
+        "pinned": false,
+        "images": [
+            "https://media.licdn.com/dms/image/v2/D4D22AQEG_D0yhkdnXg/feedshare-shrink_800/B4DZpZe2EsGgAg-/0/1762437851030?e=1767830400&v=beta&t=EkprJN3vZwG9joXSZBzEek4wVaOTq-21GApkbttb9Ac"
+        ]
+    },
+    {
+        "id": "ycombinator-hackathon-2025",
+        "title": "Y Combinator Hackathon",
+        "description": "Got selected among many participants in the hackathon held in San Francisco",
+        "date": "Nov 2025",
+        "pinned": true,
+        "images": [
+            "https://media.licdn.com/dms/image/v2/D4D22AQEoyT8JRd1NBA/feedshare-shrink_800/B4DZpSnOUzGQAg-/0/1762322606269?e=1767830400&v=beta&t=YNMFEf93-cCCrIXV8vS504--3hRSlF1S0R0ReuvZRF0"
+        ]
+    },
+    {
+        "id": "sih2025",
+        "title": "Smart India Hackthon 2025",
+        "description": "Ranked 13th out of 522 teams in SIH at my college",
+        "date": "Oct 2025",
+        "pinned": false,
+        "images": [
+            "https://media.licdn.com/dms/image/v2/D5622AQHNDBGHtgYseg/feedshare-shrink_800/B56Zl08.bRJwAg-/0/1758603767216?e=1767830400&v=beta&t=NNDAgQSLTqPXGSHrtMGWEgwZpUz3Iw_ObVTKS1YfCZQ",
+            "https://media.licdn.com/dms/image/v2/D5622AQHrTscE3cUNBA/feedshare-shrink_2048_1536/B56ZmE34WNJ0A0-/0/1758870866280?e=1767830400&v=beta&t=aoPb3nlHA1AktE_AL-xt34-XdPiiTxyeZMtdpQTl3h4",
+            "https://media.licdn.com/dms/image/v2/D5622AQHEN7aA2rkKgQ/feedshare-shrink_800/B56Zl08.akJkAk-/0/1758603766167?e=1767830400&v=beta&t=ExD2lYSUUhBCLEsuBdER_q0tijewe3N5AVB7P5JAZGk"
+        ]
+    },
+    {
+        "id": "fabrithon",
+        "title": "Fabrithon",
+        "description": "Participated in a hackathon focused on incubating startup ideas, understanding customer needs, and delivering investor pitches",
+        "date": "May 2025",
+        "pinned": false,
+        "images": [
+            "https://media.licdn.com/dms/image/v2/D4D22AQGW18zjGXMTvg/feedshare-shrink_800/B4DZav4DY4HQAk-/0/1746707432059?e=1767830400&v=beta&t=uj-K56VcC75HW6FuXc0RIgZVOQp7YDCB9SqmboDYy_w"
+        ]
+    }
+]

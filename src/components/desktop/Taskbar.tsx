@@ -199,8 +199,8 @@ export const Taskbar = () => {
                           appId: app.id,
                           x: 100 + Math.random() * 200,
                           y: 50 + Math.random() * 100,
-                          width: 700,
-                          height: 500,
+                          width: 500,
+                          height: 400,
                           content: app.content,
                         });
                       }
@@ -349,8 +349,8 @@ export const Taskbar = () => {
                     appId: calendarApp.id,
                     x: 100,
                     y: 50,
-                    width: 900,
-                    height: 600,
+                    width: 700,
+                    height: 500,
                     content: calendarApp.content,
                   });
                 }

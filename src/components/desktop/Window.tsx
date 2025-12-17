@@ -257,7 +257,7 @@ const ResumeContent = () => (
           Learner • Builder • Full Stack Developer
         </p>
         <p className="text-zinc-500 text-sm mt-1">
-          Jaipur, Rajasthan, India • harvix.tech • hardikgupta8792@gmail.com
+          Jaipur, Rajasthan, India • strykerinside.vercel.app • hardikgupta8792@gmail.com
         </p>
       </div>
 
@@ -286,7 +286,7 @@ const ResumeContent = () => (
         <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
 
         <div className="flex justify-between items-start mb-2">
-          <h4 className="text-lg font-bold text-white">Founder & CTO — NuviBrainz</h4>
+          <h4 className="text-lg font-bold text-white">Building — NuviBrainz</h4>
           <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
             Aug 2024 — Present
           </span>
@@ -355,7 +355,7 @@ const ResumeContent = () => (
           </p>
 
           <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-            <li>Building an AI-powered Chrome extension for interview prep.</li>
+            <li>Building  an AI-powered Chrome extension for interview prep.</li>
             <li>Implemented smart summaries, insights, and personalized suggestions.</li>
           </ul>
         </div>
@@ -670,10 +670,10 @@ const ProjectsContent = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  "group p-4 rounded-xl border transition-all duration-200 flex flex-col h-full",
+                  "group p-4 rounded-xl border flex flex-col h-full",
                   settings.darkMode
-                    ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900"
-                    : "bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+                    ? "bg-zinc-900/50 border-zinc-800"
+                    : "bg-white border-zinc-200"
                 )}
               >
                 <div className="flex items-start justify-between mb-2">
@@ -965,13 +965,6 @@ const AboutContent = () => {
         "flex-shrink-0 p-8 text-center border-b",
         settings.darkMode ? "border-zinc-800" : "border-zinc-200"
       )}>
-        <div className={cn(
-          "w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-4 transition-colors",
-          settings.darkMode ? "bg-zinc-900" : "bg-zinc-100",
-          theme.text
-        )}>
-          <MailIcon className="w-10 h-10" />
-        </div>
         <h2 className={cn(
           "text-3xl font-bold mb-2",
           settings.darkMode ? "text-white" : "text-zinc-900"
@@ -1007,19 +1000,12 @@ const AboutContent = () => {
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={cn(
-                  "group flex items-center gap-4 p-4 rounded-xl border transition-all duration-200",
-                  settings.darkMode
-                    ? "bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700"
-                    : "bg-white border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300"
-                )}
+                className="group flex items-center gap-4 py-2 transition-all duration-200"
               >
                 <div className={cn(
-                  "w-12 h-12 rounded-lg flex items-center justify-center transition-colors",
-                  settings.darkMode ? "bg-zinc-800" : "bg-zinc-100",
+                  "transition-colors",
                   theme.text,
-                  "group-hover:text-white",
-                  `group-hover:${theme.bg}`
+                  "group-hover:text-white"
                 )}>
                   <Icon className="w-6 h-6" />
                 </div>
@@ -1039,7 +1025,7 @@ const AboutContent = () => {
                   </p>
                 </div>
                 <ExternalLink className={cn(
-                  "w-4 h-4 ml-auto opacity-50 transition-colors",
+                  "w-4 h-4 ml-auto opacity-0 group-hover:opacity-50 transition-all",
                   settings.darkMode ? "text-zinc-400" : "text-zinc-600",
                   theme.hoverText
                 )} />
@@ -1094,21 +1080,21 @@ const DocumentsContent = () => {
       {/* Resume PDF Container */}
       <div
         onClick={handleResumeClick}
-        className="mb-6 p-6 border-2 border-zinc-800 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all cursor-pointer group"
+        className="mb-6 p-6 border-2 border-zinc-800 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 cursor-pointer group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 flex items-center justify-center bg-red-500/10 rounded-lg group-hover:bg-red-500/20 transition-colors border border-red-500/30">
+          <div className="w-16 h-16 flex items-center justify-center rounded-lg">
             <FileText className="w-8 h-8 text-red-400" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+            <h3 className="text-xl font-bold text-white transition-colors">
               Hardik_Gupta_Resume_2025.pdf
             </h3>
             <p className="text-sm text-zinc-500 mt-1">
               Click to view resume • 156 KB
             </p>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="opacity-0  transition-opacity">
             <ExternalLink className="w-5 h-5 text-blue-400" />
           </div>
         </div>
@@ -1199,14 +1185,14 @@ Identity:
 Hardik Gupta
 Learner • Builder • Full Stack Developer
 Jaipur, Rajasthan, India
-harvix.tech
+strykerinside.vercel.app
 hardikgupta8792@gmail.com
 
 Background:
 You have founded and built multiple AI-powered products and platforms across education, productivity, and consumer apps.
 
 Experience (Condensed):
-• Founder & CTO — NuviBrainz (AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools)
+• Building — NuviBrainz (AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools)
 • Full Stack Developer — LinkIT (AI-powered link manager; shipped fast and reached 100+ users in 15 days)
 • Web Developer — NextRound AI (interview-prep Chrome extension with summaries and insights)
 • Full Stack Developer — AstroNuvi (RatnAI-powered astrology platform serving 1,200+ users)
@@ -1548,15 +1534,15 @@ const VSCodeContent = () => {
             <div
               key={project.id}
               className={cn(
-                "group rounded-xl border transition-all duration-200 flex flex-col overflow-hidden",
+                "group rounded-xl border flex flex-col overflow-hidden",
                 settings.darkMode
-                  ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900"
-                  : "bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+                  ? "bg-zinc-900/50 border-zinc-800"
+                  : "bg-white border-zinc-200"
               )}
             >
               {/* Live Preview */}
               <div className={cn(
-                "w-full h-48 border-b relative group-hover:opacity-100 transition-opacity overflow-hidden",
+                "w-full h-48 border-b relative transition-opacity overflow-hidden",
                 settings.darkMode ? "bg-zinc-800 border-zinc-800" : "bg-zinc-100 border-zinc-200"
               )}>
                 <iframe

@@ -1,21 +1,29 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+
 
 interface EmailEntryProps {
     onComplete: (email?: string) => void;
 }
 
 export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
+    const navigate = useNavigate();
 
-    const handleSkip = () => {
+    const handleCreativeResume = () => {
         onComplete();
     };
+
+    const handleSimplified = () => {
+        navigate('/simplified');
+    };
+
+
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
-                handleSkip();
+                handleCreativeResume();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -49,23 +57,43 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
                 </div>
 
                 {/* Footer / Skip Area */}
-                <div className="w-full p-4 bg-zinc-950 flex flex-col items-center gap-3">
+                <div className="w-full p-6 bg-zinc-950 flex flex-col items-center gap-6">
                     <div className="relative w-full">
                         <div className="absolute inset-0 flex items-center">
                             <span className="w-full border-t border-white/10" />
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-zinc-950 px-2 text-zinc-500">Or</span>
+                            <span className="bg-zinc-950 px-2 text-zinc-500">Choose your experience</span>
                         </div>
                     </div>
 
-                    <Button
-                        variant="ghost"
-                        onClick={handleSkip}
-                        className="w-full text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                        Skip for now
-                    </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                        <button
+                            onClick={handleCreativeResume}
+                            className="flex flex-col items-center justify-center p-4 rounded-xl border border-white text-center gap-2 bg-black"
+                        >
+                            <span className="text-sm font-semibold text-white">
+                                View Creative Resume
+                            </span>
+                            <span className="text-xs text-zinc-400">
+                                (Interactive • Time-consuming)
+                            </span>
+                        </button>
+
+
+                        <button
+                            onClick={handleSimplified}
+                            className="flex flex-col items-center justify-center p-4 rounded-xl border border-white text-center gap-2 bg-black"
+                        >
+                            <span className="text-sm font-semibold text-white">
+                                Hire Me
+                            </span>
+                            <span className="text-xs text-zinc-400">
+                                (Simplified • Fast)
+                            </span>
+                        </button>
+
+                    </div>
                 </div>
             </div>
         </motion.div>
