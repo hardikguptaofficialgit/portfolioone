@@ -307,12 +307,12 @@ const ResumeContent = () => (
         </ul>
       </div>
       <div className="space-y-6">
-        {/* LinkIT */}
+        {/* Linkit */}
         <div className="relative border-l border-zinc-800 pl-6 ml-2">
           <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-white rounded-full border-4 border-black"></div>
 
           <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Full Stack Developer — LinkIT</h4>
+            <h4 className="text-lg font-bold text-white">Full Stack Developer — Linkit</h4>
             <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
               June 2025 — Present
             </span>
@@ -321,10 +321,10 @@ const ResumeContent = () => (
           <p
             className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
             onClick={() =>
-              window.open("https://linkitapp.in", "_blank", "noopener,noreferrer")
+              window.open("https://Linkitapp.in", "_blank", "noopener,noreferrer")
             }
           >
-            linkitapp.in
+            Linkitapp.in
           </p>
 
           <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
@@ -939,9 +939,9 @@ const AboutContent = () => {
       description: 'Thoughts & threads'
     },
     {
-      name: 'LinkIT',
+      name: 'Linkit',
       iconName: 'Link',
-      url: 'https://linkitapp.in/harvix',
+      url: 'https://Linkitapp.in/harvix',
       description: 'All my links'
     }
   ];
@@ -1193,7 +1193,7 @@ You have founded and built multiple AI-powered products and platforms across edu
 
 Experience (Condensed):
 • Building — NuviBrainz (AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools)
-• Full Stack Developer — LinkIT (AI-powered link manager; shipped fast and reached 100+ users in 15 days)
+• Full Stack Developer — Linkit (AI-powered link manager; shipped fast and reached 100+ users in 15 days)
 • Web Developer — NextRound AI (interview-prep Chrome extension with summaries and insights)
 • Full Stack Developer — AstroNuvi (RatnAI-powered astrology platform serving 1,200+ users)
 • Freelance Developer — Socivo (London-based marketing agency)
@@ -1412,7 +1412,7 @@ const VSCodeContent = () => {
     },
     {
       id: 2,
-      name: "LinkIT",
+      name: "Linkit",
       description:
         "AI-powered link manager with smart suggestions and personal AI chatbot.",
       tech: [
@@ -1426,7 +1426,7 @@ const VSCodeContent = () => {
         "GitHub",
         "Vercel"
       ],
-      liveUrl: "https://linkitapp.in",
+      liveUrl: "https://Linkitapp.in",
       githubUrl: "#"
     },
     {
