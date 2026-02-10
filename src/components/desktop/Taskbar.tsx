@@ -118,7 +118,7 @@ export const Taskbar = () => {
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
           className={cn(
             "pointer-events-auto", // Re-enable clicks for the dock itself
-            "flex h-[5.5rem] items-center gap-3",
+            "flex h-14 md:h-[5.5rem] items-center gap-3",
             "backdrop-blur-2xl rounded-[2.75rem] px-5",
             "w-auto max-w-[98vw]",
             "transition-all duration-300 ease-out",
@@ -136,7 +136,7 @@ export const Taskbar = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={toggleStartMenu}
                 className={cn(
-                  "flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 shadow-lg",
+                  "flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl transition-all duration-300 shadow-lg",
                   showStartMenu
                     ? `${colorMap[settings.themeColor] || colorMap.blue} text-black`
                     : settings.darkMode
@@ -144,7 +144,7 @@ export const Taskbar = () => {
                       : "bg-white/50 text-black hover:bg-white/70 border border-zinc-200"
                 )}
               >
-                <Grid3x3 className="h-6 w-6" />
+                <Grid3x3 className="h-5 w-5 md:h-6 md:w-6" />
               </motion.button>
             </Tooltip>
 
@@ -154,7 +154,7 @@ export const Taskbar = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={openStartMenuSearch}
                 className={cn(
-                  "flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-colors",
+                  "flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl shadow-lg transition-colors",
                   settings.darkMode
                     ? "bg-neutral-800/50 text-white/70 border border-white/5 hover:bg-neutral-700/50 hover:text-white"
                     : "bg-white/50 text-black border border-zinc-200 hover:bg-white/70 hover:text-black"

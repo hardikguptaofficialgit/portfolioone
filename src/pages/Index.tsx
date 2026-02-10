@@ -26,8 +26,10 @@ import { ContextMenu, ContextMenuItem } from '@/components/ui/ContextMenu';
 import { ShaderAnimation } from '@/components/ui/shader-lines';
 import { DesktopRope } from '@/components/desktop/DesktopRope';
 import { useContextMenu } from '@/hooks/useContextMenu';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { getIconComponent } from '@/utils/apps';
+import { useNavigate } from 'react-router-dom';
 
 type AuthStep = 'boot' | 'lock' | 'email' | 'desktop';
 type IconSize = 'small' | 'medium' | 'large';
@@ -35,10 +37,18 @@ type SortBy = 'name' | 'size' | 'date';
 
 const Index = () => {
   const { windows, openOrFocusWindow, settings } = useDesktopStore();
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [authStep, setAuthStep] = useState<AuthStep>('boot');
   const { contextMenu, handleContextMenu, closeContextMenu } = useContextMenu();
   const [iconSize, setIconSize] = useState<IconSize>('large');
   const [sortBy, setSortBy] = useState<SortBy>('name');
+
+  useEffect(() => {
+    if (isMobile) {
+      navigate('/simplified', { replace: true });
+    }
+  }, [isMobile, navigate]);
 
   useEffect(() => {
     if (authStep === 'boot') {
@@ -48,6 +58,12 @@ const Index = () => {
       return () => clearTimeout(timer);
     }
   }, [authStep]);
+
+  useEffect(() => {
+    if (isMobile) {
+      setIconSize('small');
+    }
+  }, [isMobile]);
 
   // Hardcoded Desktop Icons configuration
   const desktopIcons: {
@@ -199,7 +215,7 @@ const Index = () => {
             transition={{ duration: 0.5 }}
             className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden"
           >
-            <ShaderAnimation />
+            {!isMobile && <ShaderAnimation />}
 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 translate-x-10 scale-75">
   <svg
     viewBox="0 0 600 100"
@@ -289,18 +305,23 @@ const Index = () => {
           )} />
 
           {/* Noise Texture Overlay */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+          {!isMobile && (
+            <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+          )}
 
 
         </div>
 
         {/* Interactive Rope */}
-        <DesktopRope />
+        {!isMobile && <DesktopRope />}
 
         {/* --- Desktop Content --- */}
 
         {/* Desktop Icons Container */}
-        <div className="relative z-10 p-4 flex flex-col flex-wrap content-start gap-4 h-[calc(100vh-4rem)] w-full max-w-2xl pointer-events-none">
+        <div className={cn(
+          "relative z-10 p-4 flex flex-col flex-wrap content-start gap-4 h-[calc(100vh-4rem)] w-full pointer-events-none",
+          isMobile ? "max-w-none" : "max-w-2xl"
+        )}>
           {sortedIcons.map((icon, index) => (
             <motion.div
               key={icon.label}
@@ -327,26 +348,41 @@ const Index = () => {
 
 
         {/* Widgets Area - Enforcing Grayscale/Dark Theme */}
-        <div className="absolute top-6 right-6 flex flex-col gap-6 z-10 items-end pointer-events-auto">
-
-          <div className="flex items-center gap-4 relative z-20">
-            <div className="grayscale brightness-125 contrast-125">
-              <GamesWidget />
-            </div>
+        <div className={cn(
+          "absolute top-6 right-6 flex flex-col gap-6 z-10 items-end pointer-events-auto",
+          isMobile && "right-3 top-3"
+        )}>
+          {isMobile ? (
             <div className="flex flex-col gap-4 items-end">
-              <AskMeWidget />
-              <SpotifyWidget />
+              <div className="grayscale brightness-125 contrast-125">
+                <Clock />
+              </div>
+              <div className="grayscale opacity-90 hover:opacity-100 transition-opacity">
+                <WeatherWidget />
+              </div>
             </div>
-            <div className="grayscale brightness-125 contrast-125">
-              <Clock />
-            </div>
-          </div>
-          <div className="grayscale ostpacity-80 hover:opacity-100 transition-opacity">
-            <WeatherWidget />
-          </div>
-          <div className="grayscale opacity-90 hover:opacity-100 ">
-            <SubstackWidget />
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4 relative z-20">
+                <div className="grayscale brightness-125 contrast-125">
+                  <GamesWidget />
+                </div>
+                <div className="flex flex-col gap-4 items-end">
+                  <AskMeWidget />
+                  <SpotifyWidget />
+                </div>
+                <div className="grayscale brightness-125 contrast-125">
+                  <Clock />
+                </div>
+              </div>
+              <div className="grayscale ostpacity-80 hover:opacity-100 transition-opacity">
+                <WeatherWidget />
+              </div>
+              <div className="grayscale opacity-90 hover:opacity-100 ">
+                <SubstackWidget />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Open Windows Layer */}

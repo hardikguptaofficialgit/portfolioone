@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Calendar, ChevronRight, X, ChevronLeft, Maximize2, Pin, Github, Linkedin, Instagram, Twitter, Link } from 'lucide-react';
 import { format } from 'date-fns';
@@ -168,47 +168,90 @@ const SimplifiedResume = () => {
         setFilteredRepos(list);
     }, [repos, filterMode, searchQuery]);
 
-    // Fetch Substack Posts
-    useEffect(() => {
-        let isMounted = true;
+    const postsAbortRef = useRef<AbortController | null>(null);
+
+    const parseRssPosts = (rssText: string) => {
+        try {
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(rssText, 'text/xml');
+            const items = Array.from(xml.querySelectorAll('item'));
+            return items.map((item, index) => {
+                const title = item.querySelector('title')?.textContent?.trim() || 'Untitled';
+                const link = item.querySelector('link')?.textContent?.trim() || '';
+                const description = item.querySelector('description')?.textContent?.trim() || '';
+                const pubDate = item.querySelector('pubDate')?.textContent?.trim() || '';
+                return {
+                    id: `${link}-${index}`,
+                    title,
+                    canonical_url: link,
+                    description: description.replace(/<[^>]+>/g, ''),
+                    post_date: pubDate || new Date().toISOString()
+                };
+            });
+        } catch (error) {
+            return [];
+        }
+    };
+
+    const fetchSubstackPosts = useCallback(async () => {
+        postsAbortRef.current?.abort();
         const controller = new AbortController();
+        postsAbortRef.current = controller;
+        setPostsLoading(true);
+        setPostsError(null);
 
-        const fetchPosts = async (attempt = 1) => {
-            if (!isMounted) return;
-            setPostsLoading(true);
-            setPostsError(null);
+        const baseUrl = 'https://strykerinside.substack.com/api/v1/archive?sort=new&limit=10';
+        const rssUrl = 'https://strykerinside.substack.com/feed';
+        const sources = [
+            { url: baseUrl, wrapped: false, type: 'json' as const },
+            { url: `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`, wrapped: false, type: 'json' as const },
+            { url: `https://api.allorigins.win/get?url=${encodeURIComponent(baseUrl)}`, wrapped: true, type: 'json' as const },
+            { url: `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`, wrapped: false, type: 'rss' as const }
+        ];
 
-            const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+        for (const source of sources) {
+            if (controller.signal.aborted) break;
             try {
-                const url = 'https://strykerinside.substack.com/api/v1/archive?sort=new&limit=10';
-                const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-                const response = await fetch(proxyUrl, { signal: controller.signal });
+                const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+                const response = await fetch(source.url, { signal: controller.signal });
+                window.clearTimeout(timeoutId);
                 if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-                const data = await response.json();
-                const contents = JSON.parse(data.contents || '[]');
 
-                if (isMounted) {
-                    setPosts(Array.isArray(contents) ? contents : []);
+                if (source.type === 'rss') {
+                    const rssText = await response.text();
+                    const rssPosts = parseRssPosts(rssText);
+                    if (rssPosts.length > 0) {
+                        setPosts(rssPosts.slice(0, 10));
+                        setPostsLoading(false);
+                        return;
+                    }
+                } else {
+                    const data = await response.json();
+                    const contents = source.wrapped ? JSON.parse(data.contents || '[]') : data;
+
+                    if (Array.isArray(contents)) {
+                        setPosts(contents);
+                        setPostsLoading(false);
+                        return;
+                    }
                 }
             } catch (error) {
-                if (!isMounted) return;
-                if (attempt < 2) {
-                    setTimeout(() => fetchPosts(attempt + 1), 800);
-                    return;
-                }
-                setPostsError('Unable to load posts right now.');
-            } finally {
-                window.clearTimeout(timeoutId);
-                if (isMounted) setPostsLoading(false);
+                if (controller.signal.aborted) break;
             }
-        };
+        }
 
-        fetchPosts();
-        return () => {
-            isMounted = false;
-            controller.abort();
-        };
+        if (!controller.signal.aborted) {
+            setPosts([]);
+            setPostsError('Unable to load posts right now.');
+            setPostsLoading(false);
+        }
     }, []);
+
+    // Fetch Substack Posts
+    useEffect(() => {
+        fetchSubstackPosts();
+        return () => postsAbortRef.current?.abort();
+    }, [fetchSubstackPosts]);
 
     useEffect(() => {
         const sectionIds = ['resume', 'projects', 'github', 'photos', 'posts'];
@@ -882,7 +925,7 @@ const SimplifiedResume = () => {
                                 <div className="text-zinc-500 text-sm space-y-3">
                                     <p>{postsError}</p>
                                     <button
-                                        onClick={() => window.location.reload()}
+                                        onClick={fetchSubstackPosts}
                                         className="text-xs uppercase tracking-widest border border-white/10 px-3 py-1.5 rounded-full hover:text-white hover:border-white/30 transition-colors"
                                     >
                                         Retry

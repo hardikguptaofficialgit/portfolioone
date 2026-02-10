@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rnd } from 'react-rnd';
 import { Minus, Square, X, ExternalLink, Mail, Github, Linkedin, Monitor, Eye, FileText, Instagram, Twitter, Link } from 'lucide-react';
@@ -9,6 +9,7 @@ import Cal, { getCalApi } from "@calcom/embed-react";
 import { getIconComponent } from '@/utils/apps';
 import { SubstackFeed } from '@/components/apps/SubstackFeed';
 import { GamesApp } from '@/components/apps/GamesApp';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface WindowProps {
@@ -41,6 +42,9 @@ export const Window = (props: WindowProps) => {
     data,
   } = props;
 
+  const isMobile = useIsMobile();
+  const [mobileSize, setMobileSize] = useState({ width: 0, height: 0 });
+
   const {
     closeWindow,
     minimizeWindow,
@@ -52,12 +56,11 @@ export const Window = (props: WindowProps) => {
   } = useDesktopStore();
 
   const rndRef = useRef<Rnd>(null);
+  const taskbarHeight = 112;
 
   // Handle maximizing logic
   useEffect(() => {
     if (isMaximized && rndRef.current) {
-      // Account for taskbar at bottom (approx 7rem = 112px including spacing)
-      const taskbarHeight = 112;
       rndRef.current.updateSize({
         width: window.innerWidth,
         height: window.innerHeight - taskbarHeight
@@ -65,6 +68,19 @@ export const Window = (props: WindowProps) => {
       rndRef.current.updatePosition({ x: 0, y: 0 });
     }
   }, [isMaximized]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    const update = () => {
+      setMobileSize({
+        width: window.innerWidth,
+        height: window.innerHeight - taskbarHeight
+      });
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [isMobile]);
 
   const getBorderColor = () => {
     switch (settings.themeColor) {
@@ -103,6 +119,8 @@ export const Window = (props: WindowProps) => {
             width,
             height,
           }}
+          size={isMobile && mobileSize.width > 0 ? mobileSize : undefined}
+          position={isMobile ? { x: 0, y: 0 } : undefined}
           minWidth={350}
           minHeight={250}
           bounds="window"
@@ -120,8 +138,8 @@ export const Window = (props: WindowProps) => {
             updateWindowPosition(id, position.x, position.y);
           }}
           onMouseDown={() => setActiveWindow(id)}
-          disableDragging={isMaximized}
-          enableResizing={!isMaximized}
+          disableDragging={isMaximized || isMobile}
+          enableResizing={!isMaximized && !isMobile}
         >
           {/* Main Window Container */}
           <div className={cn(

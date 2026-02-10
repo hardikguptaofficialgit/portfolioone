@@ -72,7 +72,7 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
             exit={{ y: 50, opacity: 0, scale: 0.95, x: "-50%" }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className={cn(
-              "fixed bottom-28 left-1/2 w-[640px] backdrop-blur-xl rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col",
+              "fixed bottom-24 md:bottom-28 left-1/2 w-[92vw] max-w-[640px] backdrop-blur-xl rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col",
               settings.darkMode
                 ? "bg-black/90 border border-white/10 text-zinc-100"
                 : "bg-white/90 border border-border text-foreground"
@@ -115,7 +115,7 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-6 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
                 {filteredApps.map((app) => {
                   const IconComponent = getIconComponent(app.icon, settings.iconStyle);
                   const isPinned = pinnedApps.some(p => p.id === app.id);
