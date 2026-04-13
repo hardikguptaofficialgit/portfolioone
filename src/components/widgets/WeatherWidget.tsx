@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Cloud, CloudRain, Sun, CloudFog, CloudLightning, Snowflake } from 'lucide-react';
+import { Weather, Interfaces } from 'doodle-icons';
 
 // Helper to map WMO weather codes to readable text and icons
 const getWeatherInfo = (code) => {
   // WMO Weather interpretation codes (https://open-meteo.com/en/docs)
-  if (code === 0 || code === 1) return { label: 'Clear Sky', icon: Sun };
-  if (code === 2 || code === 3) return { label: 'Partly Cloudy', icon: Cloud };
-  if (code >= 45 && code <= 48) return { label: 'Foggy', icon: CloudFog };
-  if (code >= 51 && code <= 67) return { label: 'Rain', icon: CloudRain };
-  if (code >= 71 && code <= 77) return { label: 'Snow', icon: Snowflake };
-  if (code >= 80 && code <= 82) return { label: 'Showers', icon: CloudRain };
-  if (code >= 95 && code <= 99) return { label: 'Thunderstorm', icon: CloudLightning };
+  if (code === 0 || code === 1) return { label: 'Clear Sky', icon: () => <Interfaces.Sun width={32} height={32} fill="white" /> };
+  if (code === 2 || code === 3) return { label: 'Partly Cloudy', icon: () => <Interfaces.Cloud width={32} height={32} fill="white" /> };
+  if (code >= 45 && code <= 48) return { label: 'Foggy', icon: () => <Interfaces.Cloud width={32} height={32} fill="white" /> };
+  if (code >= 51 && code <= 67) return { label: 'Rain', icon: () => <Weather.Cloud width={32} height={32} fill="white" /> };
+  if (code >= 71 && code <= 77) return { label: 'Snow', icon: () => <Weather.Ice width={32} height={32} fill="white" /> };
+  if (code >= 80 && code <= 82) return { label: 'Showers', icon: () => <Weather.Rain width={32} height={32} fill="white" /> };
+  if (code >= 95 && code <= 99) return { label: 'Thunderstorm', icon: () => <Weather.Storm width={32} height={32} fill="white" /> };
 
-  return { label: 'Unknown', icon: Cloud };
+  return { label: 'Unknown', icon: () => <Interfaces.Cloud width={32} height={32} fill="white" /> };
 };
 
 export const WeatherWidget = () => {
@@ -44,7 +44,7 @@ export const WeatherWidget = () => {
         setWeather({
           temp: '--',
           condition: 'Unavailable',
-          Icon: Cloud,
+          Icon: () => <Interfaces.Cloud width={32} height={32} fill="white" />,
           location: 'Jaipur, RJ',
         });
       } finally {
@@ -76,7 +76,7 @@ export const WeatherWidget = () => {
           <div className="text-xs text-white/50 mt-2">{weather.location}</div>
         </div>
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-white/20 to-transparent flex items-center justify-center shadow-inner border border-white/10">
-          <weather.Icon className="w-8 h-8 text-white drop-shadow-md" />
+          {weather.Icon && <weather.Icon />}
         </div>
       </div>
     </motion.div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare } from 'lucide-react';
+import { Interfaces } from 'doodle-icons';
 import { useDesktopStore } from '@/store/desktopStore';
 
 export const AskMeWidget = () => {
@@ -44,7 +44,7 @@ export const AskMeWidget = () => {
 
                 <div className="flex items-center">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg shadow-indigo-600/20">
-                        <MessageSquare size={12} />
+                        <Interfaces.Message width={12} height={12} fill="currentColor" />
                         CHAT
                     </div>
                 </div>

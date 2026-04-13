@@ -152,12 +152,12 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
                         <IconComponent strokeWidth={1.5} className="w-6 h-6 text-black transition-colors relative z-10" />
                         <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                       </div>
-                      <span className={cn(
-                        "text-[11px] font-medium transition-colors text-center truncate w-full",
-                        settings.darkMode
-                          ? "text-zinc-400 group-hover:text-white"
-                          : "text-muted-foreground group-hover:text-foreground"
-                      )}>
+                    <span className={cn(
+                      "text-[11px] font-medium transition-colors text-center truncate w-full",
+                      settings.darkMode
+                        ? "text-zinc-400 group-hover:text-white"
+                        : "text-zinc-700 group-hover:text-zinc-950"
+                    )}>
                         {app.name}
                       </span>
                     </motion.button>
@@ -183,7 +183,7 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
             )}>
               <div className={cn(
                 "flex items-center gap-3 p-2 rounded-lg transition-colors cursor-pointer group",
-                settings.darkMode ? "hover:bg-white/5" : "hover:bg-white/50"
+                settings.darkMode ? "hover:bg-white/5" : "hover:bg-black/5"
               )}>
                 <div className={cn(
                   "w-9 h-9 rounded-full flex items-center justify-center",
@@ -235,7 +235,7 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
                     "w-4 h-4 transition-colors",
                     settings.darkMode
                       ? "text-zinc-500 group-hover:text-white"
-                      : "text-zinc-500 group-hover:text-zinc-900"
+                      : "text-zinc-600 group-hover:text-zinc-950"
                   )} />
                 </button>
                 <button

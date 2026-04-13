@@ -1,3 +1,4 @@
+import React from 'react';
 import {
     Github,
     Code2,
@@ -19,6 +20,7 @@ import {
     Link,
     Linkedin,
     ExternalLink,
+    BookOpen,
 } from 'lucide-react';
 
 import {
@@ -42,7 +44,10 @@ import {
     Link as LinkIconoir,
     Linkedin as LinkedinIconoir,
     OpenNewWindow as ExternalLinkIconoir,
+    Book as BookIconoir,
 } from 'iconoir-react';
+
+import { Logos, Interfaces, Files, Misc } from 'doodle-icons';
 import appsData from '@/data/apps.json';
 
 export interface App {
@@ -75,6 +80,7 @@ const lucideMap: Record<string, any> = {
     Link,
     Linkedin,
     ExternalLink,
+    BookOpen,
 };
 
 const iconoirMap: Record<string, any> = {
@@ -98,12 +104,62 @@ const iconoirMap: Record<string, any> = {
     Link: LinkIconoir,
     Linkedin: LinkedinIconoir,
     ExternalLink: ExternalLinkIconoir,
+    BookOpen: BookIconoir,
+};
+
+// Doodle Icons wrapper components with consistent API
+const DoodleIcon = (Component: any) => {
+    if (!Component) {
+        console.error('DoodleIcon: Component is undefined');
+        return () => null;
+    }
+    const WrappedIcon = (props: any) => {
+        const size = props.size || 24;
+        const color = props.color || props.fill || 'currentColor';
+        const { className, ...rest } = props;
+        return React.createElement(Component, { 
+            width: size, 
+            height: size, 
+            fill: color, 
+            className, 
+            ...rest 
+        });
+    };
+    WrappedIcon.displayName = `DoodleIcon(${Component.displayName || Component.name || 'Component'})`;
+    return WrappedIcon;
+};
+
+const doodleMap: Record<string, any> = {
+    Github: DoodleIcon(Files.FileCode),
+    Code2: DoodleIcon(Interfaces.Pencil),
+    Figma: DoodleIcon(Files.FileFigma),
+    Chrome: DoodleIcon(Logos.Google),
+    Terminal: DoodleIcon(Interfaces.Dashboard),
+    FileText: DoodleIcon(Files.FileText),
+    Folder: DoodleIcon(Interfaces.Folder),
+    Mail: DoodleIcon(Interfaces.Mail),
+    Calendar: DoodleIcon(Interfaces.Calendar),
+    Image: DoodleIcon(Interfaces.Photo),
+    Database: DoodleIcon(Misc.Server),
+    Settings: DoodleIcon(Interfaces.Setting),
+    Music: DoodleIcon(Logos.Spotify),
+    Briefcase: DoodleIcon(Interfaces.Suitcase),
+    User: DoodleIcon(Interfaces.User),
+    Instagram: DoodleIcon(Logos.Instagram),
+    Twitter: DoodleIcon(Logos.Twitter),
+    Link: DoodleIcon(Interfaces.Link),
+    Linkedin: DoodleIcon(Logos.Linkedin),
+    ExternalLink: DoodleIcon(Interfaces.Link),
+    BookOpen: DoodleIcon(Files.FileText),
 };
 
 // Get the icon component from the icon name
-export const getIconComponent = (iconName: string, library: 'lucide' | 'iconoir' = 'iconoir'): any => {
+export const getIconComponent = (iconName: string, library: 'lucide' | 'iconoir' | 'doodle' = 'doodle'): any => {
     if (library === 'lucide') {
         return lucideMap[iconName] || Folder;
+    }
+    if (library === 'doodle') {
+        return doodleMap[iconName] || DoodleIcon(Interfaces.Folder);
     }
     return iconoirMap[iconName] || FolderIconoir;
 };

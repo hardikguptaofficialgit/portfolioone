@@ -28,7 +28,7 @@ export interface PinnedApp {
 export interface Settings {
   darkMode: boolean;
   themeColor: string;
-  iconStyle: 'lucide' | 'iconoir';
+  iconStyle: 'lucide' | 'iconoir' | 'doodle';
 }
 
 interface DesktopState {
@@ -108,7 +108,7 @@ export const useDesktopStore = create<DesktopState>()(
       settings: {
         darkMode: true,
         themeColor: 'blue',
-        iconStyle: 'iconoir',
+        iconStyle: 'doodle',
       },
 
       openOrFocusWindow: (windowData) => {

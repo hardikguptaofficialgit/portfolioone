@@ -40,19 +40,54 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
         >
             <div className="w-full max-w-[520px] p-1 rounded-2xl bg-zinc-950 border border-white/10 shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col items-center">
 
-                {/* Iframe Container */}
+                {/* DEV.to Follow Section */}
                 <div className="w-full bg-zinc-950 rounded-xl overflow-hidden relative">
-
-                    <div className="dark-iframe-wrapper">
-                        <iframe
-                            src="https://strykerinside.substack.com/embed"
-                            width="100%"
-                            height="360"
-                            className="dark-iframe"
-                            frameBorder="0"
-                            scrolling="no"
-                            title="Subscribe to Stryker"
-                        />
+                    <div className="p-8 flex flex-col items-center gap-4">
+                        {/* DEV.to Logo/Header */}
+                        <div className="flex items-center gap-3">
+                            <img 
+                                src="https://media2.dev.to/dynamic/image/quality=100/https://dev-to-uploads.s3.amazonaws.com/uploads/logos/resized_logo_UQww2soKuUsjaOGNB38o.png" 
+                                alt="DEV.to Logo"
+                                className="w-16 h-16 object-contain rounded-lg"
+                            />
+                            <div className="flex flex-col">
+                                <h2 className="text-2xl font-bold text-white">Follow on DEV.to</h2>
+                                <p className="text-sm text-zinc-400">@strykerinside</p>
+                            </div>
+                        </div>
+                        
+                        {/* Description */}
+                        <p className="text-center text-zinc-400 max-w-md">
+                            Get the latest tutorials, guides, and technical insights. Join the community of developers learning together.
+                        </p>
+                        
+                        {/* Follow Button */}
+                        <a
+                            href="https://dev.to/strykerinside"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-8 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg"
+                        >
+                            Follow on DEV.to
+                        </a>
+                        
+                        {/* Stats */}
+                        <div className="flex gap-6 mt-2">
+                            <div className="text-center">
+                                <div className="text-xl font-bold text-white">Latest</div>
+                                <div className="text-xs text-zinc-500">Articles</div>
+                            </div>
+                            <div className="w-px bg-white/10"></div>
+                            <div className="text-center">
+                                <div className="text-xl font-bold text-white">Tech</div>
+                                <div className="text-xs text-zinc-500">Tutorials</div>
+                            </div>
+                            <div className="w-px bg-white/10"></div>
+                            <div className="text-center">
+                                <div className="text-xl font-bold text-white">Dev</div>
+                                <div className="text-xs text-zinc-500">Community</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -78,8 +78,12 @@ export const DesktopIcon = ({
         onDoubleClick?.();
       }}
       className={`flex flex-col items-center ${config.gap} ${config.padding} rounded-lg transition-all duration-200 group ${config.container} cursor-pointer border ${selected
-        ? 'bg-white/20 border-white/30'
-        : 'hover:bg-white/10 border-transparent hover:border-white/20'
+        ? settings.darkMode
+          ? 'bg-white/20 border-white/30'
+          : 'bg-black/10 border-black/20'
+        : settings.darkMode
+          ? 'hover:bg-white/10 border-transparent hover:border-white/20'
+          : 'hover:bg-white/55 border-transparent hover:border-black/15'
         }`}
     >
       <div className={`${config.iconBox} rounded-xl flex items-center justify-center transition-all duration-300 ${getIconStyle()} shadow-lg group-hover:shadow-xl group-hover:border-white/40`}>
@@ -88,7 +92,7 @@ export const DesktopIcon = ({
       <span className={`
         ${config.text} font-medium text-center drop-shadow-lg leading-tight select-none
         ${selected
-          ? 'text-white'
+          ? settings.darkMode ? 'text-white' : 'text-zinc-950'
           : settings.darkMode ? 'text-zinc-200' : 'text-zinc-800'
         }
       `}>

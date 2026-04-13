@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 import filesData from '@/data/files.json';
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { getIconComponent } from '@/utils/apps';
-import { SubstackFeed } from '@/components/apps/SubstackFeed';
-import { GamesApp } from '@/components/apps/GamesApp';
+import { DevToFeed } from '@/components/apps/DevToFeed';
+import { BlogApp } from '@/components/apps/BlogApp';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -56,18 +56,46 @@ export const Window = (props: WindowProps) => {
   } = useDesktopStore();
 
   const rndRef = useRef<Rnd>(null);
-  const taskbarHeight = 112;
+  const taskbarHeight = 72;
+  const previousBoundsRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  const getDesktopViewport = () => ({
+    width: window.innerWidth,
+    height: Math.max(250, window.innerHeight - taskbarHeight),
+  });
 
   // Handle maximizing logic
   useEffect(() => {
-    if (isMaximized && rndRef.current) {
-      rndRef.current.updateSize({
-        width: window.innerWidth,
-        height: window.innerHeight - taskbarHeight
-      });
-      rndRef.current.updatePosition({ x: 0, y: 0 });
+    if (isMobile) return;
+
+    if (isMaximized) {
+      if (!previousBoundsRef.current) {
+        previousBoundsRef.current = { x, y, width, height };
+      }
+      const viewport = getDesktopViewport();
+      updateWindowPosition(id, 0, 0);
+      updateWindowSize(id, viewport.width, viewport.height);
+      return;
     }
-  }, [isMaximized]);
+
+    if (previousBoundsRef.current) {
+      const prev = previousBoundsRef.current;
+      updateWindowPosition(id, prev.x, prev.y);
+      updateWindowSize(id, prev.width, prev.height);
+      previousBoundsRef.current = null;
+    }
+  }, [isMaximized, isMobile, id]);
+
+  useEffect(() => {
+    if (isMobile || !isMaximized) return;
+    const onResize = () => {
+      const viewport = getDesktopViewport();
+      updateWindowPosition(id, 0, 0);
+      updateWindowSize(id, viewport.width, viewport.height);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [isMobile, isMaximized, id]);
 
   useEffect(() => {
     if (!isMobile) return;
@@ -113,14 +141,8 @@ export const Window = (props: WindowProps) => {
       >
         <Rnd
           ref={rndRef}
-          default={{
-            x,
-            y,
-            width,
-            height,
-          }}
-          size={isMobile && mobileSize.width > 0 ? mobileSize : undefined}
-          position={isMobile ? { x: 0, y: 0 } : undefined}
+          size={isMobile && mobileSize.width > 0 ? mobileSize : { width, height }}
+          position={isMobile ? { x: 0, y: 0 } : { x, y }}
           minWidth={350}
           minHeight={250}
           bounds="window"
@@ -206,13 +228,12 @@ export const Window = (props: WindowProps) => {
                 {content === 'projects' && <div className="p-6"><ProjectsContent /></div>}
                 {content === 'vscode' && <div className="p-6"><VSCodeContent /></div>}
                 {content === 'about' && <div className="p-6"><AboutContent /></div>}
-                {content === 'spotify' && <div className="p-6 h-full"><SpotifyContent /></div>}
                 {content === 'settings' && <div className="p-6"><SettingsContent /></div>}
                 {content === 'documents' && <div className="p-6"><DocumentsContent /></div>}
                 {content === 'terminal' && <TerminalContent />}
                 {content === 'calendar' && <div className="h-full"><CalendarContent /></div>}
-                {content === 'substack' && <div className="p-6"><SubstackFeed /></div>}
-                {content === 'games' && <GamesApp />}
+                {content === 'devto' && <div className="p-6"><DevToFeed /></div>}
+                {content === 'blog' && <BlogApp />}
                 {content === 'file-preview' && <FilePreviewContent file={data} />}
               </div>
             </div>
@@ -304,9 +325,9 @@ const ResumeContent = () => (
         <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
 
         <div className="flex justify-between items-start mb-2">
-          <h4 className="text-lg font-bold text-white">Building — NuviBrainz</h4>
+          <h4 className="text-lg font-bold text-white">Building - NuviBrainz</h4>
           <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-            Aug 2024 — Present
+            Aug 2024 - Present
           </span>
         </div>
 
@@ -330,9 +351,9 @@ const ResumeContent = () => (
           <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-white rounded-full border-4 border-black"></div>
 
           <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Full Stack Developer — Linkit</h4>
+            <h4 className="text-lg font-bold text-white">Full Stack Developer - Linkit</h4>
             <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              June 2025 — Present
+              June 2025 - Present
             </span>
           </div>
 
@@ -357,9 +378,9 @@ const ResumeContent = () => (
           <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-white rounded-full border-4 border-black"></div>
 
           <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Web Developer — NextRound AI</h4>
+            <h4 className="text-lg font-bold text-white">Web Developer - NextRound AI</h4>
             <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              June 2025 — Present
+              June 2025 - Present
             </span>
           </div>
 
@@ -383,9 +404,9 @@ const ResumeContent = () => (
           <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-white rounded-full border-4 border-black"></div>
 
           <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Full Stack Developer — AstroNuvi</h4>
+            <h4 className="text-lg font-bold text-white">Full Stack Developer - AstroNuvi</h4>
             <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              Aug 2025 — Present
+              Aug 2025 - Present
             </span>
           </div>
 
@@ -411,9 +432,9 @@ const ResumeContent = () => (
           <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
 
           <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Freelance — Full Stack Developer</h4>
+            <h4 className="text-lg font-bold text-white">Freelance - Full Stack Developer</h4>
             <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              June 2025 — Present
+              June 2025 - Present
             </span>
           </div>
 
@@ -436,9 +457,9 @@ const ResumeContent = () => (
           <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
 
           <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Senior Technical Executive — FED KIIT</h4>
+            <h4 className="text-lg font-bold text-white">Senior Technical Executive - FED KIIT</h4>
             <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              Nov 2024 — Present
+              Nov 2024 - Present
             </span>
           </div>
 
@@ -461,9 +482,9 @@ const ResumeContent = () => (
           <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
 
           <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Web Developer — GeeksForGeeks KIIT</h4>
+            <h4 className="text-lg font-bold text-white">Web Developer - GeeksForGeeks KIIT</h4>
             <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              Aug 2024 — Present
+              Aug 2024 - Present
             </span>
           </div>
 
@@ -529,7 +550,7 @@ const ResumeContent = () => (
 
       <div className="text-zinc-300 text-sm space-y-1">
         <p className="font-bold text-white">Kalinga Institute of Industrial Technology</p>
-        <p>CSE — AI/ML</p>
+        <p>CSE - AI/ML</p>
         <p>2024 – 2028</p>
       </div>
     </section>
@@ -737,24 +758,6 @@ const ProjectsContent = () => {
   );
 };
 
-const SpotifyContent = () => (
-  <div className="h-full flex flex-col items-center justify-center max-w-4xl mx-auto">
-    <div className="w-full">
-      <iframe
-        data-testid="embed-iframe"
-        style={{ borderRadius: '12px' }}
-        src="https://open.spotify.com/embed/playlist/6sZlw5mscaMbGRpDliDL2b?utm_source=generator&theme=0"
-        width="100%"
-        height="400"
-        frameBorder="0"
-        allowFullScreen={true}
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        loading="lazy"
-      />
-    </div>
-  </div>
-);
-
 const SettingsContent = () => {
   const { settings, updateSettings } = useDesktopStore();
 
@@ -768,6 +771,7 @@ const SettingsContent = () => {
   ];
 
   const iconStyles = [
+    { id: 'doodle', name: 'Doodle Icons' },
     { id: 'iconoir', name: 'Iconoir' },
     { id: 'lucide', name: 'Lucide' },
   ];
@@ -832,7 +836,7 @@ const SettingsContent = () => {
             "text-sm font-semibold",
             settings.darkMode ? "text-zinc-300" : "text-zinc-600"
           )}>Icon Style</label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {iconStyles.map((style) => (
               <button
                 key={style.id}
@@ -1057,7 +1061,17 @@ const AboutContent = () => {
 };
 
 const DocumentsContent = () => {
-  const { openWindow } = useDesktopStore();
+  const { openWindow, settings } = useDesktopStore();
+
+  const panelBorder = settings.darkMode ? "border-zinc-800" : "border-zinc-200";
+  const titleText = settings.darkMode ? "text-white" : "text-zinc-900";
+  const bodyText = settings.darkMode ? "text-zinc-400" : "text-zinc-600";
+  const subtleText = settings.darkMode ? "text-zinc-500" : "text-zinc-500";
+  const cardSurface = settings.darkMode
+    ? "border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950"
+    : "border-zinc-200 bg-gradient-to-br from-white to-zinc-100";
+  const tileHover = settings.darkMode ? "hover:bg-white/10" : "hover:bg-black/5";
+  const tileSurface = settings.darkMode ? "bg-zinc-800 group-hover:bg-zinc-700" : "bg-zinc-100 group-hover:bg-zinc-200";
 
   const handleFileClick = (file: any) => {
     openWindow({
@@ -1073,24 +1087,16 @@ const DocumentsContent = () => {
   };
 
   const handleResumeClick = () => {
-    openWindow({
-      title: 'Resume',
-      icon: 'FileText',
-      width: 900,
-      height: 700,
-      x: 150,
-      y: 50,
-      content: 'resume',
-    });
+    window.location.href = '/simplified';
   };
 
   return (
     <div className="h-full">
-      <header className="border-b border-zinc-800 pb-6 mb-6">
-        <h2 className="text-3xl font-bold text-white tracking-tighter mb-2">
+      <header className={cn("border-b pb-6 mb-6", panelBorder)}>
+        <h2 className={cn("text-3xl font-bold tracking-tighter mb-2", titleText)}>
           Documents
         </h2>
-        <p className="text-zinc-400 text-lg">
+        <p className={cn("text-lg", bodyText)}>
           Browse your files
         </p>
       </header>
@@ -1098,17 +1104,17 @@ const DocumentsContent = () => {
       {/* Resume PDF Container */}
       <div
         onClick={handleResumeClick}
-        className="mb-6 p-6 border-2 border-zinc-800 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 cursor-pointer group"
+        className={cn("mb-6 p-6 border-2 rounded-xl cursor-pointer group", cardSurface)}
       >
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 flex items-center justify-center rounded-lg">
             <FileText className="w-8 h-8 text-red-400" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-white transition-colors">
-              Hardik_Gupta_Resume_2025.pdf
+            <h3 className={cn("text-xl font-bold transition-colors", titleText)}>
+              Hardik_Gupta_Simplified_Resume
             </h3>
-            <p className="text-sm text-zinc-500 mt-1">
+            <p className={cn("text-sm mt-1", subtleText)}>
               Click to view resume • 156 KB
             </p>
           </div>
@@ -1124,9 +1130,9 @@ const DocumentsContent = () => {
           <div
             key={index}
             onClick={() => handleFileClick(file)}
-            className="group flex flex-col items-center gap-3 p-4 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            className={cn("group flex flex-col items-center gap-3 p-4 rounded-lg transition-colors cursor-pointer", tileHover)}
           >
-            <div className="w-16 h-16 flex items-center justify-center bg-zinc-800 rounded-lg group-hover:bg-zinc-700 transition-colors overflow-hidden relative">
+            <div className={cn("w-16 h-16 flex items-center justify-center rounded-lg transition-colors overflow-hidden relative", tileSurface)}>
               {file.type === 'image' ? (
                 <img
                   src={file.url}
@@ -1136,10 +1142,10 @@ const DocumentsContent = () => {
               ) : file.type === 'pdf' ? (
                 <FileText className="w-8 h-8 text-red-400" />
               ) : (
-                <FileText className="w-8 h-8 text-zinc-400" />
+                <FileText className={cn("w-8 h-8", settings.darkMode ? "text-zinc-400" : "text-zinc-600")} />
               )}
             </div>
-            <span className="text-sm text-zinc-300 text-center break-all group-hover:text-white">
+            <span className={cn("text-sm text-center break-all", settings.darkMode ? "text-zinc-300 group-hover:text-white" : "text-zinc-700 group-hover:text-zinc-950")}>
               {file.name}
             </span>
           </div>
@@ -1150,11 +1156,12 @@ const DocumentsContent = () => {
 };
 
 const FilePreviewContent = ({ file }: { file: any }) => {
+  const { settings } = useDesktopStore();
   if (!file) return <div className="text-white p-4">No file selected</div>;
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-hidden flex items-center justify-center bg-zinc-900 relative">
+      <div className={cn("flex-1 overflow-hidden flex items-center justify-center relative", settings.darkMode ? "bg-zinc-900" : "bg-zinc-100")}>
         {file.type === 'pdf' ? (
           <iframe
             src={file.url}
@@ -1170,12 +1177,12 @@ const FilePreviewContent = ({ file }: { file: any }) => {
         ) : (
           <div className="text-center">
             <FileText className="w-16 h-16 text-zinc-500 mx-auto mb-4" />
-            <p className="text-zinc-400">Preview not available for this file type.</p>
+            <p className={cn(settings.darkMode ? "text-zinc-400" : "text-zinc-600")}>Preview not available for this file type.</p>
           </div>
         )}
       </div>
-      <div className="h-12 border-t border-zinc-800 flex items-center justify-between px-4 bg-zinc-950 flex-shrink-0">
-        <span className="text-sm text-zinc-400">{file.name}</span>
+      <div className={cn("h-12 border-t flex items-center justify-between px-4 flex-shrink-0", settings.darkMode ? "border-zinc-800 bg-zinc-950" : "border-zinc-200 bg-white")}>
+        <span className={cn("text-sm", settings.darkMode ? "text-zinc-400" : "text-zinc-700")}>{file.name}</span>
         <div className="flex items-center gap-4">
           <span className="text-xs text-zinc-500">{file.size}</span>
           <a
@@ -1197,7 +1204,7 @@ const TerminalContent = () => {
   >([
     {
       role: 'system',
-      content: `You are Hardik — an AI persona representing Hardik Gupta.
+      content: `You are Hardik - an AI persona representing Hardik Gupta.
 
 Identity:
 Hardik Gupta
@@ -1210,22 +1217,22 @@ Background:
 You have founded and built multiple AI-powered products and platforms across education, productivity, and consumer apps.
 
 Experience (Condensed):
-• Building — NuviBrainz (AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools)
-• Full Stack Developer — Linkit (AI-powered link manager; shipped fast and reached 100+ users in 15 days)
-• Web Developer — NextRound AI (interview-prep Chrome extension with summaries and insights)
-• Full Stack Developer — AstroNuvi (RatnAI-powered astrology platform serving 1,200+ users)
-• Freelance Developer — Socivo (London-based marketing agency)
-• Senior Technical Executive — FED KIIT
-• Web Developer — GeeksForGeeks KIIT
+• Building - NuviBrainz (AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools)
+• Full Stack Developer - Linkit (AI-powered link manager; shipped fast and reached 100+ users in 15 days)
+• Web Developer - NextRound AI (interview-prep Chrome extension with summaries and insights)
+• Full Stack Developer - AstroNuvi (RatnAI-powered astrology platform serving 1,200+ users)
+• Freelance Developer - Socivo (London-based marketing agency)
+• Senior Technical Executive - FED KIIT
+• Web Developer - GeeksForGeeks KIIT
 
 Technical Expertise:
 ReactJS, Tailwind CSS, NodeJS, ExpressJS, Firebase, TypeScript, Git, Docker, Redis,
 Vercel, Render, PostHog, C, HTML, CSS, JavaScript.
 
 Education:
-KIIT University — CSE (AI/ML) — 2024–2028
+KIIT University - CSE (AI/ML) - 2024–2028
 
-You speak, think, and respond as Hardik — with the technical depth, product background, and engineering experience he possesses.`
+You speak, think, and respond as Hardik - with the technical depth, product background, and engineering experience he possesses.`
     }
   ]);
 
@@ -1396,6 +1403,7 @@ const VSCodeContent = () => {
   const { settings } = useDesktopStore();
   const GithubIcon = getIconComponent('Github', settings.iconStyle);
   const ExternalLinkIcon = getIconComponent('ExternalLink', settings.iconStyle);
+  const [selectedProjectPreview, setSelectedProjectPreview] = useState<any | null>(null);
 
   // Theme Colors
   const themeMap: Record<string, any> = {
@@ -1551,25 +1559,50 @@ const VSCodeContent = () => {
           {projects.map((project) => (
             <div
               key={project.id}
+              onClick={() => project.liveUrl !== "#" && setSelectedProjectPreview(project)}
               className={cn(
-                "group rounded-xl border flex flex-col overflow-hidden",
+                "group rounded-xl border flex flex-col overflow-hidden cursor-pointer",
                 settings.darkMode
                   ? "bg-zinc-900/50 border-zinc-800"
                   : "bg-white border-zinc-200"
               )}
             >
-              {/* Live Preview */}
               <div className={cn(
                 "w-full h-48 border-b relative transition-opacity overflow-hidden",
                 settings.darkMode ? "bg-zinc-800 border-zinc-800" : "bg-zinc-100 border-zinc-200"
               )}>
-                <iframe
-                  src={project.liveUrl}
-                  title={project.name}
-                  className="w-[200%] h-[200%] origin-top-left scale-50 border-none pointer-events-none"
-                  loading="lazy"
-                  tabIndex={-1}
-                />
+                <div className={cn(
+                  "absolute inset-0 bg-gradient-to-br",
+                  project.id === 1 && "from-fuchsia-500/30 via-rose-500/20 to-amber-500/20",
+                  project.id === 2 && "from-cyan-500/25 via-blue-500/15 to-emerald-500/20",
+                  project.id === 3 && "from-emerald-500/20 via-lime-500/10 to-cyan-500/20",
+                  project.id === 4 && "from-orange-500/20 via-red-500/15 to-yellow-500/15",
+                  project.id === 5 && "from-violet-500/25 via-indigo-500/15 to-sky-500/20",
+                  project.id === 6 && "from-sky-500/25 via-cyan-500/10 to-indigo-500/20"
+                )} />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_35%)]" />
+                <div className="absolute inset-0 flex flex-col justify-between p-4">
+                  <span className={cn(
+                    "w-fit rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.25em]",
+                    settings.darkMode ? "border-white/15 bg-black/15 text-zinc-100" : "border-black/10 bg-white/40 text-zinc-700"
+                  )}>
+                    {project.liveUrl !== "#" ? "Click to preview" : "Private build"}
+                  </span>
+                  <div>
+                    <p className={cn(
+                      "text-4xl font-black tracking-tight leading-none",
+                      settings.darkMode ? "text-white/85" : "text-zinc-900/75"
+                    )}>
+                      {project.name}
+                    </p>
+                    <p className={cn(
+                      "mt-3 text-[11px] uppercase tracking-[0.3em]",
+                      settings.darkMode ? "text-zinc-200/80" : "text-zinc-700/70"
+                    )}>
+                      {project.liveUrl !== "#" ? "Live preview in popup" : "Source only"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="p-5 flex flex-col flex-1">
@@ -1586,6 +1619,7 @@ const VSCodeContent = () => {
                       href={project.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className={cn(
                         "p-1.5 rounded-lg transition-colors",
                         settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
@@ -1598,6 +1632,7 @@ const VSCodeContent = () => {
                       href={project.liveUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className={cn(
                         "p-1.5 rounded-lg transition-colors",
                         settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
@@ -1606,6 +1641,22 @@ const VSCodeContent = () => {
                     >
                       <ExternalLinkIcon size={16} />
                     </a>
+                    {project.liveUrl !== "#" && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProjectPreview(project);
+                        }}
+                        className={cn(
+                          "p-1.5 rounded-lg transition-colors",
+                          settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
+                          theme.hoverText
+                        )}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1616,26 +1667,95 @@ const VSCodeContent = () => {
                   {project.description}
                 </p>
 
-                <div className="flex flex-wrap gap-2">
-                  {project.tech.map((tech) => (
-                    <span
-                      key={tech}
-                      className={cn(
-                        "px-2 py-1 text-xs font-medium rounded-md",
-                        settings.darkMode
-                          ? "bg-zinc-800 text-zinc-300"
-                          : "bg-zinc-100 text-zinc-600"
-                      )}
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (project.liveUrl !== "#") setSelectedProjectPreview(project);
+                  }}
+                  className={cn(
+                    "mt-auto inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.25em]",
+                    settings.darkMode ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-zinc-900"
+                  )}
+                >
+                  {project.liveUrl !== "#" ? <Eye size={14} /> : <GithubIcon size={14} />}
+                  {project.liveUrl !== "#" ? "Preview Site" : "Code Link Only"}
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedProjectPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 bg-black/80 backdrop-blur-md p-4"
+            onClick={() => setSelectedProjectPreview(null)}
+          >
+            <motion.div
+              initial={{ y: 24, scale: 0.98 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 20, scale: 0.98 }}
+              className={cn(
+                "mx-auto flex h-full max-h-[calc(100vh-10rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border",
+                settings.darkMode ? "bg-zinc-950 border-zinc-800" : "bg-white border-zinc-200"
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={cn(
+                "flex items-start justify-between gap-4 border-b px-5 py-4",
+                settings.darkMode ? "border-zinc-800" : "border-zinc-200"
+              )}>
+                <div>
+                  <p className={cn("text-[10px] uppercase tracking-[0.3em]", settings.darkMode ? "text-zinc-500" : "text-zinc-500")}>
+                    {selectedProjectPreview.name}
+                  </p>
+                  <h3 className="mt-2 text-2xl font-bold">{selectedProjectPreview.name}</h3>
+                  <p className={cn("mt-2 text-sm max-w-2xl", settings.darkMode ? "text-zinc-400" : "text-zinc-600")}>
+                    {selectedProjectPreview.description}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={selectedProjectPreview.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                      settings.darkMode ? "bg-white text-black" : "bg-zinc-900 text-white"
+                    )}
+                  >
+                    <ExternalLink size={14} />
+                    Open Site
+                  </a>
+                  <button
+                    onClick={() => setSelectedProjectPreview(null)}
+                    className={cn(
+                      "rounded-lg border p-2",
+                      settings.darkMode ? "border-zinc-800 text-zinc-400 hover:text-white" : "border-zinc-200 text-zinc-500 hover:text-zinc-900"
+                    )}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+              <div className={cn("flex-1", settings.darkMode ? "bg-zinc-900" : "bg-zinc-100")}>
+                <iframe
+                  src={selectedProjectPreview.liveUrl}
+                  title={`${selectedProjectPreview.name} preview`}
+                  className="h-full w-full border-none"
+                  loading="lazy"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

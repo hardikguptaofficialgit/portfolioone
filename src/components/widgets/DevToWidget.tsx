@@ -1,17 +1,17 @@
 import React from 'react';
-import { Rss, ExternalLink } from 'lucide-react';
+import { Files, Interfaces } from 'doodle-icons';
 import { useDesktopStore } from '@/store/desktopStore';
 import { cn } from '@/lib/utils';
 
-export const SubstackWidget = () => {
+export const DevToWidget = () => {
     const { openOrFocusWindow, settings } = useDesktopStore();
 
     const handleClick = () => {
         openOrFocusWindow({
-            title: 'StrykerInside',
+            title: 'DEV.to Articles',
             icon: 'FileText',
-            appId: 'substack',
-            content: 'substack',
+            appId: 'devto',
+            content: 'devto',
             width: 900,
             height: 700,
             x: 100,
@@ -32,11 +32,11 @@ export const SubstackWidget = () => {
             <div className="relative z-10 flex items-start justify-between mb-3">
                 <div className={cn(
                     "p-2 rounded-xl",
-                    settings.darkMode ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"
+                    settings.darkMode ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"
                 )}>
-                    <Rss size={20} />
+                    <Files.FileText width={20} height={20} fill="currentColor" />
                 </div>
-                <ExternalLink size={16} className="text-zinc-500 transition-colors" />
+                <Interfaces.Link width={16} height={16} fill="currentColor" className="text-zinc-500 transition-colors" />
             </div>
 
             <div className="relative z-10">
@@ -44,13 +44,13 @@ export const SubstackWidget = () => {
                     "text-lg font-bold mb-1",
                     settings.darkMode ? "text-white" : "text-zinc-900"
                 )}>
-                    Stryker Articles
+                    Dev Articles
                 </h3>
                 <p className={cn(
                     "text-xs line-clamp-2",
                     settings.darkMode ? "text-zinc-400" : "text-zinc-600"
                 )}>
-                    Latest thoughts, tutorials, and insights from the newsletter.
+                    Latest tutorials, guides, and technical insights from DEV Community.
                 </p>
             </div>
 

@@ -1,6 +1,14 @@
 {
     "apps": [
         {
+            "id": "blog",
+            "name": "Blog",
+            "icon": "BookOpen",
+            "content": "blog",
+            "pinned": true,
+            "color": "from-purple-600 to-purple-700"
+        },
+        {
             "id": "github",
             "name": "GitHub",
             "icon": "Github",
@@ -23,14 +31,6 @@
             "content": "terminal",
             "pinned": true,
             "color": "from-neutral-800 to-neutral-900"
-        },
-        {
-            "id": "spotify",
-            "name": "Spotify",
-            "icon": "Music",
-            "content": "spotify",
-            "pinned": true,
-            "color": "from-green-600 to-green-700"
         },
         {
             "id": "settings",
