@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -67,10 +68,6 @@ All colors MUST be HSL.
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .dark {
-    /* Dark mode already defined in :root above */
-  }
-
   .light {
     /* Light Mode - Inverted colors for bright theme */
     --desktop-bg: 210 20% 98%;
@@ -130,28 +127,29 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground overflow-hidden;
-    font-family: "Quantico", sans-serif;
+    font-family: "Manrope", sans-serif;
   }
 
-  /* Custom Scrollbar - Modern & Sleek */
+  /* Ultra-smooth Minimalist Scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
+    background: #2C2C2C;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    transition: background 0.2s ease;
+    background: #9F9F9F;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+    transition: background 0.3s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: #FFFFFF;
   }
 
   /* Claymorphism Design Utilities */
@@ -196,17 +194,6 @@ All colors MUST be HSL.
       inset 0 2px 4px rgba(0, 0, 0, 0.3),
       0 0 0 2px rgba(255, 255, 255, 0.05);
   }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--desktop-accent));
-    box-shadow: 0 0 6px hsl(var(--desktop-accent-glow));
-  }
-
-  /* Firefox Scrollbar */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) rgba(0, 0, 0, 0.3);
-  }
 }
 
 /* Glass Effect Utility */
@@ -245,6 +232,11 @@ All colors MUST be HSL.
     font-family: "Quantico", sans-serif;
     font-weight: 700;
     font-style: normal;
+  }
+
+  .font-display {
+    font-family: "Space Grotesk", sans-serif;
+    letter-spacing: -0.02em;
   }
 
   .no-scrollbar::-webkit-scrollbar {

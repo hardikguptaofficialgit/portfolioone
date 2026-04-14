@@ -165,7 +165,8 @@ export const Window = (props: WindowProps) => {
         >
           {/* Main Window Container */}
           <div className={cn(
-            "rounded-lg overflow-hidden h-full flex flex-col shadow-2xl w-full border transition-colors",
+            "overflow-hidden h-full flex flex-col shadow-2xl w-full border transition-colors",
+            isMaximized ? "rounded-none" : "rounded-lg",
             getBorderColor(),
             settings.darkMode ? "bg-zinc-950" : "bg-white"
           )}>
@@ -216,11 +217,11 @@ export const Window = (props: WindowProps) => {
 
             {/* Content Area - Scrollable */}
             <div className={cn(
-              "flex-1 overflow-auto custom-scrollbar",
+              "flex-1 min-h-0 overflow-auto custom-scrollbar",
               settings.darkMode ? "bg-zinc-950" : "bg-white"
             )}>
               <div className={cn(
-                "h-full",
+                "h-full min-h-0",
                 settings.darkMode ? "text-zinc-200" : "text-zinc-800"
               )}>
                 {content === 'portfolio' && <div className="p-6"><PortfolioContent /></div>}
@@ -232,7 +233,7 @@ export const Window = (props: WindowProps) => {
                 {content === 'documents' && <div className="p-6"><DocumentsContent /></div>}
                 {content === 'terminal' && <TerminalContent />}
                 {content === 'calendar' && <div className="h-full"><CalendarContent /></div>}
-                {content === 'devto' && <div className="p-6"><DevToFeed /></div>}
+                {content === 'devto' && <div className={cn("h-full", isMaximized ? "p-4 md:p-6" : "p-6")}><DevToFeed /></div>}
                 {content === 'blog' && <BlogApp />}
                 {content === 'file-preview' && <FilePreviewContent file={data} />}
               </div>

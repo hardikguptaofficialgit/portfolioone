@@ -24,12 +24,16 @@ import { useNavigate } from 'react-router-dom';
 type AuthStep = 'boot' | 'lock' | 'email' | 'desktop';
 type IconSize = 'small' | 'medium' | 'large';
 type SortBy = 'name' | 'size' | 'date';
+const BOOT_ANIMATION_SEEN_KEY = 'portfolio_boot_animation_seen_v1';
 
 const Index = () => {
   const { windows, openOrFocusWindow, settings } = useDesktopStore();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const [authStep, setAuthStep] = useState<AuthStep>('boot');
+  const [authStep, setAuthStep] = useState<AuthStep>(() => {
+    if (typeof window === 'undefined') return 'boot';
+    return localStorage.getItem(BOOT_ANIMATION_SEEN_KEY) === '1' ? 'lock' : 'boot';
+  });
   const { contextMenu, handleContextMenu, closeContextMenu } = useContextMenu();
   const [iconSize, setIconSize] = useState<IconSize>('large');
   const [sortBy, setSortBy] = useState<SortBy>('name');
@@ -43,6 +47,7 @@ const Index = () => {
   useEffect(() => {
     if (authStep === 'boot') {
       const timer = setTimeout(() => {
+        localStorage.setItem(BOOT_ANIMATION_SEEN_KEY, '1');
         setAuthStep('lock');
       }, 4000);
       return () => clearTimeout(timer);
@@ -276,22 +281,20 @@ const Index = () => {
               "absolute inset-0",
               settings.darkMode
                 ? "bg-[linear-gradient(135deg,rgba(5,8,20,0.78),rgba(5,5,5,0.55)_45%,rgba(6,10,18,0.8))]"
-                : "bg-[linear-gradient(135deg,rgba(248,250,252,0.7),rgba(255,255,255,0.38)_45%,rgba(241,245,249,0.72))]"
+                : "bg-transparent"
             )}
           />
 
           {/* Ambient Light/Glow spots */}
-          <div className={cn(
-            "absolute top-0 left-0 w-[500px] h-[500px] rounded-full blur-[120px]",
-            settings.darkMode ? "bg-white/5" : "bg-sky-500/10"
-          )} />
-          <div className={cn(
-            "absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px]",
-            settings.darkMode ? "bg-zinc-800/20" : "bg-indigo-500/10"
-          )} />
+          {settings.darkMode && (
+            <>
+              <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full blur-[120px] bg-white/5" />
+              <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px] bg-zinc-800/20" />
+            </>
+          )}
 
           {/* Noise Texture Overlay */}
-          {!isMobile && (
+          {!isMobile && settings.darkMode && (
             <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
           )}
         </div>

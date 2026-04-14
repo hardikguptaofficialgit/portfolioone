@@ -44,7 +44,6 @@ export const DesktopRope = () => {
                 points[0].oldX = width * 0.2;
                 points[0].oldY = -50;
             }
-
         };
 
         // Physics Configuration
@@ -90,7 +89,7 @@ export const DesktopRope = () => {
         const handleMouseDown = (e: MouseEvent) => {
             isMouseDown = true;
             // Find nearest point
-            let minDist = 60; // Increased grab radius for better UX with image
+            let minDist = 150; // Increased grab radius to accommodate the larger card
             let nearest: Point | null = null;
 
             for (const p of points) {
@@ -144,8 +143,10 @@ export const DesktopRope = () => {
                 const dx = p.x - mouseX;
                 const dy = p.y - mouseY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 50 && !draggedPoint) {
-                    const force = (50 - dist) / 50;
+                
+                // Increased interaction radius so the push feels natural with a larger image
+                if (dist < 120 && !draggedPoint) {
+                    const force = (120 - dist) / 120;
                     const angle = Math.atan2(dy, dx);
                     p.x += Math.cos(angle) * force * 2;
                     p.y += Math.sin(angle) * force * 2;
@@ -212,7 +213,13 @@ export const DesktopRope = () => {
             const endPoint = points[points.length - 1];
 
             if (logoImg.complete && logoImg.naturalWidth > 0) {
-                const size = 240; // Size of the logo
+                // Calculate proper aspect ratio
+                const imageRatio = logoImg.naturalHeight / logoImg.naturalWidth;
+                
+                // Increase the base width here (adjust 380 to your exact preference)
+                const cardWidth = 250; 
+                const cardHeight = cardWidth * imageRatio;
+
                 ctx.save();
                 ctx.translate(endPoint.x, endPoint.y);
 
@@ -221,8 +228,8 @@ export const DesktopRope = () => {
                 // const angle = Math.atan2(lastStick.p2.y - lastStick.p1.y, lastStick.p2.x - lastStick.p1.x);
                 // ctx.rotate(angle - Math.PI / 2);
 
-                // Draw image centered
-                ctx.drawImage(logoImg, -size / 2, -size / 2, size, size);
+                // Draw image properly centered based on its new width and height
+                ctx.drawImage(logoImg, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
                 ctx.restore();
             } else {
                 // Fallback if image not loaded yet

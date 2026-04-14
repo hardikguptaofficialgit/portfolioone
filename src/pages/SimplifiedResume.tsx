@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useInView, useMotionValue, useAnimationFrame } from 'framer-motion';
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import {
     ChevronRight, X, ChevronLeft,
     Maximize2, Pin, Github, Linkedin, Instagram,
-    Link, Star, GitFork, Download, ArrowUpRight, Clock,
+    Link as LinkIcon, Star, GitFork, Download, ArrowUpRight, Clock,
     Menu,
-    MapPin, Calendar, Sun, Moon, Mail, Terminal, Zap, Eye, Code2
+    MapPin, Calendar, Sun, Moon
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { fetchDevToArticles, type DevToArticle } from '@/lib/devto';
 import photosData from '@/data/photos.json';
+import { DevToArticle, fetchDevToArticles } from '@/lib/devto';
 
 /* ─── Theme Context ──────────────────────────────────────────── */
 type Theme = 'dark' | 'light';
@@ -19,7 +20,7 @@ const ThemeContext = React.createContext<{ theme: Theme; toggle: () => void }>({
 });
 
 const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
-const EASE_RIPPLE = [0.76, 0, 0.24, 1] as const;
+const NAV_SPRING = { type: 'spring', stiffness: 140, damping: 20 } as const;
 
 /* ─── Noise SVG overlay (CSS) ─────────────────────────────── */
 const NoiseOverlay = () => (
@@ -35,102 +36,8 @@ const NoiseOverlay = () => (
     />
 );
 
-/* ─── Scroll Progress Bar ─────────────────────────────────── */
-const ScrollProgress = ({ isDark }: { isDark: boolean }) => {
-    const { scrollYProgress } = useScroll();
-    const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
-    return (
-        <motion.div
-            className="fixed top-0 left-0 right-0 z-[200] h-[2px] origin-left"
-            style={{
-                scaleX,
-                background: isDark
-                    ? 'linear-gradient(90deg, #d0fffe, #a78bfa, #f9a8d4)'
-                    : 'linear-gradient(90deg, #7b3e77, #c084fc, #f0abfc)',
-            }}
-        />
-    );
-};
 
-/* ─── Magnetic cursor dot ─────────────────────────────────── */
-const CursorDot = ({ isDark }: { isDark: boolean }) => {
-    const cursorX = useMotionValue(-100);
-    const cursorY = useMotionValue(-100);
-    const springConfig = { damping: 25, stiffness: 700 };
-    const cursorXSpring = useSpring(cursorX, springConfig);
-    const cursorYSpring = useSpring(cursorY, springConfig);
 
-    useEffect(() => {
-        const move = (e: MouseEvent) => {
-            cursorX.set(e.clientX - 6);
-            cursorY.set(e.clientY - 6);
-        };
-        window.addEventListener('mousemove', move);
-        return () => window.removeEventListener('mousemove', move);
-    }, []);
-
-    return (
-        <motion.div
-            className="pointer-events-none fixed z-[300] rounded-full mix-blend-difference"
-            style={{
-                left: cursorXSpring,
-                top: cursorYSpring,
-                width: 12,
-                height: 12,
-                background: isDark ? '#d0fffe' : '#7b3e77',
-            }}
-        />
-    );
-};
-
-/* ─── Live Clock Widget ───────────────────────────────────── */
-const LiveClock = ({ isDark, subtleText }: { isDark: boolean; subtleText: string }) => {
-    const [time, setTime] = useState(new Date());
-    useEffect(() => {
-        const id = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(id);
-    }, []);
-    return (
-        <div className={`flex items-center gap-2 text-xs font-mono ${subtleText}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>{time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
-            <span className="opacity-50">IST</span>
-        </div>
-    );
-};
-
-/* ─── Glitch Text ─────────────────────────────────────────── */
-const GlitchText = ({ text, className }: { text: string; className?: string }) => {
-    const [isGlitching, setIsGlitching] = useState(false);
-    useEffect(() => {
-        const trigger = () => {
-            setIsGlitching(true);
-            setTimeout(() => setIsGlitching(false), 500);
-        };
-        const id = setInterval(trigger, 4000 + Math.random() * 3000);
-        return () => clearInterval(id);
-    }, []);
-
-    return (
-        <span className={`relative inline-block ${className}`} data-text={text}>
-            {text}
-            {isGlitching && (
-                <>
-                    <span
-                        aria-hidden
-                        className="absolute inset-0 text-[#d0fffe] opacity-70"
-                        style={{ clipPath: 'polygon(0 30%, 100% 30%, 100% 50%, 0 50%)', transform: 'translate(-2px, 0)', mixBlendMode: 'screen' }}
-                    >{text}</span>
-                    <span
-                        aria-hidden
-                        className="absolute inset-0 text-[#f9a8d4] opacity-70"
-                        style={{ clipPath: 'polygon(0 55%, 100% 55%, 100% 70%, 0 70%)', transform: 'translate(2px, 0)', mixBlendMode: 'screen' }}
-                    >{text}</span>
-                </>
-            )}
-        </span>
-    );
-};
 
 /* ─── Section reveal wrapper ──────────────────────────────── */
 const RevealSection = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
@@ -164,94 +71,6 @@ const StaggerItem = ({ children, index }: { children: React.ReactNode; index: nu
         </motion.div>
     );
 };
-
-/* ─── Terminal Easter Egg ─────────────────────────────────── */
-const TerminalModal = ({ isDark, onClose }: { isDark: boolean; onClose: () => void }) => {
-    const [input, setInput] = useState('');
-    const [history, setHistory] = useState<{ cmd: string; out: string }[]>([
-        { cmd: '', out: 'hardik@portfolio:~$ type "help" to get started' },
-    ]);
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    const commands: Record<string, string> = {
-        help: '  whoami  · about me\n  skills  · tech stack\n  contact · get in touch\n  projects· my work\n  clear   · clear terminal\n  exit    · close terminal',
-        whoami: 'Hardik Gupta — Full-stack engineer, SaaS founder.\nCSE (AI/ML) @ KIIT University 2024-2028.\nBuilding Linkit & NuviBrainz.',
-        skills: 'Frontend: React, Next.js, TypeScript, Tailwind\nBackend : Node.js, Express, Firebase, Redis\nAI/ML  : OpenAI, Gemini, Llama, RAG\nDevOps : Docker, Vercel, Render',
-        contact: 'Email    : hardikgupta8792@gmail.com\nGitHub   : github.com/hardikguptaofficialgit\nLinkedIn : linkedin.com/in/hardik-gupta-b528072b3\nTwitter  : @stryker_inside',
-        projects: 'Linkit         · Link-in-bio SaaS (200+ creators)\nNuviBrainz     · AI JEE prep platform\nC25Go          · Campus nav PWA (15k students)\nPigglu Khelega · Real-time multiplayer game\nOpenSource Hire· OSS dev discovery engine\nVelocity Transit· Flutter transit app',
-    };
-
-    const run = (cmd: string) => {
-        const trimmed = cmd.trim().toLowerCase();
-        if (trimmed === 'clear') { setHistory([]); setInput(''); return; }
-        if (trimmed === 'exit') { onClose(); return; }
-        const out = commands[trimmed] ?? `command not found: ${trimmed}. Try "help".`;
-        setHistory(h => [...h, { cmd, out }]);
-        setInput('');
-    };
-
-    useEffect(() => { inputRef.current?.focus(); }, []);
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ duration: 0.25, ease: EASE_SMOOTH }}
-            className="fixed inset-0 z-[150] flex items-center justify-center p-4"
-            onClick={onClose}
-        >
-            <motion.div
-                className={`w-full max-w-2xl rounded-2xl border font-mono text-sm overflow-hidden shadow-2xl ${isDark ? 'bg-black border-zinc-700' : 'bg-[#1a1a1a] border-zinc-600'}`}
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Title bar */}
-                <div className="flex items-center gap-2 px-4 py-3 bg-zinc-800 border-b border-zinc-700">
-                    <button onClick={onClose} className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                    <span className="ml-auto text-xs text-zinc-400">hardik@portfolio — terminal</span>
-                </div>
-                {/* Output */}
-                <div className="p-5 h-80 overflow-y-auto space-y-3 text-emerald-400">
-                    {history.map((item, i) => (
-                        <div key={i}>
-                            {item.cmd && <div className="text-zinc-300"><span className="text-[#d0fffe]">hardik@portfolio:~$</span> {item.cmd}</div>}
-                            <pre className="whitespace-pre-wrap text-emerald-400 text-xs leading-relaxed">{item.out}</pre>
-                        </div>
-                    ))}
-                    {/* Input row */}
-                    <div className="flex items-center gap-2 text-zinc-300">
-                        <span className="text-[#d0fffe]">hardik@portfolio:~$</span>
-                        <input
-                            ref={inputRef}
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') run(input); }}
-                            className="flex-1 bg-transparent outline-none text-zinc-100 caret-[#d0fffe]"
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                    </div>
-                </div>
-            </motion.div>
-        </motion.div>
-    );
-};
-
-/* ─── Floating status badge ───────────────────────────────── */
-const FloatingBadge = ({ isDark }: { isDark: boolean }) => (
-    <motion.div
-        initial={{ opacity: 0, x: 40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.4, duration: 0.6, ease: EASE_SMOOTH }}
-        className={`fixed bottom-6 right-6 z-40 hidden md:flex items-center gap-2.5 rounded-2xl border px-4 py-2.5 text-xs font-medium backdrop-blur-xl shadow-lg ${isDark ? 'border-zinc-700 bg-zinc-900/80 text-zinc-300' : 'border-[#e7dacb] bg-[#fffaf1]/90 text-[#5f5248]'}`}
-        style={{ fontFamily: 'monospace' }}
-    >
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        open to internships · 2025
-    </motion.div>
-);
 
 /* ─── X Brand Icon ────────────────────────────────────────── */
 const XBrandIcon = ({ size = 18, className = '' }: { size?: number; className?: string }) => (
@@ -322,8 +141,6 @@ const calcDuration = (start: string, end?: string) => {
     return `${yrs} yr${yrs > 1 ? 's' : ''} ${mos} mo${mos > 1 ? 's' : ''}`;
 };
 
-const readingTime = (desc: string) => Math.max(1, Math.round(desc.split(' ').length / 200));
-
 /* ─── static data ──────────────────────────────────────────── */
 const techCategories = [
     { label: 'Languages', items: ['TypeScript', 'JavaScript', 'C++', 'C', 'Dart', 'PHP'] },
@@ -343,10 +160,17 @@ const projects = [
 ];
 
 const achievements = [
-    { title: 'YC Hackathon', detail: 'Selected from 2,000+ global applicants. Designed and shipped a full product under strict time constraints.', badge: 'Top Applicant' },
+{
+  title: 'YC Hackathon',
+  detail: 'Selected from 2,000+ global applicants by showcasing an app idea that helps users find nearby people to go out to places together.',
+  badge: 'Top Applicant'
+},
     { title: 'GDG Hackathon - Building Bad', detail: 'Winner. Demonstrated end-to-end product execution and cross-team collaboration.', badge: 'Winner' },
-    { title: 'Bangalore Startup Residency', detail: 'Growth-focused startup residency covering product iteration and go-to-market strategy.', badge: 'Participant' },
-];
+{
+  title: 'Growth Hackathon at The Residency',
+  detail: 'Pitched LinkitApp.in during the Growth Hackathon in Bangalore at The Residency, generating leads from nearby restaurants, cafés, and local businesses.',
+  badge: 'Participant'
+}];
 
 const achievementIconSrc = {
     yc: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHZEuWg1DSjG7W9DQ1Yl4ti8wj4I2DlGjZvg&s',
@@ -369,7 +193,7 @@ const navItems = [
     { id: 'projects', label: 'Projects' },
     { id: 'github', label: 'GitHub' },
     { id: 'photos', label: 'Photos' },
-    { id: 'posts', label: 'Posts' },
+    { id: 'blog', label: 'Blog' },
     { id: 'contact', label: 'Contact', isAction: true },
 ];
 
@@ -380,16 +204,14 @@ const SimplifiedResume = () => {
     const [theme, setTheme] = useState<Theme>('dark');
     const [activeSection, setActiveSection] = useState('resume');
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-    // FIXED: single state flag controls the ripple
-    const [rippleKey, setRippleKey] = useState(0);
-    const [rippleTheme, setRippleTheme] = useState<Theme | null>(null);
+    const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
     const [repos, setRepos] = useState<any[]>([]);
     const [filteredRepos, setFilteredRepos] = useState<any[]>([]);
-    const [posts, setPosts] = useState<DevToArticle[]>([]);
-    const [postsLoading, setPostsLoading] = useState(true);
-    const [postsError, setPostsError] = useState<string | null>(null);
     const [filterMode, setFilterMode] = useState<'top' | 'latest' | 'pushed' | 'all'>('top');
     const [searchQuery, setSearchQuery] = useState('');
+    const [popularArticles, setPopularArticles] = useState<DevToArticle[]>([]);
+    const [blogLoading, setBlogLoading] = useState(true);
+    const [blogError, setBlogError] = useState<string | null>(null);
     const [previewErrors, setPreviewErrors] = useState<Record<number, boolean>>({});
     const [selectedProject, setSelectedProject] = useState<(typeof projects)[number] | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<typeof photosData[0] | null>(null);
@@ -397,15 +219,26 @@ const SimplifiedResume = () => {
     const [projectControlsCollapsed, setProjectControlsCollapsed] = useState(false);
     const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
     const [isDraggingProjectControls, setIsDraggingProjectControls] = useState(false);
-    const [showTerminal, setShowTerminal] = useState(false);
+    const [isNavCompact, setIsNavCompact] = useState(false);
     const dragOffsetRef = useRef({ x: 0, y: 0 });
-    const rippleTimerRef = useRef<number | null>(null);
+    const themeTransitionTimerRef = useRef<number | null>(null);
 
     const isDark = theme === 'dark';
+
+    useEffect(() => {
+        const onScroll = () => setIsNavCompact(window.scrollY > 56);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     const sortedEvents = [...photosData].sort((a, b) =>
         a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1
     );
+    const devUsername = useMemo(() => {
+        const envUser = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_DEV_USERNAME : '';
+        return (envUser || 'strykerinside').replace(/^@/, '');
+    }, []);
 
     useEffect(() => {
         fetch('https://api.github.com/users/hardikguptaofficialgit/repos?per_page=100')
@@ -413,6 +246,36 @@ const SimplifiedResume = () => {
             .then(d => Array.isArray(d) && setRepos(d))
             .catch(() => {});
     }, []);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const loadPopularArticles = async () => {
+            try {
+                setBlogLoading(true);
+                setBlogError(null);
+                const articles = await fetchDevToArticles(devUsername, 30, { perPage: 30, signal: controller.signal });
+                if (controller.signal.aborted) return;
+                const sorted = [...articles]
+                    .sort((a, b) => {
+                        const scoreA = a.public_reactions_count * 2 + a.comments_count;
+                        const scoreB = b.public_reactions_count * 2 + b.comments_count;
+                        return scoreB - scoreA;
+                    })
+                    .slice(0, 6);
+                setPopularArticles(sorted);
+            } catch (error) {
+                if (controller.signal.aborted) return;
+                const message = error instanceof Error ? error.message : 'Unable to load popular DEV.to posts.';
+                setBlogError(message);
+                setPopularArticles([]);
+            } finally {
+                if (!controller.signal.aborted) setBlogLoading(false);
+            }
+        };
+
+        loadPopularArticles();
+        return () => controller.abort();
+    }, [devUsername]);
 
     useEffect(() => {
         let list = [...repos];
@@ -427,24 +290,8 @@ const SimplifiedResume = () => {
         setFilteredRepos(list);
     }, [repos, filterMode, searchQuery]);
 
-    const fetchDevToPosts = useCallback(async () => {
-        setPostsLoading(true); setPostsError(null);
-        const username = import.meta.env.VITE_DEV_USERNAME || 'strykerinside';
-        try {
-            const articles = await fetchDevToArticles(username, 10);
-            setPosts(articles);
-            setPostsLoading(false);
-        } catch {
-            setPosts([]);
-            setPostsError('Unable to load posts from DEV.to right now.');
-            setPostsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => { fetchDevToPosts(); }, [fetchDevToPosts]);
-
     useEffect(() => {
-        const ids = ['resume', 'projects', 'github', 'photos', 'posts'];
+        const ids = ['resume', 'projects', 'github', 'photos', 'blog'];
         const sections = ids.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
         if (!sections.length) return;
         const vis = new Map<string, number>();
@@ -523,33 +370,25 @@ const SimplifiedResume = () => {
         document.documentElement.style.overflow = 'auto';
     }, []);
 
-    useEffect(() => () => { if (rippleTimerRef.current) window.clearTimeout(rippleTimerRef.current); }, []);
+    useEffect(() => () => { if (themeTransitionTimerRef.current) window.clearTimeout(themeTransitionTimerRef.current); }, []);
 
-    /* ── FIXED THEME TOGGLE ── */
     const toggleTheme = useCallback(() => {
-        const next: Theme = theme === 'dark' ? 'light' : 'dark';
-        // 1. show ripple for next theme immediately
-        setRippleTheme(next);
-        setRippleKey(k => k + 1);
-        // 2. after ripple fully covers screen (~160ms), flip the theme
-        if (rippleTimerRef.current) window.clearTimeout(rippleTimerRef.current);
-        rippleTimerRef.current = window.setTimeout(() => {
-            setTheme(next);
-            // 3. ripple stays a moment so the new theme is visible under it, then fades out
-            rippleTimerRef.current = window.setTimeout(() => {
-                setRippleTheme(null);
-            }, 320);
-        }, 160);
-    }, [theme]);
+        setIsThemeTransitioning(true);
+        setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+        if (themeTransitionTimerRef.current) window.clearTimeout(themeTransitionTimerRef.current);
+        themeTransitionTimerRef.current = window.setTimeout(() => {
+            setIsThemeTransitioning(false);
+        }, 260);
+    }, []);
 
     // ── theme-aware classes
     const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
     const bgImage = isDark ? '/bgdarkimage.png' : '/bgimage.png';
     const text = isDark ? 'text-zinc-100' : 'text-[#1f1a17]';
-    const navBg = isDark ? 'bg-[#09090b]/90 border-zinc-800' : 'bg-[#fffef9]/90 border-[#e6d8cb]';
+    const navBg = isDark ? 'bg-black border-zinc-800' : 'bg-[#fffef9] border-[#e6d8cb]';
     const mutedText = isDark ? 'text-zinc-400' : 'text-[#5f5248]';
     const subtleText = isDark ? 'text-zinc-500' : 'text-[#7d6b5c]';
-    const cardBg = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-[#fffaf1] border-[#e7dacb]';
+    const cardBg = isDark ? 'bg-black border-black' : 'bg-[#fffaf1] border-[#e7dacb]';
     const accent = isDark ? 'text-[#d0fffe]' : 'text-[#7b3e77]';
     const accentBorder = isDark ? 'border-[#d0fffe]/40 text-[#d0fffe]' : 'border-[#d39ad0] text-[#7b3e77]';
     const accentHover = isDark ? 'hover:bg-[#d0fffe] hover:text-black' : 'hover:bg-[#ffd3fd] hover:text-[#3f2a3d]';
@@ -560,7 +399,7 @@ const SimplifiedResume = () => {
     const filterInactive = isDark ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700' : 'text-[#7b6b5e] border-[#d9cabd] hover:text-[#3a312b] hover:border-[#bfaea0]';
     const labelText = isDark ? 'text-zinc-500' : 'text-[#6f5b4e]';
     const shellBase = isDark
-        ? 'rounded-2xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm p-6 md:p-8'
+        ? 'rounded-2xl border border-zinc-800 bg-black p-6 md:p-8'
         : 'rounded-2xl border-2 border-[#d8c8b9] p-6 md:p-8 shadow-[6px_6px_0_0_rgba(80,58,41,0.16)]';
 
     /* ─ page entrance stagger ─ */
@@ -575,196 +414,240 @@ const SimplifiedResume = () => {
 
     return (
         <ThemeContext.Provider value={{ theme, toggle: toggleTheme }}>
-            <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-colors duration-500`}
-                style={{ backgroundImage: `url('${bgImage}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+            <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color,filter] duration-500`}
+                style={{ backgroundImage: bgImage ? `url('${bgImage}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
                 {/* ── Noise & dim overlays ── */}
                 <NoiseOverlay />
-                <div aria-hidden className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/72' : 'bg-white/55'} transition-colors duration-500`} />
+                <div aria-hidden className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/64' : 'bg-white/55'} transition-colors duration-500`} />
 
-                {/* ── Scroll progress ── */}
-                <ScrollProgress isDark={isDark} />
+                <div
+                    aria-hidden
+                    className={`pointer-events-none fixed inset-0 z-[49] transition-opacity duration-300 ${
+                        isThemeTransitioning ? 'opacity-100' : 'opacity-0'
+                    } ${isDark ? 'bg-black/10' : 'bg-white/25'}`}
+                />
 
-                {/* ── Cursor dot (desktop only) ── */}
-                <div className="hidden md:block">
-                    <CursorDot isDark={isDark} />
-                </div>
+             {/* ══════════ NAV ══════════ */}
+<motion.nav
+    layout
+    transition={NAV_SPRING}
+    className={`fixed z-50 ${
+        isNavCompact ? 'top-6 left-2' : 'top-3 left-0 right-0 px-3 md:px-6'
+    }`}
+>
+    <motion.div
+        layout
+        transition={NAV_SPRING}
+        className={`hidden lg:flex border shadow-sm ${navBg} ${
+            isNavCompact
+                ? 'w-[164px] flex-col rounded-2xl p-2 items-start'
+                : 'mx-auto max-w-6xl items-center justify-between rounded-[1.5rem] px-4 md:px-6 py-3 md:py-4'
+        }`}
+        animate={{ scale: isNavCompact ? 1 : 0.98 }}
+    >
+        {/* LOGO */}
+        <motion.button
+            layout
+            layoutId="nav-logo"
+            transition={NAV_SPRING}
+            onClick={() => scrollTo('resume')}
+            className={`flex items-center gap-2.5 text-sm font-bold tracking-wider uppercase ${
+                isDark ? 'text-zinc-100' : 'text-zinc-900'
+            }`}
+        >
+            <img
+                src="/harvix_logo.png"
+                alt="Harvix logo"
+                className="h-8 w-8 rounded-md object-cover"
+            />
+            <span className={isNavCompact ? 'text-xs' : 'text-xs sm:text-sm'}>
+                stryker.inside
+            </span>
+        </motion.button>
 
-                {/* ── FIXED Theme ripple ── */}
-                <AnimatePresence>
-                    {rippleTheme && (
-                        <motion.div
-                            key={rippleKey}
-                            initial={{ clipPath: 'circle(0% at 98% 100%)' }}
-                            animate={{ clipPath: 'circle(160% at 98% 100%)' }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.55, ease: EASE_RIPPLE }}
-                            className={`pointer-events-none fixed inset-0 z-[89] ${rippleTheme === 'dark' ? 'bg-[#09090b]' : 'bg-[#fffef9]'}`}
-                        />
-                    )}
-                </AnimatePresence>
-
-                {/* ── Terminal modal ── */}
-                <AnimatePresence>
-                    {showTerminal && (
-                        <TerminalModal isDark={isDark} onClose={() => setShowTerminal(false)} />
-                    )}
-                </AnimatePresence>
-
-                {/* ── Floating status badge ── */}
-                <FloatingBadge isDark={isDark} />
-
-                {/* ══════════ NAV ══════════ */}
-                <motion.nav
-                    initial={{ y: -60, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.6, ease: EASE_SMOOTH }}
-                    className={`fixed top-[2px] left-0 right-0 z-50 border-b ${navBg} backdrop-blur-xl transition-all duration-500`}
+        {/* NAV ITEMS */}
+        <motion.div
+            layout
+            transition={NAV_SPRING}
+            className={`flex ${
+                isNavCompact
+                    ? 'w-full flex-col gap-2 mt-4'
+                    : 'items-center gap-1 ml-auto mr-3'
+            }`}
+        >
+            {navItems.map((item) => (
+                <motion.button
+                    key={item.id}
+                    layout
+                    transition={NAV_SPRING}
+                    onClick={() => {
+                        if (item.id === 'contact') {
+                            window.location.href =
+                                'mailto:hardikgupta8792@gmail.com';
+                        } else {
+                            scrollTo(item.id);
+                        }
+                    }}
+                    className={`relative rounded-lg uppercase transition-colors ${
+                        isNavCompact
+                            ? `w-full text-left px-3 py-2 text-xs font-semibold tracking-wide border ${
+                                  activeSection === item.id && !item.isAction
+                                      ? isDark
+                                          ? 'text-zinc-100 bg-zinc-800 border-zinc-700'
+                                          : 'text-zinc-900 bg-zinc-200 border-zinc-300'
+                                      : isDark
+                                      ? 'text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-900'
+                                      : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
+                              }`
+                            : `px-4 py-2 text-xs font-medium tracking-wide ${
+                                  activeSection === item.id && !item.isAction
+                                      ? isDark
+                                          ? 'text-zinc-100 bg-zinc-800'
+                                          : 'text-zinc-900 bg-zinc-200'
+                                      : isDark
+                                      ? 'text-zinc-500 hover:text-zinc-300'
+                                      : 'text-zinc-500 hover:text-zinc-700'
+                              }`
+                    }`}
                 >
-                    <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3">
-                        <button onClick={() => scrollTo('resume')}
-                            className={`flex items-center gap-2.5 text-sm font-bold tracking-wider uppercase ${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors`}>
-                            <motion.img
-                                src="/harvix_logo.png" alt="Harvix logo"
-                                className="h-8 w-8 rounded-md object-cover border border-white/20"
-                                whileHover={{ rotate: [0, -8, 8, 0] }}
-                                transition={{ duration: 0.4 }}
-                            />
-                            <span className="text-xs sm:text-sm">stryker.inside</span>
-                        </button>
+                    {item.label}
+                </motion.button>
+            ))}
+        </motion.div>
 
-                        <div className="hidden lg:flex items-center gap-1">
-                            {navItems.map((item, i) => (
-                                <motion.button
-                                    key={item.id}
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 + i * 0.06, duration: 0.4 }}
-                                    onClick={() => item.id === 'contact'
-                                        ? (window.location.href = 'mailto:hardikgupta8792@gmail.com')
-                                        : scrollTo(item.id)}
-                                    className={`relative px-4 py-2 text-xs font-medium tracking-wide uppercase transition-all duration-300 rounded-lg overflow-hidden ${
-                                        activeSection === item.id && !item.isAction
-                                            ? isDark ? 'text-zinc-100 bg-zinc-800' : 'text-zinc-900 bg-zinc-200'
-                                            : isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700'
-                                    }`}
-                                    whileHover={{ scale: 1.04 }}
-                                    whileTap={{ scale: 0.96 }}
-                                >
-                                    {item.label}
-                                    {activeSection === item.id && !item.isAction && (
-                                        <motion.div
-                                            layoutId="nav-pill"
-                                            className={`absolute inset-0 rounded-lg -z-10 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}
-                                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                                        />
-                                    )}
-                                </motion.button>
-                            ))}
-                        </div>
+        {/* RIGHT CONTROLS */}
+        <motion.div
+            layout
+            transition={NAV_SPRING}
+            className={`flex ${
+                isNavCompact
+                    ? `w-full mt-2 pt-2 border-t ${divider} items-center justify-between`
+                    : 'items-center gap-2 md:gap-3'
+            }`}
+        >
+            {/* THEME TOGGLE */}
+            <button
+                onClick={toggleTheme}
+                className={`relative h-8 w-14 rounded-full p-1 border overflow-hidden transition-colors ${
+                    isDark
+                        ? 'bg-zinc-900 border-zinc-700'
+                        : 'bg-zinc-100 border-zinc-300'
+                }`}
+                aria-label="Toggle theme"
+            >
+                <span
+                    className={`absolute inset-0 ${
+                        isDark
+                            ? 'bg-[radial-gradient(circle_at_20%_20%,#2f3a58_0%,#0b0d16_55%)]'
+                            : 'bg-[radial-gradient(circle_at_80%_20%,#ffe89a_0%,#ffd3fd_55%,#f4f4f5_100%)]'
+                    }`}
+                />
+                <span
+                    className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border shadow transition-transform duration-300 ${
+                        isDark
+                            ? 'translate-x-6 bg-zinc-950 border-zinc-700'
+                            : 'translate-x-0 bg-white border-zinc-300'
+                    }`}
+                >
+                    {isDark ? (
+                        <Moon size={14} className="text-[#d0fffe]" />
+                    ) : (
+                        <Sun size={14} className="text-[#7b3e77]" />
+                    )}
+                </span>
+            </button>
 
-                        <div className="flex items-center gap-2 md:gap-3">
-                            {/* Live clock */}
-                            <div className="hidden xl:block">
-                                <LiveClock isDark={isDark} subtleText={subtleText} />
-                            </div>
+            {!isNavCompact && (
+                <a
+                    href="/"
+                    className={`hidden md:flex items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors ${
+                        isDark
+                            ? 'text-zinc-500 hover:text-zinc-300'
+                            : 'text-zinc-500 hover:text-zinc-700'
+                    }`}
+                >
+                    <span>Return to OS</span>
+                </a>
+            )}
+        </motion.div>
+    </motion.div>
 
-                            {/* Terminal button */}
-                            <motion.button
-                                onClick={() => setShowTerminal(true)}
-                                whileHover={{ scale: 1.08 }}
-                                whileTap={{ scale: 0.92 }}
-                                className={`hidden md:flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${isDark ? 'border-zinc-700 bg-zinc-900 text-[#d0fffe] hover:bg-zinc-800' : 'border-zinc-300 bg-zinc-100 text-[#7b3e77] hover:bg-zinc-200'}`}
-                                title="Open terminal"
-                            >
-                                <Terminal size={14} />
-                            </motion.button>
+    {/* MOBILE NAV */}
+    <div className="lg:hidden px-3 md:px-6">
+        <div
+            className={`mx-auto border shadow-sm rounded-[1.2rem] px-4 py-3 ${navBg}`}
+        >
+            <div className="flex items-center justify-between gap-3">
+                <button
+                    onClick={() => scrollTo('resume')}
+                    className={`flex items-center gap-2.5 text-sm font-bold tracking-wider uppercase ${
+                        isDark ? 'text-zinc-100' : 'text-zinc-900'
+                    }`}
+                >
+                    <img
+                        src="/harvix_logo.png"
+                        alt="Harvix logo"
+                        className="h-8 w-8 rounded-md object-cover border border-white/20"
+                    />
+                    <span className="text-xs sm:text-sm">
+                        stryker.inside
+                    </span>
+                </button>
 
-                            {/* FIXED Theme toggle */}
-                            <motion.button
-                                onClick={toggleTheme}
-                                whileTap={{ scale: 0.93 }}
-                                transition={{ type: 'spring', stiffness: 420, damping: 24 }}
-                                className={`relative h-8 w-14 rounded-full p-1 border overflow-hidden ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-zinc-100 border-zinc-300'}`}
-                                aria-label="Toggle theme"
-                            >
-                                <motion.div
-                                    className={`absolute inset-0 ${isDark ? 'bg-[radial-gradient(circle_at_20%_20%,#2f3a58_0%,#0b0d16_55%)]' : 'bg-[radial-gradient(circle_at_80%_20%,#ffe89a_0%,#ffd3fd_55%,#f4f4f5_100%)]'}`}
-                                    initial={false}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.35 }}
-                                />
-                                <motion.div
-                                    className={`relative z-10 w-6 h-6 rounded-full border flex items-center justify-center shadow ${isDark ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-zinc-300'}`}
-                                    animate={{ x: isDark ? 24 : 0 }}
-                                    transition={{ type: 'spring', stiffness: 500, damping: 32, mass: 0.7 }}
-                                >
-                                    <AnimatePresence mode="wait" initial={false}>
-                                        {isDark ? (
-                                            <motion.div key="moon"
-                                                initial={{ opacity: 0, rotate: -120, scale: 0.75 }}
-                                                animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                                exit={{ opacity: 0, rotate: 120, scale: 0.75 }}
-                                                transition={{ duration: 0.28, ease: 'easeOut' }}>
-                                                <Moon size={14} className="text-[#d0fffe]" />
-                                            </motion.div>
-                                        ) : (
-                                            <motion.div key="sun"
-                                                initial={{ opacity: 0, rotate: 120, scale: 0.75 }}
-                                                animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                                exit={{ opacity: 0, rotate: -120, scale: 0.75 }}
-                                                transition={{ duration: 0.28, ease: 'easeOut' }}>
-                                                <Sun size={14} className="text-[#7b3e77]" />
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            </motion.button>
+                <button
+                    onClick={() => setIsMobileNavOpen((v) => !v)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+                        isDark
+                            ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
+                            : 'border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                    }`}
+                >
+                    <Menu size={16} />
+                </button>
+            </div>
+        </div>
+    </div>
 
-                            <a href="/" className={`hidden md:flex items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors ${isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700'}`}>
-                                <span>OS</span><ArrowUpRight size={12} />
-                            </a>
-
-                            <motion.button
-                                onClick={() => setIsMobileNavOpen(v => !v)}
-                                whileTap={{ scale: 0.9 }}
-                                className={`lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${isDark ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800' : 'border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200'}`}>
-                                <Menu size={16} />
-                            </motion.button>
-                        </div>
-                    </div>
-
-                    <AnimatePresence>
-                        {isMobileNavOpen && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3, ease: EASE_SMOOTH }}
-                                className={`lg:hidden overflow-hidden border-t ${isDark ? 'border-zinc-800 bg-zinc-950/95' : 'border-[#e6d8cb] bg-[#fffef9]/95'} backdrop-blur-xl px-4 pb-4 pt-3`}
-                            >
-                                <div className="grid grid-cols-2 gap-2">
-                                    {navItems.map((item, i) => (
-                                        <motion.button
-                                            key={item.id}
-                                            initial={{ opacity: 0, y: 8 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: i * 0.04 }}
-                                            onClick={() => item.id === 'contact'
-                                                ? (window.location.href = 'mailto:hardikgupta8792@gmail.com')
-                                                : scrollTo(item.id)}
-                                            className={`px-3 py-2.5 text-xs font-semibold tracking-wide uppercase rounded-lg border transition-all duration-300 ${
-                                                activeSection === item.id && !item.isAction
-                                                    ? isDark ? 'text-zinc-100 bg-zinc-800 border-zinc-700' : 'text-zinc-900 bg-zinc-200 border-zinc-300'
-                                                    : isDark ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900' : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
-                                            }`}
-                                        >{item.label}</motion.button>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.nav>
+    {/* MOBILE DROPDOWN */}
+    {isMobileNavOpen && (
+        <div
+            className={`lg:hidden overflow-hidden border mt-2 mx-3 rounded-xl ${
+                isDark
+                    ? 'border-zinc-800 bg-black'
+                    : 'border-[#e6d8cb] bg-[#fffef9]'
+            } px-4 pb-4 pt-3`}
+        >
+            <div className="grid grid-cols-2 gap-2">
+                {navItems.map((item) => (
+                    <button
+                        key={item.id}
+                        onClick={() => {
+                            if (item.id === 'contact') {
+                                window.location.href =
+                                    'mailto:hardikgupta8792@gmail.com';
+                            } else {
+                                scrollTo(item.id);
+                            }
+                            setIsMobileNavOpen(false);
+                        }}
+                        className={`px-3 py-2.5 text-xs font-semibold tracking-wide uppercase rounded-lg border transition-colors ${
+                            activeSection === item.id && !item.isAction
+                                ? isDark
+                                    ? 'text-zinc-100 bg-zinc-800 border-zinc-700'
+                                    : 'text-zinc-900 bg-zinc-200 border-zinc-300'
+                                : isDark
+                                ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900'
+                                : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
+                        }`}
+                    >
+                        {item.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )}
+</motion.nav>
 
                 {/* ══════════ BODY ══════════ */}
                 <div className="relative z-10 w-full px-4 md:px-10 lg:px-16 pt-28 pb-12">
@@ -772,24 +655,15 @@ const SimplifiedResume = () => {
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        className="max-w-5xl mx-auto space-y-24"
+                        className="max-w-4xl mx-auto space-y-24"
                     >
 
                         {/* ══ RESUME ══ */}
-                        <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#fffddb]'}`}>
+                        <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-32 ${shellBase} ${isDark ? 'bg-black' : 'bg-[#fffddb]'}`}>
 
                             {/* Header */}
                             <header className={`space-y-6 pb-10 border-b ${divider}`}>
-                                <motion.div
-                                    className="flex items-center gap-2"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                >
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className={`text-xs ${subtleText} tracking-widest uppercase`}>Available for internships · 2025</span>
-                                </motion.div>
-
+                               
                                 <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
                                     <div className="space-y-3">
                                         <motion.p
@@ -797,13 +671,12 @@ const SimplifiedResume = () => {
                                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
                                         >Software Engineer</motion.p>
                                         <motion.h1
-                                            className="text-5xl md:text-6xl font-bold tracking-tight leading-none"
+                                            className="font-display text-5xl md:text-6xl font-bold tracking-tight leading-none"
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.55, duration: 0.7, ease: EASE_SMOOTH }}
                                         >
-                                            <GlitchText text="Hardik Gupta" />
-                                        </motion.h1>
+Hardik Gupta                                        </motion.h1>
                                         <motion.p
                                             className={`${mutedText} text-base max-w-lg leading-relaxed`}
                                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
@@ -831,9 +704,7 @@ const SimplifiedResume = () => {
                                         transition={{ delay: 0.7, duration: 0.6 }}
                                     >
                                         <motion.a
-                                            href="/resume.pdf" download
-                                            whileHover={{ scale: 1.04, y: -2 }}
-                                            whileTap={{ scale: 0.97 }}
+                                            href="/files/resume.pdf" download
                                             className={`inline-flex items-center gap-2 px-5 py-2.5 border ${accentBorder} text-sm tracking-wider uppercase rounded-lg ${accentHover} transition-all duration-300`}
                                         >
                                             <Download size={14} /> Download CV
@@ -844,13 +715,11 @@ const SimplifiedResume = () => {
                                                 { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={18} /> },
                                                 { href: 'https://www.instagram.com/stryker.inside/', icon: <Instagram size={18} /> },
                                                 { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={18} /> },
-                                                { href: 'https://linkitapp.in/harvix', icon: <Link size={18} /> },
+                                                { href: 'https://linkitapp.in/harvix', icon: <LinkIcon size={18} /> },
                                             ].map(({ href, icon }, i) => (
                                                 <motion.a
                                                     key={href} href={href} target="_blank" rel="noopener noreferrer"
                                                     className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors duration-300`}
-                                                    whileHover={{ scale: 1.25, y: -3 }}
-                                                    whileTap={{ scale: 0.9 }}
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: 0.8 + i * 0.06 }}
@@ -890,40 +759,64 @@ const SimplifiedResume = () => {
                                 </div>
                             </RevealSection>
 
-                            {/* Tech Stack */}
-                            <RevealSection delay={0.05}>
-                                <div className="space-y-5">
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Technical Skills</SectionLabel>
-                                    <div className="space-y-3">
-                                        {techCategories.map((cat, ci) => (
-                                            <motion.div
-                                                key={cat.label}
-                                                className="flex flex-wrap items-center gap-2.5"
-                                                initial={{ opacity: 0, x: -16 }}
-                                                whileInView={{ opacity: 1, x: 0 }}
-                                                viewport={{ once: true }}
-                                                transition={{ delay: ci * 0.07, duration: 0.5 }}
-                                            >
-                                                <span className={`text-xs uppercase tracking-[0.3em] ${subtleText} w-24 shrink-0`}>{cat.label}</span>
-                                                {cat.items.map((s, si) => (
-                                                    <motion.span
-                                                        key={s}
-                                                        whileHover={{ scale: 1.08, y: -2 }}
-                                                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs uppercase tracking-wide border ${tagBg} rounded-lg transition-all duration-300 cursor-default`}
-                                                        initial={{ opacity: 0, scale: 0.85 }}
-                                                        whileInView={{ opacity: 1, scale: 1 }}
-                                                        viewport={{ once: true }}
-                                                        transition={{ delay: ci * 0.07 + si * 0.025 }}
-                                                    >
-                                                        <TechIcon name={s} />{s}
-                                                    </motion.span>
-                                                ))}
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </RevealSection>
+                        {/* Tech Stack */}
+<RevealSection delay={0.05}>
+  <div className="space-y-8">
 
+    <SectionLabel
+      isDark={isDark}
+      divider={divider}
+      labelText={labelText}
+    >
+      Technical Skills
+    </SectionLabel>
+
+    <div className="space-y-6">
+
+      {techCategories.map((cat, ci) => (
+        <motion.div
+          key={cat.label}
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: ci * 0.08 }}
+          className="space-y-3"
+        >
+          {/* Category Label */}
+          <div
+            className={`text-[11px] uppercase tracking-[0.25em] ${
+              isDark ? "text-zinc-500" : "text-[#6b5c4f]"
+            }`}
+          >
+            {cat.label}
+          </div>
+
+          {/* Skills Grid */}
+          <div className="flex flex-wrap gap-2.5">
+            {cat.items.map((s, si) => (
+              <motion.div
+                key={s}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: ci * 0.08 + si * 0.02 }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs ${
+                  isDark
+                    ? "bg-zinc-900 text-zinc-300"
+                    : "bg-[#fffddb] text-[#3f3a34]"
+                }`}
+              >
+                <TechIcon name={s} />
+                <span>{s}</span>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      ))}
+
+    </div>
+  </div>
+</RevealSection>
                             {/* Achievements */}
                             <RevealSection delay={0.05}>
                                 <div className="space-y-5">
@@ -934,7 +827,6 @@ const SimplifiedResume = () => {
                                             return (
                                                 <StaggerItem key={a.title} index={i}>
                                                     <motion.div
-                                                        whileHover={{ x: 4 }}
                                                         className={`flex items-start gap-4 border ${cardBg} rounded-xl p-5 transition-all duration-300`}
                                                     >
                                                         <div className={`w-10 h-10 rounded-lg border ${divider} flex items-center justify-center shrink-0 overflow-hidden`}
@@ -995,7 +887,6 @@ const SimplifiedResume = () => {
                                         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                                             {([['top', 'Top Rated'], ['latest', 'Latest'], ['pushed', 'Recently Pushed'], ['all', 'All']] as const).map(([id, label]) => (
                                                 <motion.button key={id} onClick={() => setFilterMode(id as any)}
-                                                    whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                                                     className={`px-3 py-2 text-xs font-medium border rounded-lg transition-all duration-300 ${filterMode === id ? filterActive : filterInactive}`}>
                                                     {label}
                                                 </motion.button>
@@ -1012,7 +903,6 @@ const SimplifiedResume = () => {
                                         <StaggerItem key={repo.id} index={i}>
                                             <motion.a
                                                 href={repo.html_url} target="_blank" rel="noopener noreferrer"
-                                                whileHover={{ y: -3, scale: 1.01 }}
                                                 className={`group block border ${cardBg} rounded-xl p-5 transition-all duration-300`}
                                             >
                                                 <div className="flex items-start justify-between gap-2 mb-3">
@@ -1049,13 +939,12 @@ const SimplifiedResume = () => {
                                         <StaggerItem key={ev.id} index={i}>
                                             <motion.div
                                                 onClick={() => openGallery(ev)}
-                                                whileHover={{ y: -4 }}
                                                 className="group cursor-pointer space-y-3"
                                             >
                                                 <div className={`relative aspect-video ${isDark ? 'bg-zinc-900' : 'bg-white'} p-2 rounded-xl overflow-hidden border ${divider}`}>
                                                     <div className="relative w-full h-full rounded-lg overflow-hidden bg-zinc-900">
                                                         <img src={ev.images[0]} alt={ev.title}
-                                                            className="absolute inset-0 h-full w-full object-cover grayscale group-hover:grayscale-0 scale-100 group-hover:scale-105 transition-all duration-700" />
+                                                            className="absolute inset-0 h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
                                                         <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end z-10 pointer-events-none">
                                                             {ev.pinned && (
                                                                 <div className="bg-white text-black px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1">
@@ -1063,7 +952,7 @@ const SimplifiedResume = () => {
                                                                 </div>
                                                             )}
                                                             {ev.images.length > 1 && (
-                                                                <div className="bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-white flex items-center gap-1 border border-white/10">
+                                                                <div className="bg-black px-2 py-0.5 rounded text-xs text-white flex items-center gap-1 border border-white/10">
                                                                     <Maximize2 size={10} /> +{ev.images.length - 1}
                                                                 </div>
                                                             )}
@@ -1084,72 +973,68 @@ const SimplifiedResume = () => {
                             </section>
                         </RevealSection>
 
-                        {/* ══ POSTS ══ */}
+                        {/* ══ BLOG ══ */}
                         <RevealSection>
-                            <section id="posts" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#ffd3fd]'}`}>
+                            <section id="blog" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#efe7ff]'}`}>
                                 <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Posts</SectionLabel>
-                                    <a href={`https://dev.to/${import.meta.env.VITE_DEV_USERNAME || 'strykerinside'}`}
-                                        target="_blank" rel="noopener noreferrer"
-                                        className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors uppercase tracking-widest`}>
-                                        DEV.to <ArrowUpRight size={12} />
+                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Blog</SectionLabel>
+                                    <a
+                                        href={`https://dev.to/${devUsername}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors uppercase tracking-widest`}
+                                    >
+                                        Dev.to Profile <ArrowUpRight size={12} />
                                     </a>
                                 </div>
 
-                                {postsLoading ? (
-                                    <div className="space-y-4">
-                                        {[1, 2, 3].map(i => (
-                                            <motion.div key={i}
-                                                animate={{ opacity: [0.4, 0.8, 0.4] }}
-                                                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-                                                className={`h-24 rounded-xl ${isDark ? 'bg-zinc-900/60' : 'bg-zinc-200/60'}`} />
-                                        ))}
-                                    </div>
-                                ) : postsError ? (
-                                    <div className={`${subtleText} text-sm space-y-4`}>
-                                        <p>{postsError}</p>
-                                        <motion.button onClick={fetchDevToPosts}
-                                            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                                            className={`text-xs uppercase tracking-widest border ${divider} px-4 py-2 rounded-lg transition-colors`}>
-                                            Retry
-                                        </motion.button>
-                                    </div>
-                                ) : posts.length > 0 ? (
-                                    <div className={`divide-y ${isDark ? 'divide-zinc-800' : 'divide-zinc-200'}`}>
-                                        {posts.map((post, i) => (
-                                            <StaggerItem key={post.id} index={i}>
-                                                <article className="group py-6 first:pt-0">
-                                                    <div className="flex gap-5">
-                                                        {post.cover_image && (
-                                                            <motion.img
-                                                                src={post.cover_image} alt=""
-                                                                whileHover={{ scale: 1.05 }}
-                                                                className="w-24 h-16 object-cover rounded-lg shrink-0 opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
-                                                        )}
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className={`flex items-center gap-4 text-xs ${subtleText} mb-2`}>
-                                                                <span className="flex items-center gap-1.5"><Calendar size={11} /> {format(new Date(post.published_at), 'MMM d, yyyy')}</span>
-                                                                <span className="flex items-center gap-1.5"><Clock size={11} /> {post.reading_time_minutes || readingTime(post.description)} min read</span>
-                                                            </div>
-                                                            <h3 className="text-base font-bold mb-1.5 group-hover:underline underline-offset-4 leading-snug">
-                                                                <a href={post.url} target="_blank" rel="noopener noreferrer">{post.title}</a>
-                                                            </h3>
-                                                            <p className={`${mutedText} text-sm leading-relaxed line-clamp-2`}>{post.description}</p>
-                                                            {post.tag_list?.length > 0 && (
-                                                                <div className="flex gap-2 mt-2.5 flex-wrap">
-                                                                    {post.tag_list.slice(0, 3).map((t: string) => (
-                                                                        <span key={t} className={`text-xs uppercase tracking-wider border px-2 py-0.5 rounded ${tagBg}`}>#{t}</span>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                {blogLoading && <p className={`text-sm ${mutedText}`}>Loading popular articles...</p>}
+                                {blogError && <p className="text-sm text-rose-400">{blogError}</p>}
+
+                                {!blogLoading && !blogError && popularArticles.length === 0 && (
+                                    <p className={`text-sm ${mutedText}`}>No blog posts found right now.</p>
+                                )}
+
+                                {!blogLoading && !blogError && popularArticles.length > 0 && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {popularArticles.map((article, index) => (
+                                            <StaggerItem key={article.id} index={index}>
+                                                <RouterLink
+                                                    to={`/blogs/${article.slug}`}
+                                                    className={`block border ${cardBg} rounded-xl p-4 transition-colors`}
+                                                >
+                                                    {article.cover_image && (
+                                                        <div className={`mb-3 h-40 overflow-hidden rounded-lg border ${divider}`}>
+                                                            <img
+                                                                src={article.cover_image}
+                                                                alt={article.title}
+                                                                className="h-full w-full object-cover"
+                                                                loading="lazy"
+                                                            />
                                                         </div>
+                                                    )}
+                                                    <h3 className="text-base font-bold leading-snug line-clamp-2">{article.title}</h3>
+                                                    <p className={`mt-2 text-sm ${mutedText} line-clamp-2`}>
+                                                        {article.description || 'No description.'}
+                                                    </p>
+                                                    <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs ${subtleText}`}>
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <Calendar size={12} />
+                                                            {format(new Date(article.published_at), 'MMM d, yyyy')}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <Clock size={12} />
+                                                            {article.reading_time_minutes || 1} min
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <Star size={12} />
+                                                            {article.public_reactions_count}
+                                                        </span>
                                                     </div>
-                                                </article>
+                                                </RouterLink>
                                             </StaggerItem>
                                         ))}
                                     </div>
-                                ) : (
-                                    <p className={`${subtleText} text-sm`}>No posts yet.</p>
                                 )}
                             </section>
                         </RevealSection>
@@ -1162,21 +1047,28 @@ const SimplifiedResume = () => {
                         whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
-                        className={`max-w-5xl mx-auto mt-24 pt-10 pb-8 border-t ${divider} flex flex-col md:flex-row items-center justify-between gap-4`}
+                        className={`max-w-4xl mx-auto mt-24 pt-10 pb-8  border-t ${divider} flex flex-col md:flex-row items-center justify-between gap-4`}
                     >
-                        <a href="/" className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors text-sm uppercase tracking-widest`}>← Return to OS</a>
-                        <div className="flex gap-5">
+                    <motion.a
+  href="/"
+  className={`${subtleText} ${
+    isDark
+      ? "px-4 py-2.5 bg-black text-white"
+      : "text-black px-4 py-2.5 bg-white"
+  } transition-colors text-xs md:text-sm uppercase tracking-widest`}
+>
+  ← Return to OS
+</motion.a>
+                        <div className={`flex gap-5 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
                             {[
                                 { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={16} /> },
                                 { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={16} /> },
                                 { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={16} /> },
                             ].map(({ href, icon }) => (
                                 <motion.a key={href} href={href} target="_blank" rel="noopener noreferrer"
-                                    whileHover={{ scale: 1.2, y: -2 }}
                                     className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors`}>{icon}</motion.a>
                             ))}
                         </div>
-                        <p className={`text-xs ${subtleText} font-mono`}>hardikgupta8792@gmail.com</p>
                     </motion.footer>
                 </div>
 
@@ -1187,7 +1079,7 @@ const SimplifiedResume = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className={`fixed inset-0 z-[95] ${isDark ? 'bg-black/95' : 'bg-white/95'} backdrop-blur-xl`}
+                            className={`fixed inset-0 z-[95] ${isDark ? 'bg-black' : 'bg-white'}`}
                             onClick={() => setSelectedProject(null)}
                         >
                             <motion.div
@@ -1199,7 +1091,7 @@ const SimplifiedResume = () => {
                                 onClick={e => e.stopPropagation()}
                             >
                                 <div className="absolute z-10" style={{ left: `${projectControlsPos.x}px`, top: `${projectControlsPos.y}px` }}>
-                                    <div className={`flex items-center gap-2 rounded-xl border ${isDark ? 'border-white/15 bg-black/60' : 'border-black/10 bg-white/92'} p-2 shadow-lg backdrop-blur-sm`}>
+                                    <div className={`flex items-center gap-2 rounded-xl border ${isDark ? 'border-white/15 bg-black' : 'border-black/10 bg-white'} p-2 shadow-lg`}>
                                         <button onPointerDown={handleProjectControlsPointerDown} onPointerMove={handleProjectControlsPointerMove} onPointerUp={handleProjectControlsPointerUp} onPointerCancel={handleProjectControlsPointerUp}
                                             className={`flex h-8 w-8 items-center justify-center rounded-lg border cursor-grab active:cursor-grabbing ${isDark ? 'border-white/15 text-zinc-100 hover:bg-white/10' : 'border-black/10 text-zinc-900 hover:bg-zinc-200'} transition-colors`} title="Drag controls">
                                             <Pin size={13} />
@@ -1237,7 +1129,7 @@ const SimplifiedResume = () => {
                                     <div className="flex h-full items-center justify-center p-8">
                                         <div className="max-w-md text-center">
                                             <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{selectedProject.name}</p>
-                                            <p className={`mt-3 text-sm ${mutedText}`}>Live preview unavailable — check the GitHub link above.</p>
+                                            <p className={`mt-3 text-sm ${mutedText}`}>Live preview unavailable - check the GitHub link above.</p>
                                         </div>
                                     </div>
                                 )}
@@ -1246,74 +1138,119 @@ const SimplifiedResume = () => {
                     )}
 
                     {/* ══ PHOTO LIGHTBOX ══ */}
-                    {selectedEvent && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className={`fixed inset-0 z-[100] ${isDark ? 'bg-black/98' : 'bg-white/98'} backdrop-blur-xl flex flex-col`}
-                            onClick={() => setSelectedEvent(null)}
-                        >
-                            <div className={`flex items-center justify-between px-5 py-4 border-b ${divider} shrink-0`} onClick={e => e.stopPropagation()}>
-                                <div>
-                                    <h3 className="text-base font-bold">{selectedEvent.title}</h3>
-                                    <p className={`text-xs ${subtleText} mt-0.5`}>{selectedEvent.description}</p>
-                                </div>
-                                <motion.button onClick={() => setSelectedEvent(null)}
-                                    whileHover={{ rotate: 90 }} transition={{ duration: 0.2 }}
-                                    className={`p-2 hover:${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} rounded-lg transition-colors ml-4 shrink-0`}>
-                                    <X size={18} />
-                                </motion.button>
-                            </div>
-                            <div className="flex-1 flex items-center justify-center relative px-4 py-6 min-h-0" onClick={e => e.stopPropagation()}>
-                                {selectedEvent.images.length > 1 && (
-                                    <motion.button onClick={prevImg} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                                        className={`absolute left-3 p-2.5 ${isDark ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-200'} rounded-lg transition-colors z-10`}>
-                                        <ChevronLeft size={20} />
-                                    </motion.button>
-                                )}
-                                <div className="bg-white p-2 rounded-xl max-h-full flex items-center">
-                                    <motion.img
-                                        key={currentImageIndex}
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ duration: 0.25 }}
-                                        src={selectedEvent.images[currentImageIndex]}
-                                        alt={`Image ${currentImageIndex + 1}`}
-                                        className="max-w-full max-h-[65vh] object-contain rounded-lg"
-                                        drag="x"
-                                        dragConstraints={{ left: 0, right: 0 }}
-                                        dragElastic={0.2}
-                                        onDragEnd={(_, { offset }) => {
-                                            if (offset.x < -50) nextImg();
-                                            else if (offset.x > 50) prevImg();
-                                        }}
-                                    />
-                                </div>
-                                {selectedEvent.images.length > 1 && (
-                                    <motion.button onClick={nextImg} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                                        className={`absolute right-3 p-2.5 ${isDark ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-200'} rounded-lg transition-colors z-10`}>
-                                        <ChevronRight size={20} />
-                                    </motion.button>
-                                )}
-                                <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 ${isDark ? 'bg-zinc-900' : 'bg-white'} backdrop-blur-sm border ${divider} px-3 py-1 rounded-full text-xs ${mutedText}`}>
-                                    {currentImageIndex + 1} / {selectedEvent.images.length}
-                                </div>
-                            </div>
-                            {selectedEvent.images.length > 1 && (
-                                <div className={`h-20 border-t ${divider} flex items-center gap-2 px-5 overflow-x-auto no-scrollbar justify-start md:justify-center shrink-0 ${isDark ? 'bg-black/40' : 'bg-white/40'}`}
-                                    onClick={e => e.stopPropagation()}>
-                                    {selectedEvent.images.map((img, idx) => (
-                                        <motion.button key={idx} onClick={() => setCurrentImageIndex(idx)}
-                                            whileHover={{ scale: 1.08 }}
-                                            className={`h-13 aspect-video flex-shrink-0 rounded-lg overflow-hidden transition-all duration-300 bg-white p-0.5 ${currentImageIndex === idx ? 'ring-2 ring-zinc-600' : 'opacity-40 hover:opacity-80'}`}>
-                                            <img src={img} alt="" className="w-full h-full object-cover rounded" />
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
+                  {/* ══ PHOTO LIGHTBOX ══ */}
+{selectedEvent && (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className={`fixed inset-0 z-[100] ${
+      isDark ? "bg-black" : "bg-[#fffef9]"
+    } flex flex-col overflow-hidden`}
+    onClick={() => setSelectedEvent(null)}
+  >
+    {/* Top Bar */}
+    <div
+      className="flex items-center justify-between px-5 py-4 shrink-0"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div>
+        <h3 className="text-base font-semibold">
+          {selectedEvent.title}
+        </h3>
+        <p className={`text-xs ${subtleText} mt-0.5`}>
+          {selectedEvent.description}
+        </p>
+      </div>
+
+      <button
+        onClick={() => setSelectedEvent(null)}
+        className={`p-2 ${
+          isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black"
+        } transition`}
+      >
+        <X size={18} />
+      </button>
+    </div>
+
+    {/* Image Area */}
+    <div
+      className="flex-1 flex items-center justify-center relative px-4 py-6 min-h-0"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Prev */}
+      {selectedEvent.images.length > 1 && (
+        <button
+          onClick={prevImg}
+          className="absolute left-3 p-2 text-zinc-500 hover:text-white transition z-10"
+        >
+          <ChevronLeft size={22} />
+        </button>
+      )}
+
+      {/* Image (NO CONTAINER) */}
+      <motion.img
+        key={currentImageIndex}
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25 }}
+        src={selectedEvent.images[currentImageIndex]}
+        alt=""
+        className="max-w-full max-h-[82vh] object-contain"
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(_, { offset }) => {
+          if (offset.x < -50) nextImg();
+          else if (offset.x > 50) prevImg();
+        }}
+      />
+
+      {/* Next */}
+      {selectedEvent.images.length > 1 && (
+        <button
+          onClick={nextImg}
+          className="absolute right-3 p-2 text-zinc-500 hover:text-white transition z-10"
+        >
+          <ChevronRight size={22} />
+        </button>
+      )}
+
+      {/* Counter */}
+      <div
+        className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-xs ${
+          isDark ? "text-zinc-400" : "text-zinc-600"
+        }`}
+      >
+        {currentImageIndex + 1} / {selectedEvent.images.length}
+      </div>
+    </div>
+
+    {/* Thumbnails */}
+    {selectedEvent.images.length > 1 && (
+      <div
+        className="h-20 flex items-center gap-2 px-5 overflow-x-auto no-scrollbar justify-start md:justify-center shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {selectedEvent.images.map((img, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentImageIndex(idx)}
+            className={`h-14 aspect-video flex-shrink-0 overflow-hidden ${
+              currentImageIndex === idx ? "opacity-100" : "opacity-40"
+            }`}
+          >
+            <img
+              src={img}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </button>
+        ))}
+      </div>
+    )}
+  </motion.div>
+)}
                 </AnimatePresence>
             </div>
         </ThemeContext.Provider>
@@ -1322,7 +1259,7 @@ const SimplifiedResume = () => {
 
 /* ─── sub-components ──────────────────────────────────────── */
 const SectionLabel = ({ children, isDark, divider, labelText }: { children: React.ReactNode; isDark: boolean; divider: string; labelText: string }) => (
-    <h2 className={`text-sm font-bold uppercase tracking-[0.3em] ${labelText} border-b ${divider} pb-3`}>{children}</h2>
+    <h2 className={`font-display text-sm font-bold uppercase tracking-[0.3em] ${labelText} border-b ${divider} pb-3`}>{children}</h2>
 );
 
 interface Role { title: string; period: string; duration: string; location?: string; }
@@ -1333,7 +1270,6 @@ interface ExpCardProps {
 }
 const ExpCard = ({ org, url, totalDuration, badge, roles, bullets, isDark, cardBg, divider, mutedText, subtleText }: ExpCardProps) => (
     <motion.div
-        whileHover={{ x: 3 }}
         className={`border ${cardBg} rounded-xl p-5 transition-all duration-300`}
     >
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-1.5 mb-2.5">
@@ -1380,15 +1316,11 @@ interface ProjectCardProps {
 const ProjectCard = memo(({ project: p, isDark, cardBg, divider, mutedText, subtleText, onPreview, onImgError, imgError }: ProjectCardProps) => {
     const hasVisual = !!p.img && !imgError;
     return (
-        <motion.article
-            whileHover={{ y: -4, scale: 1.01 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-            className={`group w-full border ${cardBg} rounded-xl overflow-hidden text-left`}
-        >
-            <div className={`relative h-56 w-full bg-black overflow-hidden border-b ${divider}`}>
+        <article className={`group w-full border ${cardBg} rounded-xl overflow-hidden text-left`}>
+            <div className={`relative h-44 w-full bg-black overflow-hidden border-b ${divider}`}>
                 {hasVisual ? (
-                    <div className="absolute inset-0 flex items-center justify-center p-6 md:p-8">
-                        <img src={p.img} alt={p.name} className="max-h-full max-w-full object-contain"
+                    <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">
+                        <img src={p.img} alt={p.name} className="max-h-[82%] max-w-[88%] object-contain"
                             onError={() => onImgError(p.id)} />
                     </div>
                 ) : (
@@ -1396,30 +1328,6 @@ const ProjectCard = memo(({ project: p, isDark, cardBg, divider, mutedText, subt
                         <h3 className="text-4xl font-black tracking-tight leading-none text-white md:text-5xl">{p.name}</h3>
                     </div>
                 )}
-                {hasVisual && <div className="absolute inset-0 bg-black/45" />}
-                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-center gap-2">
-                    {p.liveUrl !== '#' && (
-                        <motion.button type="button" onClick={() => onPreview(p)}
-                            whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-black hover:bg-zinc-100 transition-colors">
-                            <Maximize2 size={13} /> Preview
-                        </motion.button>
-                    )}
-                    {p.githubUrl !== '#' && (
-                        <motion.a href={p.githubUrl} target="_blank" rel="noopener noreferrer"
-                            whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}
-                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide border ${isDark ? 'bg-zinc-800 text-white hover:bg-zinc-700 border-white/10' : 'bg-[#ffd3fd] text-[#3f2a3d] hover:bg-[#f8bbf5] border-[#f1b4ee]'}`}>
-                            <Github size={13} /> Code
-                        </motion.a>
-                    )}
-                    {p.liveUrl !== '#' && (
-                        <motion.a href={p.liveUrl} target="_blank" rel="noopener noreferrer"
-                            whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-black/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black/80 transition-colors">
-                            <ArrowUpRight size={13} /> Open Site
-                        </motion.a>
-                    )}
-                </div>
             </div>
             <div className="p-5 space-y-4">
                 <div className="space-y-1">
@@ -1427,8 +1335,28 @@ const ProjectCard = memo(({ project: p, isDark, cardBg, divider, mutedText, subt
                     <p className={`text-xs uppercase tracking-widest ${subtleText}`}>{p.tag}</p>
                 </div>
                 <p className={`text-sm ${mutedText} leading-relaxed`}>{p.description}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                    {p.liveUrl !== '#' && (
+                        <button type="button" onClick={() => onPreview(p)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-black hover:bg-zinc-100 transition-colors">
+                            <Maximize2 size={13} /> Preview
+                        </button>
+                    )}
+                    {p.githubUrl !== '#' && (
+                        <a href={p.githubUrl} target="_blank" rel="noopener noreferrer"
+                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide border ${isDark ? 'bg-zinc-800 text-white hover:bg-zinc-700 border-white/10' : 'bg-[#ffd3fd] text-[#3f2a3d] hover:bg-[#f8bbf5] border-[#f1b4ee]'}`}>
+                            <Github size={13} /> Code
+                        </a>
+                    )}
+                    {p.liveUrl !== '#' && (
+                        <a href={p.liveUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-black/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black/80 transition-colors">
+                            <ArrowUpRight size={13} /> Open Site
+                        </a>
+                    )}
+                </div>
             </div>
-        </motion.article>
+        </article>
     );
 });
 

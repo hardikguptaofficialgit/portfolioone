@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getBlogPosts, BlogPost } from '@/lib/supabase';
+import { fetchDevToArticles } from '@/lib/devto';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,18 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Interfaces, Files } from 'doodle-icons';
 import { format } from 'date-fns';
+
+interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  featured_image?: string;
+  tags: string[];
+  published_at: string;
+  created_at: string;
+  views: number;
+}
 
 export const BlogApp = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -16,8 +28,21 @@ export const BlogApp = () => {
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const data = await getBlogPosts(true);
-        setPosts(data);
+        const username = (import.meta.env.VITE_DEV_USERNAME || 'strykerinside').replace(/^@/, '');
+        const data = await fetchDevToArticles(username, 24, { perPage: 24 });
+        setPosts(
+          data.map((post) => ({
+            id: post.id,
+            title: post.title,
+            slug: post.slug,
+            excerpt: post.description || 'No description.',
+            featured_image: post.cover_image || undefined,
+            tags: post.tag_list || [],
+            published_at: post.published_at,
+            created_at: post.published_at,
+            views: post.public_reactions_count + post.comments_count,
+          }))
+        );
       } catch (error) {
         console.error('Error loading posts:', error);
       } finally {
@@ -36,11 +61,11 @@ export const BlogApp = () => {
   );
 
   const openBlogPost = (slug: string) => {
-    window.open(`/blog/${slug}`, '_blank');
+    window.open(`/blogs/${slug}`, '_blank');
   };
 
   const openBlogPage = () => {
-    window.open('/blog', '_blank');
+    window.open('/blogs', '_blank');
   };
 
   return (
