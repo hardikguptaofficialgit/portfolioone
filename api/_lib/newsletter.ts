@@ -90,6 +90,38 @@ export const renderNewsletterHtml = (article: DevToArticleLite) => {
   </div>`;
 };
 
+export const renderWelcomeNewsletterHtml = (email: string) => {
+  const safeEmail = escapeHtml(email);
+  return `
+  <div style="margin:0;background:#ffffff;padding:0;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+    <div style="max-width:640px;margin:0 auto;border:1px solid #111111;">
+      <div style="padding:22px 24px;border-bottom:1px solid #111111;background:#ffffff;">
+        <p style="margin:0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">Newsletter Subscription</p>
+      </div>
+      <div style="height:10px;background-image:repeating-linear-gradient(45deg,#111111 0,#111111 8px,#ffffff 8px,#ffffff 16px);"></div>
+      <div style="padding:26px 24px;background:#ffffff;">
+        <h1 style="margin:0 0 10px;font-size:24px;line-height:1.3;font-weight:800;">Thanks for subscribing.</h1>
+        <p style="margin:0 0 14px;font-size:14px;line-height:1.7;">
+          You're in, <strong>${safeEmail}</strong>.
+        </p>
+        <p style="margin:0 0 14px;font-size:14px;line-height:1.7;">
+          You will get the latest updates on AI, engineering, and new DEV.to posts.
+        </p>
+        <div style="padding:14px;border:1px dashed #111111;">
+          <p style="margin:0;font-size:12px;line-height:1.7;">
+            Expect concise updates, practical insights, and useful resources.
+          </p>
+        </div>
+      </div>
+      <div style="padding:14px 24px;border-top:1px solid #111111;background:#f7f7f7;">
+        <p style="margin:0;font-size:11px;line-height:1.6;color:#333333;">
+          You are receiving this because you subscribed on the site.
+        </p>
+      </div>
+    </div>
+  </div>`;
+};
+
 const chunk = <T>(arr: T[], size: number) => {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
@@ -122,6 +154,23 @@ export const sendNewsletter = async (to: string[], article: DevToArticleLite) =>
   return { sent };
 };
 
+export const sendWelcomeNewsletter = async (toEmail: string) => {
+  const resend = new Resend(requiredEnv('RESEND_API_KEY'));
+  const from = requiredEnv('NEWSLETTER_FROM_EMAIL');
+
+  const { error } = await resend.emails.send({
+    from,
+    to: [toEmail],
+    subject: 'Thanks for subscribing - you are all set',
+    html: renderWelcomeNewsletterHtml(toEmail),
+    text: `Thanks for subscribing.\n\nYou will now receive latest updates about AI and new posts.`,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to send welcome email.');
+  }
+};
+
 export const isAuthorizedDispatchRequest = (req: any) => {
   const secret = process.env.CRON_SECRET;
   if (!secret) return process.env.NODE_ENV !== 'production';
@@ -132,4 +181,3 @@ export const isAuthorizedDispatchRequest = (req: any) => {
 
   return auth === `Bearer ${secret}` || cronHeader === secret || querySecret === secret;
 };
-

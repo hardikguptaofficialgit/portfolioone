@@ -2,11 +2,45 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Moon, Sun } from 'lucide-react';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useDesktopStore } from '@/store/desktopStore';
 
 interface EmailEntryProps {
   onComplete: (email?: string) => void;
 }
+
+let supabaseAnonClient: SupabaseClient | null = null;
+const getSupabaseAnonClient = () => {
+  if (supabaseAnonClient) return supabaseAnonClient;
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !anon) return null;
+  supabaseAnonClient = createClient(url, anon);
+  return supabaseAnonClient;
+};
+
+  const subscribeViaSupabaseFallback = async (email: string) => {
+  const client = getSupabaseAnonClient();
+  if (!client) throw new Error('Newsletter service unavailable. Missing Supabase config.');
+  const now = new Date().toISOString();
+  const { error } = await client.from('newsletter_subscribers').upsert(
+    {
+      email,
+      is_active: true,
+      subscribed_at: now,
+      updated_at: now,
+    },
+    { onConflict: 'email' }
+  );
+
+  if (error) {
+    const msg = error.message || 'Subscription failed.';
+    if (msg.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
+      throw new Error('Supabase table is missing. Run supabase/newsletter_schema.sql in Supabase SQL editor first.');
+    }
+    throw new Error(msg);
+  }
+};
 
 export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
   const navigate = useNavigate();
@@ -68,19 +102,34 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
       throw new Error('Enter a valid email address.');
     }
 
-    const response = await fetch('/api/newsletter/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: normalized }),
-    });
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalized }),
+      });
 
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(
-        typeof payload?.error === 'string'
-          ? payload.error
-          : 'Subscription failed.'
-      );
+      if (response.status === 404) {
+        // Local Vite dev often doesn't serve Vercel API routes.
+        await subscribeViaSupabaseFallback(normalized);
+        return true;
+      }
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          typeof payload?.error === 'string'
+            ? payload.error
+            : 'Subscription failed.'
+        );
+      }
+    } catch (error) {
+      // Network failures during local dev: fallback to Supabase directly.
+      if (error instanceof TypeError) {
+        await subscribeViaSupabaseFallback(normalized);
+        return true;
+      }
+      throw error;
     }
 
     return true;
@@ -207,11 +256,14 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
 
         {/* Top */}
         <div className="px-6 pt-8 pb-6 text-center flex flex-col items-center">
-          <img
-            src="https://media2.dev.to/dynamic/image/quality=100/https://dev-to-uploads.s3.amazonaws.com/uploads/logos/resized_logo_UQww2soKuUsjaOGNB38o.png"
-            alt="DEV.to Logo"
-            className="w-12 h-12 mb-4"
-          />
+          <div
+            aria-hidden
+            className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl border text-[10px] font-black tracking-[0.18em] ${
+              isDark ? 'border-zinc-700 bg-zinc-900 text-zinc-100' : 'border-[#c7d1df] bg-[#f3f6fb] text-[#1c2a3d]'
+            }`}
+          >
+            DEV
+          </div>
 
           <h2 className={`text-lg font-semibold ${T.title}`}>
             Join the Community

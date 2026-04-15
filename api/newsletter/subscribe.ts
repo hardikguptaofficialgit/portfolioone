@@ -1,4 +1,4 @@
-import { getSupabaseAdminClient } from '../_lib/newsletter';
+import { getSupabaseAdminClient, sendWelcomeNewsletter } from '../_lib/newsletter';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -50,9 +50,18 @@ export default async function handler(req: any, res: any) {
       );
 
     if (error) {
-      res.status(500).json({ error: error.message || 'Failed to save subscriber.' });
+      const raw = error.message || 'Failed to save subscriber.';
+      if (raw.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
+        res.status(500).json({
+          error: "Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.",
+        });
+        return;
+      }
+      res.status(500).json({ error: raw });
       return;
     }
+
+    await sendWelcomeNewsletter(email);
 
     res.status(200).json({ ok: true, message: 'Subscribed successfully.' });
   } catch (error) {
@@ -60,4 +69,3 @@ export default async function handler(req: any, res: any) {
     res.status(500).json({ error: message });
   }
 }
-
