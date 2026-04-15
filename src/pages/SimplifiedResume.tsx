@@ -11,13 +11,10 @@ import {
 import { format } from 'date-fns';
 import photosData from '@/data/photos.json';
 import { DevToArticle, fetchDevToArticles } from '@/lib/devto';
+import { useDesktopStore } from '@/store/desktopStore';
 
 /* ─── Theme Context ──────────────────────────────────────────── */
 type Theme = 'dark' | 'light';
-const ThemeContext = React.createContext<{ theme: Theme; toggle: () => void }>({
-    theme: 'dark',
-    toggle: () => {},
-});
 
 const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
 const NAV_SPRING = { type: 'spring', stiffness: 140, damping: 20 } as const;
@@ -201,7 +198,7 @@ const navItems = [
 /*  MAIN COMPONENT                                             */
 /* ═══════════════════════════════════════════════════════════ */
 const SimplifiedResume = () => {
-    const [theme, setTheme] = useState<Theme>('dark');
+    const { settings, updateSettings } = useDesktopStore();
     const [activeSection, setActiveSection] = useState('resume');
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
@@ -220,16 +217,28 @@ const SimplifiedResume = () => {
     const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
     const [isDraggingProjectControls, setIsDraggingProjectControls] = useState(false);
     const [isNavCompact, setIsNavCompact] = useState(false);
+    const [isDesktopView, setIsDesktopView] = useState(
+        () => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+    );
     const dragOffsetRef = useRef({ x: 0, y: 0 });
     const themeTransitionTimerRef = useRef<number | null>(null);
 
+    const theme: Theme = settings.darkMode ? 'dark' : 'light';
     const isDark = theme === 'dark';
+    const shouldUseCompactNav = isDesktopView && isNavCompact;
 
     useEffect(() => {
         const onScroll = () => setIsNavCompact(window.scrollY > 56);
         onScroll();
         window.addEventListener('scroll', onScroll, { passive: true });
         return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
+    useEffect(() => {
+        const onResize = () => setIsDesktopView(window.innerWidth >= 1024);
+        onResize();
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
     }, []);
 
     const sortedEvents = [...photosData].sort((a, b) =>
@@ -374,12 +383,12 @@ const SimplifiedResume = () => {
 
     const toggleTheme = useCallback(() => {
         setIsThemeTransitioning(true);
-        setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+        updateSettings({ darkMode: !settings.darkMode });
         if (themeTransitionTimerRef.current) window.clearTimeout(themeTransitionTimerRef.current);
         themeTransitionTimerRef.current = window.setTimeout(() => {
             setIsThemeTransitioning(false);
         }, 260);
-    }, []);
+    }, [settings.darkMode, updateSettings]);
 
     // ── theme-aware classes
     const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
@@ -413,7 +422,6 @@ const SimplifiedResume = () => {
     };
 
     return (
-        <ThemeContext.Provider value={{ theme, toggle: toggleTheme }}>
             <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color,filter] duration-500`}
                 style={{ backgroundImage: bgImage ? `url('${bgImage}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
@@ -433,18 +441,18 @@ const SimplifiedResume = () => {
     layout
     transition={NAV_SPRING}
     className={`fixed z-50 ${
-        isNavCompact ? 'top-6 left-2' : 'top-3 left-0 right-0 px-3 md:px-6'
+        shouldUseCompactNav ? 'top-6 left-2' : 'top-3 left-0 right-0 px-3 md:px-6'
     }`}
 >
     <motion.div
         layout
         transition={NAV_SPRING}
         className={`hidden lg:flex border shadow-sm ${navBg} ${
-            isNavCompact
+            shouldUseCompactNav
                 ? 'w-[164px] flex-col rounded-2xl p-2 items-start'
                 : 'mx-auto max-w-6xl items-center justify-between rounded-[1.5rem] px-4 md:px-6 py-3 md:py-4'
         }`}
-        animate={{ scale: isNavCompact ? 1 : 0.98 }}
+        animate={{ scale: shouldUseCompactNav ? 1 : 0.98 }}
     >
         {/* LOGO */}
         <motion.button
@@ -461,7 +469,7 @@ const SimplifiedResume = () => {
                 alt="Harvix logo"
                 className="h-8 w-8 rounded-md object-cover"
             />
-            <span className={isNavCompact ? 'text-xs' : 'text-xs sm:text-sm'}>
+            <span className={shouldUseCompactNav ? 'text-xs' : 'text-xs sm:text-sm'}>
                 stryker.inside
             </span>
         </motion.button>
@@ -471,7 +479,7 @@ const SimplifiedResume = () => {
             layout
             transition={NAV_SPRING}
             className={`flex ${
-                isNavCompact
+                shouldUseCompactNav
                     ? 'w-full flex-col gap-2 mt-4'
                     : 'items-center gap-1 ml-auto mr-3'
             }`}
@@ -481,6 +489,8 @@ const SimplifiedResume = () => {
                     key={item.id}
                     layout
                     transition={NAV_SPRING}
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                         if (item.id === 'contact') {
                             window.location.href =
@@ -490,28 +500,37 @@ const SimplifiedResume = () => {
                         }
                     }}
                     className={`relative rounded-lg uppercase transition-colors ${
-                        isNavCompact
-                            ? `w-full text-left px-3 py-2 text-xs font-semibold tracking-wide border ${
+                        shouldUseCompactNav
+                            ? `w-full overflow-hidden text-left px-3 py-2 text-xs font-semibold tracking-wide border ${
                                   activeSection === item.id && !item.isAction
                                       ? isDark
-                                          ? 'text-zinc-100 bg-zinc-800 border-zinc-700'
-                                          : 'text-zinc-900 bg-zinc-200 border-zinc-300'
+                                          ? 'text-zinc-100 border-zinc-700'
+                                          : 'text-zinc-900 border-zinc-300'
                                       : isDark
                                       ? 'text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-900'
                                       : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
                               }`
-                            : `px-4 py-2 text-xs font-medium tracking-wide ${
+                            : `overflow-hidden px-4 py-2 text-xs font-medium tracking-wide ${
                                   activeSection === item.id && !item.isAction
                                       ? isDark
-                                          ? 'text-zinc-100 bg-zinc-800'
-                                          : 'text-zinc-900 bg-zinc-200'
+                                          ? 'text-zinc-100'
+                                          : 'text-zinc-900'
                                       : isDark
                                       ? 'text-zinc-500 hover:text-zinc-300'
                                       : 'text-zinc-500 hover:text-zinc-700'
                               }`
                     }`}
                 >
-                    {item.label}
+                    {activeSection === item.id && !item.isAction && (
+                        <motion.span
+                            layoutId={shouldUseCompactNav ? 'compact-nav-item-active' : 'nav-item-active'}
+                            transition={NAV_SPRING}
+                            className={`absolute inset-0 rounded-lg ${
+                                isDark ? 'bg-zinc-800' : 'bg-zinc-200'
+                            }`}
+                        />
+                    )}
+                    <span className="relative z-10">{item.label}</span>
                 </motion.button>
             ))}
         </motion.div>
@@ -521,7 +540,7 @@ const SimplifiedResume = () => {
             layout
             transition={NAV_SPRING}
             className={`flex ${
-                isNavCompact
+                shouldUseCompactNav
                     ? `w-full mt-2 pt-2 border-t ${divider} items-center justify-between`
                     : 'items-center gap-2 md:gap-3'
             }`}
@@ -558,7 +577,7 @@ const SimplifiedResume = () => {
                 </span>
             </button>
 
-            {!isNavCompact && (
+            {!shouldUseCompactNav && (
                 <a
                     href="/"
                     className={`hidden md:flex items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors ${
@@ -1253,7 +1272,6 @@ Hardik Gupta                                        </motion.h1>
 )}
                 </AnimatePresence>
             </div>
-        </ThemeContext.Provider>
     );
 };
 

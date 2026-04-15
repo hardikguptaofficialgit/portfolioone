@@ -1,66 +1,81 @@
 import React from 'react';
-import { Files, Interfaces } from 'doodle-icons';
+import { Files } from 'doodle-icons';
 import { useDesktopStore } from '@/store/desktopStore';
 import { cn } from '@/lib/utils';
 
 export const DevToWidget = () => {
-    const { openOrFocusWindow, settings } = useDesktopStore();
+  const { openOrFocusWindow, settings } = useDesktopStore();
 
-    const handleClick = () => {
-        openOrFocusWindow({
-            title: 'DEV.to Articles',
-            icon: 'FileText',
-            appId: 'devto',
-            content: 'devto',
-            width: 900,
-            height: 700,
-            x: 100,
-            y: 50,
-        });
-    };
+  const handleClick = () => {
+    openOrFocusWindow({
+      title: 'My Blog',
+      icon: 'FileText',
+      appId: 'devto',
+      content: 'devto',
+      width: 900,
+      height: 700,
+      x: 100,
+      y: 50,
+    });
+  };
 
-    return (
+  return (
+    <div
+      onClick={handleClick}
+      className={cn(
+        "w-64 p-5 rounded-xl cursor-pointer",
+        settings.darkMode
+          ? "bg-zinc-900"
+          : "bg-[#fffddb]"
+      )}
+    >
+      {/* Top */}
+      <div className="flex items-center justify-between mb-4">
         <div
-            onClick={handleClick}
-            className={cn(
-                "group relative w-64 p-4 rounded-2xl backdrop-blur-md border cursor-pointer overflow-hidden",
-                settings.darkMode
-                    ? "bg-black/40 border-white/10"
-                    : "bg-white/40 border-black/5"
-            )}
+          className={cn(
+            "p-2 rounded-md",
+            settings.darkMode
+              ? "bg-zinc-800 text-zinc-300"
+              : "bg-[#d0fffe] text-[#1f1a17]"
+          )}
         >
-            <div className="relative z-10 flex items-start justify-between mb-3">
-                <div className={cn(
-                    "p-2 rounded-xl",
-                    settings.darkMode ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"
-                )}>
-                    <Files.FileText width={20} height={20} fill="currentColor" />
-                </div>
-                <Interfaces.Link width={16} height={16} fill="currentColor" className="text-zinc-500 transition-colors" />
-            </div>
-
-            <div className="relative z-10">
-                <h3 className={cn(
-                    "text-lg font-bold mb-1",
-                    settings.darkMode ? "text-white" : "text-zinc-900"
-                )}>
-                    Dev Articles
-                </h3>
-                <p className={cn(
-                    "text-xs line-clamp-2",
-                    settings.darkMode ? "text-zinc-400" : "text-zinc-600"
-                )}>
-                    Latest tutorials, guides, and technical insights from DEV Community.
-                </p>
-            </div>
-
-            {/* Latest Post Indicator */}
-            <div className="relative z-10 mt-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
-                    New Posts Available
-                </span>
-            </div>
+          <Files.FileText width={18} height={18} fill="currentColor" />
         </div>
-    );
+      </div>
+
+      {/* Content */}
+      <div className="space-y-1">
+        <h3
+          className={cn(
+            "text-base font-semibold",
+            settings.darkMode ? "text-white" : "text-[#1f1a17]"
+          )}
+        >
+          My Blog
+        </h3>
+
+        <p
+          className={cn(
+            "text-sm leading-snug line-clamp-2",
+            settings.darkMode ? "text-zinc-400" : "text-[#5c554b]"
+          )}
+        >
+          Thoughts, deep dives, and things I learn while building.
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-4 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+        <span
+          className={cn(
+            "text-[10px] uppercase tracking-wider",
+            settings.darkMode ? "text-zinc-500" : "text-[#6b5c4f]"
+          )}
+        >
+          Updated regularly
+        </span>
+      </div>
+    </div>
+  );
 };

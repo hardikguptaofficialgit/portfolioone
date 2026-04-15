@@ -279,7 +279,6 @@ export const BlogListPage = () => {
             className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
           >
             <div>
-              <p className={`text-[10px] uppercase tracking-[0.4em] font-mono mb-2 ${C.subtle}`}>Dev Journal</p>
               <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Blogs</h1>
               <p className={`mt-1.5 max-w-xl text-sm leading-relaxed ${C.muted}`}>
                 Thoughts, deep dives, and things I'm learning - documented.
