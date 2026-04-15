@@ -128,7 +128,16 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
       }
       return {
         alreadySubscribed: Boolean(payload?.alreadySubscribed),
-        message: typeof payload?.message === 'string' ? payload.message : 'Subscribed successfully.',
+        message: (() => {
+          const base =
+            typeof payload?.message === 'string'
+              ? payload.message
+              : 'Subscribed successfully.';
+          if (payload?.welcomeEmailSent === false) {
+            return `${base} Welcome email is pending and will be retried later.`;
+          }
+          return base;
+        })(),
       };
     } catch (error) {
       // Network failures during local dev: fallback to Supabase directly.

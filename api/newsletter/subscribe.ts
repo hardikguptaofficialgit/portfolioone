@@ -88,11 +88,22 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    await sendWelcomeNewsletter(email);
+    let welcomeEmailSent = true;
+    let welcomeEmailError: string | null = null;
+    try {
+      await sendWelcomeNewsletter(email);
+    } catch (mailError) {
+      // Do not fail subscription if mail provider/env is misconfigured.
+      welcomeEmailSent = false;
+      welcomeEmailError =
+        mailError instanceof Error ? mailError.message : 'Welcome email failed.';
+    }
 
     res.status(200).json({
       ok: true,
       alreadySubscribed: false,
+      welcomeEmailSent,
+      welcomeEmailError,
       message: existingRow ? 'Subscription re-activated successfully.' : 'Subscribed successfully.',
     });
   } catch (error) {
