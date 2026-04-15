@@ -105,6 +105,12 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
       throw new Error('Enter a valid email address.');
     }
 
+    if (import.meta.env.DEV) {
+      // Vite dev server doesn't serve Vercel `/api` routes, so avoid 404 noise.
+      await subscribeViaSupabaseFallback(normalized);
+      return { alreadySubscribed: false, message: 'Subscribed successfully.' };
+    }
+
     try {
       const response = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
@@ -112,10 +118,16 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
         body: JSON.stringify({ email: normalized }),
       });
 
-      if (response.status === 404) {
-        // Local Vite dev often doesn't serve Vercel API routes.
+      if (response.status === 404 || response.status >= 500) {
+        // If API route is unavailable or backend errors, fallback to direct Supabase insert.
         await subscribeViaSupabaseFallback(normalized);
-        return { alreadySubscribed: false, message: 'Subscribed successfully.' };
+        return {
+          alreadySubscribed: false,
+          message:
+            response.status >= 500
+              ? 'Subscribed successfully. Backend email may be delayed.'
+              : 'Subscribed successfully.',
+        };
       }
 
       const payload = await response.json().catch(() => ({}));
