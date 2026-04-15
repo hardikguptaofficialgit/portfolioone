@@ -1,10 +1,4 @@
 {
-    "crons": [
-        {
-            "path": "/api/newsletter/dispatch",
-            "schedule": "*/15 * * * *"
-        }
-    ],
     "rewrites": [
         {
             "source": "/api/:path*",
