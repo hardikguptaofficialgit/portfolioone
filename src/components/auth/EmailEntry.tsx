@@ -49,9 +49,10 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterMsg, setNewsletterMsg] = useState<{
     text: string;
-    type: 'success' | 'error';
+    type: 'success' | 'error' | 'info';
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [devLogoFailed, setDevLogoFailed] = useState(false);
   const followPopupTimerRef = useRef<number | null>(null);
   const T = isDark
     ? {
@@ -70,6 +71,7 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
         itemHover: 'hover:bg-zinc-900/80',
         themeToggle: 'border-zinc-700/80 bg-zinc-900/80 text-zinc-200 hover:bg-zinc-800',
         success: 'text-emerald-400',
+        info: 'text-zinc-300',
         error: 'text-rose-400',
       }
     : {
@@ -88,6 +90,7 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
         itemHover: 'hover:bg-[#f3f6fc]',
         themeToggle: 'border-[#c8d2e2] bg-white/80 text-[#1c2a3d] hover:bg-[#eef3fb]',
         success: 'text-emerald-600',
+        info: 'text-[#4b5563]',
         error: 'text-rose-600',
       };
 
@@ -95,7 +98,7 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
     updateSettings({ darkMode: !isDark });
   };
 
-  const subscribeToNewsletter = async (email: string) => {
+  const subscribeToNewsletter = async (email: string): Promise<{ alreadySubscribed: boolean; message: string }> => {
     const normalized = email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(normalized)) {
@@ -112,7 +115,7 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
       if (response.status === 404) {
         // Local Vite dev often doesn't serve Vercel API routes.
         await subscribeViaSupabaseFallback(normalized);
-        return true;
+        return { alreadySubscribed: false, message: 'Subscribed successfully.' };
       }
 
       const payload = await response.json().catch(() => ({}));
@@ -123,16 +126,18 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
             : 'Subscription failed.'
         );
       }
+      return {
+        alreadySubscribed: Boolean(payload?.alreadySubscribed),
+        message: typeof payload?.message === 'string' ? payload.message : 'Subscribed successfully.',
+      };
     } catch (error) {
       // Network failures during local dev: fallback to Supabase directly.
       if (error instanceof TypeError) {
         await subscribeViaSupabaseFallback(normalized);
-        return true;
+        return { alreadySubscribed: false, message: 'Subscribed successfully.' };
       }
       throw error;
     }
-
-    return true;
   };
 
   const handleNewsletterSubscribe = async () => {
@@ -143,12 +148,14 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
 
     setIsSubmitting(true);
     try {
-      await subscribeToNewsletter(newsletterEmail);
+      const result = await subscribeToNewsletter(newsletterEmail);
       setNewsletterMsg({
-        text: 'Subscribed successfully.',
-        type: 'success',
+        text: result.message,
+        type: result.alreadySubscribed ? 'info' : 'success',
       });
-      setNewsletterEmail('');
+      if (!result.alreadySubscribed) {
+        setNewsletterEmail('');
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -197,7 +204,7 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
           followPopupTimerRef.current = null;
         }
         setNewsletterMsg({
-          text: 'Thanks for my profile bro . You can continue here.',
+          text: 'Thanks for checking my DEV profile. You can continue here.',
           type: 'success',
         });
       }
@@ -256,14 +263,25 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
 
         {/* Top */}
         <div className="px-6 pt-8 pb-6 text-center flex flex-col items-center">
-          <div
-            aria-hidden
-            className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl border text-[10px] font-black tracking-[0.18em] ${
-              isDark ? 'border-zinc-700 bg-zinc-900 text-zinc-100' : 'border-[#c7d1df] bg-[#f3f6fb] text-[#1c2a3d]'
-            }`}
-          >
-            DEV
-          </div>
+          {!devLogoFailed ? (
+            <img
+              src="https://media2.dev.to/dynamic/image/quality=100/https://dev-to-uploads.s3.amazonaws.com/uploads/logos/resized_logo_UQww2soKuUsjaOGNB38o.png"
+              alt="DEV.to Logo"
+              className="w-12 h-12 mb-4 rounded-xl"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setDevLogoFailed(true)}
+            />
+          ) : (
+            <div
+              aria-hidden
+              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl border text-[10px] font-black tracking-[0.18em] ${
+                isDark ? 'border-zinc-700 bg-zinc-900 text-zinc-100' : 'border-[#c7d1df] bg-[#f3f6fb] text-[#1c2a3d]'
+              }`}
+            >
+              DEV
+            </div>
+          )}
 
           <h2 className={`text-lg font-semibold ${T.title}`}>
             Join the Community
@@ -300,6 +318,8 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
                 className={`text-xs text-left ${
                   newsletterMsg.type === 'success'
                     ? T.success
+                    : newsletterMsg.type === 'info'
+                    ? T.info
                     : T.error
                 }`}
               >

@@ -37,6 +37,33 @@ export default async function handler(req: any, res: any) {
     const supabase = getSupabaseAdminClient();
     const now = new Date().toISOString();
 
+    const { data: existingRow, error: existingError } = await supabase
+      .from('newsletter_subscribers')
+      .select('id,is_active')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingError) {
+      const raw = existingError.message || 'Failed to check existing subscriber.';
+      if (raw.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
+        res.status(500).json({
+          error: "Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.",
+        });
+        return;
+      }
+      res.status(500).json({ error: raw });
+      return;
+    }
+
+    if (existingRow?.is_active) {
+      res.status(200).json({
+        ok: true,
+        alreadySubscribed: true,
+        message: 'This email is already subscribed.',
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from('newsletter_subscribers')
       .upsert(
@@ -63,7 +90,11 @@ export default async function handler(req: any, res: any) {
 
     await sendWelcomeNewsletter(email);
 
-    res.status(200).json({ ok: true, message: 'Subscribed successfully.' });
+    res.status(200).json({
+      ok: true,
+      alreadySubscribed: false,
+      message: existingRow ? 'Subscription re-activated successfully.' : 'Subscribed successfully.',
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Subscription failed.';
     res.status(500).json({ error: message });

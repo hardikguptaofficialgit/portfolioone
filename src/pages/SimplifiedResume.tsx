@@ -438,7 +438,7 @@ const SimplifiedResume = () => {
 
              {/* ══════════ NAV ══════════ */}
 <motion.nav
-    layout
+    layout={isDesktopView}
     transition={NAV_SPRING}
     className={`fixed z-50 ${
         shouldUseCompactNav ? 'top-6 left-2' : 'top-3 left-0 right-0 px-3 md:px-6'
@@ -629,43 +629,49 @@ const SimplifiedResume = () => {
     </div>
 
     {/* MOBILE DROPDOWN */}
-    {isMobileNavOpen && (
-        <div
-            className={`lg:hidden overflow-hidden border mt-2 mx-3 rounded-xl ${
-                isDark
-                    ? 'border-zinc-800 bg-black'
-                    : 'border-[#e6d8cb] bg-[#fffef9]'
-            } px-4 pb-4 pt-3`}
-        >
-            <div className="grid grid-cols-2 gap-2">
-                {navItems.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => {
-                            if (item.id === 'contact') {
-                                window.location.href =
-                                    'mailto:hardikgupta8792@gmail.com';
-                            } else {
-                                scrollTo(item.id);
-                            }
-                            setIsMobileNavOpen(false);
-                        }}
-                        className={`px-3 py-2.5 text-xs font-semibold tracking-wide uppercase rounded-lg border transition-colors ${
-                            activeSection === item.id && !item.isAction
-                                ? isDark
-                                    ? 'text-zinc-100 bg-zinc-800 border-zinc-700'
-                                    : 'text-zinc-900 bg-zinc-200 border-zinc-300'
-                                : isDark
-                                ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900'
-                                : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
-                        }`}
-                    >
-                        {item.label}
-                    </button>
-                ))}
-            </div>
-        </div>
-    )}
+    <AnimatePresence initial={false}>
+        {isMobileNavOpen && (
+            <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.985 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.985 }}
+                transition={{ duration: 0.18, ease: EASE_SMOOTH }}
+                className={`lg:hidden overflow-hidden border mt-2 mx-3 rounded-xl ${
+                    isDark
+                        ? 'border-zinc-800 bg-black'
+                        : 'border-[#e6d8cb] bg-[#fffef9]'
+                } px-4 pb-4 pt-3`}
+            >
+                <div className="grid grid-cols-2 gap-2">
+                    {navItems.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                if (item.id === 'contact') {
+                                    window.location.href =
+                                        'mailto:hardikgupta8792@gmail.com';
+                                } else {
+                                    scrollTo(item.id);
+                                }
+                                setIsMobileNavOpen(false);
+                            }}
+                            className={`px-3 py-2.5 text-xs font-semibold tracking-wide uppercase rounded-lg border transition-colors ${
+                                activeSection === item.id && !item.isAction
+                                    ? isDark
+                                        ? 'text-zinc-100 bg-zinc-800 border-zinc-700'
+                                        : 'text-zinc-900 bg-zinc-200 border-zinc-300'
+                                    : isDark
+                                    ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900'
+                                    : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
+                            }`}
+                        >
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
+            </motion.div>
+        )}
+    </AnimatePresence>
 </motion.nav>
 
                 {/* ══════════ BODY ══════════ */}
