@@ -72,6 +72,16 @@ const normalizeTagList = (value: unknown): string[] => {
   return [];
 };
 
+export const normalizeDevToMarkdown = (value: string) => {
+  if (!value) return '';
+
+  return value
+    .replace(/\r\n/g, '\n')
+    .replace(/\{\%\s*embed\s+(https?:\/\/[^%\s]+)\s*\%\}/gi, '\n\n[$1]($1)\n\n')
+    .replace(/\{\%\s*youtube\s+([^\s%]+)\s*\%\}/gi, '\n\n[YouTube video](https://www.youtube.com/watch?v=$1)\n\n')
+    .replace(/\{\%\s*agent_session\s+([^\s%]+)\s*\%\}/gi, '\n\n> Agent session: $1\n\n');
+};
+
 const parseDevToError = async (response: Response) => {
   const fallback = `DEV.to request failed (${response.status})`;
 
@@ -200,7 +210,7 @@ export const postToDevTo = async (data: DevToPostData) => {
         article: {
           title: data.title,
           published: data.published ?? false,
-          body_markdown: data.content,
+          body_markdown: normalizeDevToMarkdown(data.content),
           tags: data.tags || [],
           description: data.excerpt,
           main_image: data.featuredImage,
@@ -388,7 +398,7 @@ export const updateDevToArticle = async (articleId: number, data: Partial<DevToP
         article: {
           title: data.title,
           published: data.published,
-          body_markdown: data.content,
+          body_markdown: normalizeDevToMarkdown(data.content ?? ''),
           tags: data.tags,
           description: data.excerpt,
           main_image: data.featuredImage,
