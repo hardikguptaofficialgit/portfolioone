@@ -1,10 +1,5 @@
 import { loadEnv } from 'vite';
-import {
-  handlePortfolioIndex,
-  handlePortfolioProjectById,
-  handlePortfolioProjects,
-  handlePortfolioSchema,
-} from './portfolio-handlers';
+import { routePortfolioRequestSafe } from './portfolio-router';
 
 const sendJson = (res: any, status: number, payload: unknown) => {
   res.statusCode = status;
@@ -12,19 +7,10 @@ const sendJson = (res: any, status: number, payload: unknown) => {
   res.end(JSON.stringify(payload));
 };
 
-const wrapHandler = (handler: (req: any, res: any, id?: string) => Promise<void>) => {
-  return async (req: any, res: any, id?: string) => {
-    const mockRes = {
-      status(code: number) {
-        res.statusCode = code;
-        return this;
-      },
-      json(body: unknown) {
-        sendJson(res, res.statusCode || 200, body);
-      },
-    };
-    await handler(req, mockRes, id);
-  };
+const toPathParam = (pathname: string): string | string[] | undefined => {
+  const sub = pathname.replace(/^\/api\/portfolio\/?/, '');
+  if (!sub) return undefined;
+  return sub.split('/').filter(Boolean);
 };
 
 export const portfolioLocalApiPlugin = (mode: string) => {
@@ -69,28 +55,18 @@ export const portfolioLocalApiPlugin = (mode: string) => {
         }
       }
 
+      const mockRes = {
+        status(code: number) {
+          res.statusCode = code;
+          return this;
+        },
+        json(body: unknown) {
+          sendJson(res, res.statusCode || 200, body);
+        },
+      };
+
       try {
-        if (pathname === '/api/portfolio/schema') {
-          await wrapHandler(handlePortfolioSchema)(mockReq, res);
-          return;
-        }
-        if (pathname === '/api/portfolio/projects') {
-          await wrapHandler(handlePortfolioProjects)(mockReq, res);
-          return;
-        }
-        const projectMatch = pathname.match(/^\/api\/portfolio\/projects\/([^/]+)$/);
-        if (projectMatch) {
-          await wrapHandler((r, rr) => handlePortfolioProjectById(r, rr, decodeURIComponent(projectMatch[1])))(
-            mockReq,
-            res
-          );
-          return;
-        }
-        if (pathname === '/api/portfolio') {
-          await wrapHandler(handlePortfolioIndex)(mockReq, res);
-          return;
-        }
-        sendJson(res, 404, { error: 'Not found.' });
+        await routePortfolioRequestSafe(mockReq, mockRes, toPathParam(pathname));
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Portfolio API error';
         sendJson(res, 500, { error: message });

@@ -10,8 +10,8 @@
     }
   ],
   "functions": {
-    "api/**/*.ts": {
-      "includeFiles": "api/_lib/portfolio.seed.json,content/portfolio.json"
+    "api/portfolio/[[...path]].ts": {
+      "includeFiles": "api/_lib/**"
     }
   }
 }
