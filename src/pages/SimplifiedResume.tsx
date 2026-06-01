@@ -797,7 +797,7 @@ Hardik Gupta                                        </motion.h1>
 
     <div className="space-y-6">
 
-      {techCategories.map((cat, ci) => (
+      {skillCategories.map((cat, ci) => (
         <motion.div
           key={cat.label}
           initial={{ opacity: 0, y: 12 }}

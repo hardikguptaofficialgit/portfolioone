@@ -1,6 +1,5 @@
-import { projectSchema } from '../../src/content/schema';
-import { slugify } from '../../src/content/schema';
-import type { Project } from '../../src/content/types';
+import { projectSchema, slugify } from '../../lib/portfolio/schema';
+import type { Project } from '../../lib/portfolio/types';
 import { assertPortfolioAuth } from './portfolio-auth';
 import {
   deleteProjectById,

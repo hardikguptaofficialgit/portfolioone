@@ -1,9 +1,9 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { getSupabaseAdminClient } from './newsletter';
-import { portfolioDocumentSchema } from '../../src/content/schema';
-import type { PortfolioDocument, PortfolioPatch, Project } from '../../src/content/types';
-import { defaultPortfolio } from '../../src/content/defaults';
+import { portfolioDocumentSchema } from '../../lib/portfolio/schema';
+import type { PortfolioDocument, PortfolioPatch, Project } from '../../lib/portfolio/types';
+import { defaultPortfolio } from '../../lib/portfolio/defaults';
 
 const CONTENT_ID = 'main';
 const TABLE = 'portfolio_content';
