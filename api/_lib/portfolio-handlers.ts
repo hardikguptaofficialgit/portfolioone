@@ -1,6 +1,7 @@
-import { projectSchema, slugify } from '../../lib/portfolio/schema';
-import type { Project } from '../../lib/portfolio/types';
 import { assertPortfolioAuth } from './portfolio-auth';
+import { projectSchema, slugify } from './portfolio-schema';
+import type { Project } from './portfolio-schema';
+import { loadPortfolioSeed } from './portfolio-seed';
 import {
   deleteProjectById,
   getPortfolio,
@@ -27,8 +28,17 @@ const methodNotAllowed = (res: Res) => res.status(405).json({ error: 'Method not
 export const handlePortfolioIndex = async (req: Req, res: Res) => {
   try {
     if (req.method === 'GET') {
-      const { doc, meta } = await getPortfolio();
-      return res.status(200).json({ ok: true, data: doc, meta });
+      try {
+        const { doc, meta } = await getPortfolio();
+        return res.status(200).json({ ok: true, data: doc, meta });
+      } catch (error) {
+        console.error('[portfolio] GET failed, serving seed:', error);
+        return res.status(200).json({
+          ok: true,
+          data: loadPortfolioSeed(),
+          meta: { source: 'seed', writable: false, degraded: true },
+        });
+      }
     }
 
     if (req.method === 'PATCH') {

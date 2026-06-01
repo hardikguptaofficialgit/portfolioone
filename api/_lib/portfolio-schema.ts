@@ -119,3 +119,7 @@ export const slugify = (value: string) =>
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+export type PortfolioDocument = z.infer<typeof portfolioDocumentSchema>;
+export type PortfolioPatch = Partial<Omit<PortfolioDocument, 'version' | 'updatedAt'>> & { version?: number };
+export type Project = z.infer<typeof projectSchema>;

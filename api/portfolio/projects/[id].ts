@@ -1,5 +1,7 @@
 import { handlePortfolioProjectById } from '../../_lib/portfolio-handlers';
 
+export const config = { runtime: 'nodejs' };
+
 export default async function handler(req: any, res: any) {
   const id = String(req.query?.id || '');
   if (!id) {
