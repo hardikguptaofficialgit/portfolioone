@@ -11,7 +11,7 @@
   ],
   "functions": {
     "api/**/*.ts": {
-      "includeFiles": "content/portfolio.json"
+      "includeFiles": "api/_lib/portfolio.seed.json,content/portfolio.json"
     }
   }
 }

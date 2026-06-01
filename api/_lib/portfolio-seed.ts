@@ -3,8 +3,8 @@ import { join } from 'path';
 import { portfolioDocumentSchema, type PortfolioDocument } from './portfolio-schema';
 
 const seedPaths = () => [
+  join(process.cwd(), 'api', '_lib', 'portfolio.seed.json'),
   join(process.cwd(), 'content', 'portfolio.json'),
-  join(process.cwd(), '..', 'content', 'portfolio.json'),
 ];
 
 let cachedSeed: PortfolioDocument | null = null;

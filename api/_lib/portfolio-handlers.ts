@@ -60,13 +60,24 @@ export const handlePortfolioIndex = async (req: Req, res: Res) => {
 
 export const handlePortfolioProjects = async (req: Req, res: Res) => {
   try {
-    const { doc, meta } = await getPortfolio();
-
     if (req.method === 'GET') {
-      const activeOnly = req.query?.active !== 'false';
-      const projects = activeOnly ? doc.projects.filter((p) => !p.archived) : doc.projects;
-      return res.status(200).json({ ok: true, data: projects, meta });
+      try {
+        const { doc, meta } = await getPortfolio();
+        const activeOnly = req.query?.active !== 'false';
+        const projects = activeOnly ? doc.projects.filter((p) => !p.archived) : doc.projects;
+        return res.status(200).json({ ok: true, data: projects, meta });
+      } catch (error) {
+        console.error('[portfolio] projects GET failed, serving seed:', error);
+        const projects = loadPortfolioSeed().projects.filter((p) => !p.archived);
+        return res.status(200).json({
+          ok: true,
+          data: projects,
+          meta: { source: 'seed', writable: false, degraded: true },
+        });
+      }
     }
+
+    const { doc } = await getPortfolio();
 
     if (req.method === 'POST') {
       assertPortfolioAuth(req);

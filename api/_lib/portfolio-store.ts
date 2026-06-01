@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { getSupabaseAdminClient } from './newsletter';
+import { getSupabaseAdminClient } from './supabase-admin';
 import {
   portfolioDocumentSchema,
   type PortfolioDocument,
