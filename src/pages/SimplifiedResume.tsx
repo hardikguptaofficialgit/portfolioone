@@ -12,6 +12,8 @@ import { format } from 'date-fns';
 import photosData from '@/data/photos.json';
 import { DevToArticle, fetchDevToArticles } from '@/lib/devto';
 import { useDesktopStore } from '@/store/desktopStore';
+import { usePortfolio } from '@/hooks/usePortfolio';
+import type { Project } from '@/content/types';
 
 /* ─── Theme Context ──────────────────────────────────────────── */
 type Theme = 'dark' | 'light';
@@ -138,37 +140,7 @@ const calcDuration = (start: string, end?: string) => {
     return `${yrs} yr${yrs > 1 ? 's' : ''} ${mos} mo${mos > 1 ? 's' : ''}`;
 };
 
-/* ─── static data ──────────────────────────────────────────── */
-const techCategories = [
-    { label: 'Languages', items: ['TypeScript', 'JavaScript', 'C++', 'C', 'Dart', 'PHP'] },
-    { label: 'Frontend', items: ['React.js', 'Next.js', 'Flutter', 'Tailwind CSS', 'HTML5', 'CSS3', 'PWA'] },
-    { label: 'Backend', items: ['Node.js', 'Express.js', 'REST APIs', 'WebSockets', 'Socket.IO', 'Redis'] },
-    { label: 'AI / ML', items: ['OpenAI', 'Anthropic', 'Gemini', 'Llama', 'RAG', 'Prompt Engineering', 'TensorFlow'] },
-    { label: 'DB & DevOps', items: ['Firebase', 'PostgreSQL', 'Docker', 'Vercel', 'Render', 'PostHog', 'MCP Servers'] },
-];
-
-const projects = [
-    { id: 1, name: 'Linkit', tag: 'SaaS · 2025–Present', description: 'Linktree/Beacons-style link-in-bio platform serving 200+ creators. Drag-and-drop bio builder, real-time analytics, Cashfree payments, no-code form builder, and Linkit Studio - an AI creative suite for motion videos and slides.', tech: ['React.js', 'TypeScript', 'Firebase', 'Node.js', 'Cashfree'], liveUrl: 'https://linkitapp.in', githubUrl: '#', img: 'https://linkitapp.in/v1.png' },
-    { id: 2, name: 'NuviBrainz', tag: 'EdTech · 2024–Present', description: 'AI-powered JEE exam prep platform with adaptive quizzes, personalised learning paths, and multi-LLM content generation across OpenAI, Gemini, and Llama.', tech: ['React.js', 'Node.js', 'Firebase', 'OpenAI', 'Gemini'], liveUrl: 'https://nuvibrainz.in', githubUrl: '#', img: 'https://res.cloudinary.com/ddx6avza4/image/upload/v1744129312/n_rz5riq.png' },
-    { id: 3, name: 'C25Go', tag: 'PWA · 2025', description: "Indoor campus navigation PWA used by 15,000+ students. Shortest-path routing via Dijkstra's, offline-first architecture, and admin tooling for node/edge management.", tech: ['React.js', 'TypeScript', 'PWA', "Dijkstra's", 'Vercel'], liveUrl: 'https://campus25fed.vercel.app', githubUrl: 'https://github.com/hardikguptaofficialgit', img: null },
-    { id: 4, name: 'Pigglu Khelega', tag: 'Multiplayer · 2025', description: 'Real-time multiplayer game with sub-100ms state sync across concurrent players using Socket.IO and Redis Pub/Sub.', tech: ['Node.js', 'Socket.IO', 'Redis', 'React.js', 'TypeScript'], liveUrl: '#', githubUrl: 'https://github.com/hardikguptaofficialgit', img: 'https://i.imgur.com/vzPtssA.png' },
-    { id: 5, name: 'OpenSource Hire', tag: 'Dev Tool · 2025', description: 'Developer discovery engine surfacing engineering talent from open-source contribution signals via the GitHub API - replacing traditional resume screening.', tech: ['React.js', 'GitHub API', 'TypeScript', 'Vercel'], liveUrl: 'https://opensourcehire.vercel.app', githubUrl: 'https://github.com/hardikguptaofficialgit', img: 'https://opensourcehire.vercel.app/assets/logo-M4ZsasB2.png' },
-    { id: 6, name: 'Velocity Transit', tag: 'Flutter · 2025', description: 'Multi-role Flutter transit app with real-time GPS tracking, live bus discovery, road-snapped route visualisation, and Socket.IO + Redis operations infrastructure.', tech: ['Flutter', 'Dart', 'Socket.IO', 'Redis', 'Google Maps'], liveUrl: '#', githubUrl: 'https://github.com/hardikguptaofficialgit', img: 'https://github.com/hardikguptaofficialgit/velocitytransit/blob/main/velocitytransitdark.png?raw=true' },
-];
-
-const achievements = [
-{
-  title: 'YC Hackathon',
-  detail: 'Selected from 2,000+ global applicants by showcasing an app idea that helps users find nearby people to go out to places together.',
-  badge: 'Top Applicant'
-},
-    { title: 'GDG Hackathon - Building Bad', detail: 'Winner. Demonstrated end-to-end product execution and cross-team collaboration.', badge: 'Winner' },
-{
-  title: 'Growth Hackathon at The Residency',
-  detail: 'Pitched LinkitApp.in during the Growth Hackathon in Bangalore at The Residency, generating leads from nearby restaurants, cafés, and local businesses.',
-  badge: 'Participant'
-}];
-
+/* ─── achievement icons (static assets) ───────────────────── */
 const achievementIconSrc = {
     yc: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHZEuWg1DSjG7W9DQ1Yl4ti8wj4I2DlGjZvg&s',
     gdg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx1ifvMfrD9VzaphHBYLhM6wUV-YHR0g28Ow&s',
@@ -197,8 +169,15 @@ const navItems = [
 /* ═══════════════════════════════════════════════════════════ */
 /*  MAIN COMPONENT                                             */
 /* ═══════════════════════════════════════════════════════════ */
+type ResumeProject = Project & { img?: string | null };
+
 const SimplifiedResume = () => {
     const { settings, updateSettings } = useDesktopStore();
+    const { profile, projects, skillCategories, achievements, simplifiedExperience } = usePortfolio();
+    const resumeProjects: ResumeProject[] = projects.map((p) => ({
+        ...p,
+        img: p.imageUrl ?? null,
+    }));
     const [activeSection, setActiveSection] = useState('resume');
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
@@ -209,8 +188,8 @@ const SimplifiedResume = () => {
     const [popularArticles, setPopularArticles] = useState<DevToArticle[]>([]);
     const [blogLoading, setBlogLoading] = useState(true);
     const [blogError, setBlogError] = useState<string | null>(null);
-    const [previewErrors, setPreviewErrors] = useState<Record<number, boolean>>({});
-    const [selectedProject, setSelectedProject] = useState<(typeof projects)[number] | null>(null);
+    const [previewErrors, setPreviewErrors] = useState<Record<string, boolean>>({});
+    const [selectedProject, setSelectedProject] = useState<ResumeProject | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<typeof photosData[0] | null>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [projectControlsCollapsed, setProjectControlsCollapsed] = useState(false);
@@ -250,7 +229,7 @@ const SimplifiedResume = () => {
     }, []);
 
     useEffect(() => {
-        fetch('https://api.github.com/users/hardikguptaofficialgit/repos?per_page=100')
+        fetch(`https://api.github.com/users/${profile.githubUsername || 'hardikguptaofficialgit'}/repos?per_page=100`)
             .then(r => r.json())
             .then(d => Array.isArray(d) && setRepos(d))
             .catch(() => {});
@@ -760,7 +739,7 @@ Hardik Gupta                                        </motion.h1>
                                 <div className="space-y-4">
                                     <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Summary</SectionLabel>
                                     <p className={`text-base ${mutedText} leading-relaxed max-w-3xl`}>
-                                        Full-stack engineer and SaaS founder with 2+ years of hands-on experience building and shipping production-grade web applications, AI-integrated platforms, and real-time systems. Adept at owning features end-to-end across fast-paced, collaborative environments.{' '}
+                                        {profile.summary || profile.title}{' '}
                                         <span className={isDark ? 'text-zinc-200' : 'text-zinc-800'}>Selected for YC Hackathon (top applicants globally); GDG Hackathon winner.</span>
                                     </p>
                                 </div>
@@ -771,13 +750,33 @@ Hardik Gupta                                        </motion.h1>
                                 <div className="space-y-5">
                                     <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Experience</SectionLabel>
                                     <div className="space-y-4">
-                                        {[
-                                            { org: 'NextRound Private Limited', url: 'https://nextround.tech', totalDuration: 'Jun 2025 – Aug 2025', badge: 'Internship · Remote', bullets: ['Delivered 10+ production features used by thousands of active users in agile sprint cycles.', 'Engineered a cross-platform Chrome extension for real-time meeting transcription across Zoom, Google Meet, and Teams.', 'Integrated event-driven APIs for real-time frontend updates, measurably reducing API latency.', 'Participated in code reviews, sprint retrospectives, and iterative delivery cycles.'] },
-                                            { org: 'GeeksforGeeks KIIT Chapter', url: 'https://gfgkiit.in', totalDuration: `Feb 2025 – Present · ${calcDuration('2025-02-01')}`, badge: 'Part-time · On-site', bullets: ['Designed, built, and maintained a student-facing platform serving hundreds of users.', 'Shipped iterative feature improvements through continuous feedback cycles.'] },
-                                            { org: 'FED, KIIT', url: 'https://fedkiit.com', totalDuration: `Nov 2024 – Present · ${calcDuration('2024-11-01')}`, badge: 'Part-time · On-site', roles: [{ title: 'Senior Technical Executive', period: 'Jan 2026 – Present', duration: calcDuration('2026-01-01'), location: 'Bhubaneswar' }, { title: 'Technical Executive', period: 'Nov 2024 – Jan 2026', duration: '1 yr 3 mos', location: 'Bhubaneswar' }], bullets: ['Built internal tooling for large-scale event coordination for a 500+ member student organisation.', 'Coordinated cross-functional peer teams to define requirements and ship systems on schedule.'] },
-                                        ].map((exp, i) => (
-                                            <StaggerItem key={exp.org} index={i}>
-                                                <ExpCard isDark={isDark} cardBg={cardBg} divider={divider} mutedText={mutedText} subtleText={subtleText} {...exp} />
+                                        {simplifiedExperience.map((exp, i) => (
+                                            <StaggerItem key={exp.id} index={i}>
+                                                <ExpCard
+                                                    isDark={isDark}
+                                                    cardBg={cardBg}
+                                                    divider={divider}
+                                                    mutedText={mutedText}
+                                                    subtleText={subtleText}
+                                                    org={exp.org}
+                                                    url={exp.url}
+                                                    totalDuration={
+                                                        exp.id === 'gfg-kiit-chapter'
+                                                            ? `${exp.totalDuration} · ${calcDuration('2025-02-01')}`
+                                                            : exp.id === 'fed-kiit-org'
+                                                              ? `${exp.totalDuration} · ${calcDuration('2024-11-01')}`
+                                                              : exp.totalDuration
+                                                    }
+                                                    badge={exp.badge}
+                                                    bullets={exp.bullets}
+                                                    roles={
+                                                        exp.roles?.map((r) =>
+                                                            r.duration === 'ongoing'
+                                                                ? { ...r, duration: calcDuration('2026-01-01') }
+                                                                : r
+                                                        )
+                                                    }
+                                                />
                                             </StaggerItem>
                                         ))}
                                     </div>
@@ -882,7 +881,7 @@ Hardik Gupta                                        </motion.h1>
                                     <span className={`text-xs ${subtleText} uppercase tracking-widest`}>Selected Works</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {projects.map((p, i) => (
+                                    {resumeProjects.map((p, i) => (
                                         <StaggerItem key={p.id} index={i}>
                                             <ProjectCard
                                                 project={p} isDark={isDark} cardBg={cardBg} divider={divider}
@@ -1331,10 +1330,10 @@ const ExpCard = ({ org, url, totalDuration, badge, roles, bullets, isDark, cardB
 );
 
 interface ProjectCardProps {
-    project: typeof projects[0];
+    project: ResumeProject;
     isDark: boolean; cardBg: string; divider: string; mutedText: string; subtleText: string; tagBg: string;
-    onPreview: (p: typeof projects[0]) => void;
-    onImgError: (id: number) => void;
+    onPreview: (p: ResumeProject) => void;
+    onImgError: (id: string) => void;
     imgError: boolean;
 }
 const ProjectCard = memo(({ project: p, isDark, cardBg, divider, mutedText, subtleText, onPreview, onImgError, imgError }: ProjectCardProps) => {

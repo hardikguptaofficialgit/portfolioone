@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { portfolioLocalApiPlugin } from "./api/_lib/portfolio-vite-plugin";
 
 const readJsonBody = async (req: any) => {
   const chunks: Buffer[] = [];
@@ -256,7 +257,7 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 8080,
     },
-    plugins: [react(), devToLocalPublishPlugin(mode)],
+    plugins: [react(), devToLocalPublishPlugin(mode), portfolioLocalApiPlugin(mode)],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

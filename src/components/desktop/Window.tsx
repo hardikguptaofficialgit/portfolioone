@@ -10,6 +10,9 @@ import { getIconComponent } from '@/utils/apps';
 import { DevToFeed } from '@/components/apps/DevToFeed';
 import { BlogApp } from '@/components/apps/BlogApp';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePortfolio } from '@/hooks/usePortfolio';
+import { ResumeExperienceSection } from '@/components/portfolio/ResumeExperienceSection';
+import type { Project } from '@/content/types';
 
 
 interface WindowProps {
@@ -287,280 +290,71 @@ const PortfolioContent = () => (
     </div>
   </div>
 );
-const ResumeContent = () => (
-  <div className="space-y-8 max-w-3xl mx-auto font-mono">
-    {/* HEADER */}
-    <header className="flex justify-between items-end border-b border-zinc-800 pb-6">
-      <div>
-        <h2 className="text-3xl font-bold text-white mb-1">Hardik Gupta</h2>
-        <p className="text-zinc-400">
-          Learner • Builder • Full Stack Developer
-        </p>
-        <p className="text-zinc-500 text-sm mt-1">
-          Jaipur, Rajasthan, India • strykerinside.vercel.app • hardikgupta8792@gmail.com
-        </p>
-      </div>
+const ResumeContent = () => {
+  const { profile, experience, skillsFlat, education } = usePortfolio();
+  const openUrl = (url: string) => window.open(url, '_blank', 'noopener,noreferrer');
 
-      <button
-        onClick={() =>
-          window.open(
-            "https://drive.google.com/file/d/16rDrv9O35qYxHeUxuSXyWWDpOUJH0aQZ/view?usp=drive_link",
-            "_blank",
-            "noopener,noreferrer"
-          )
-        }
-        className="px-4 py-1 bg-white  text-black font-bold text-sm hover:bg-zinc-200 transition-colors flex items-center gap-2"
-      >
-        Download PDF <ExternalLink size={14} />
-      </button>
-
-    </header>
-
-    {/* EXPERIENCE */}
-    <section className="space-y-6">
-      <h3 className="text-xl font-bold text-white uppercase tracking-widest border-b border-zinc-800 pb-2 w-max">
-        Experience
-      </h3>
-      {/* NuviBrainz */}
-      <div className="relative border-l border-zinc-800 pl-6 ml-2">
-        <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
-
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="text-lg font-bold text-white">Building - NuviBrainz</h4>
-          <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-            Aug 2024 - Present
-          </span>
-        </div>
-
-        <p
-          className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
-          onClick={() =>
-            window.open("https://nuvibrainz.in", "_blank", "noopener,noreferrer")
-          }
-        >
-          nuvibrainz.in
-        </p>
-
-        <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-          <li>Built an AI-powered JEE exam prep platform with smart revision tools.</li>
-          <li>Includes focus tracking, AI-generated questions, progress tracking, and chatbots.</li>
-        </ul>
-      </div>
-      <div className="space-y-6">
-        {/* Linkit */}
-        <div className="relative border-l border-zinc-800 pl-6 ml-2">
-          <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-white rounded-full border-4 border-black"></div>
-
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Full Stack Developer - Linkit</h4>
-            <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              June 2025 - Present
-            </span>
-          </div>
-
-          <p
-            className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
-            onClick={() =>
-              window.open("https://Linkitapp.in", "_blank", "noopener,noreferrer")
-            }
-          >
-            Linkitapp.in
+  return (
+    <div className="space-y-8 max-w-3xl mx-auto font-mono">
+      <header className="flex justify-between items-end border-b border-zinc-800 pb-6">
+        <div>
+          <h2 className="text-3xl font-bold text-white mb-1">{profile.name}</h2>
+          <p className="text-zinc-400">{profile.headline}</p>
+          <p className="text-zinc-500 text-sm mt-1">
+            {profile.location} • {profile.website.replace(/^https?:\/\//, '')} • {profile.email}
           </p>
-
-          <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-            <li>AI-powered link manager with smart suggestions.</li>
-            <li>Built personal AI chatbot and customizable collections.</li>
-            <li>Product gained 100+ users in the first 15 days.</li>
-          </ul>
         </div>
 
-        {/* NextRound AI */}
-        <div className="relative border-l border-zinc-800 pl-6 ml-2">
-          <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-white rounded-full border-4 border-black"></div>
+        {profile.resumePdfUrl ? (
+          <button
+            onClick={() => openUrl(profile.resumePdfUrl!)}
+            className="px-4 py-1 bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-colors flex items-center gap-2"
+          >
+            Download PDF <ExternalLink size={14} />
+          </button>
+        ) : null}
+      </header>
 
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Web Developer - NextRound AI</h4>
-            <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              June 2025 - Present
+      <ResumeExperienceSection items={experience} onOpenUrl={openUrl} />
+
+      <section className="space-y-4">
+        <h3 className="text-xl font-bold text-white uppercase tracking-widest border-b border-zinc-800 pb-2 w-max">
+          Tech Stack
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {skillsFlat.map((skill) => (
+            <span
+              key={skill}
+              className="px-3 py-1 border border-zinc-700 text-zinc-300 text-sm hover:bg-white hover:text-black transition-colors cursor-default"
+            >
+              {skill}
             </span>
-          </div>
-
-          <p
-            className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
-            onClick={() =>
-              window.open("https://nextround.tech/", "_blank", "noopener,noreferrer")
-            }
-          >
-            nextround.tech
-          </p>
-
-          <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-            <li>Building  an AI-powered Chrome extension for interview prep.</li>
-            <li>Implemented smart summaries, insights, and personalized suggestions.</li>
-          </ul>
+          ))}
         </div>
+      </section>
 
-        {/* AstroNuvi */}
-        <div className="relative border-l border-zinc-800 pl-6 ml-2">
-          <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-white rounded-full border-4 border-black"></div>
-
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Full Stack Developer - AstroNuvi</h4>
-            <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              Aug 2025 - Present
-            </span>
+      <section className="space-y-4">
+        <h3 className="text-xl font-bold text-white uppercase tracking-widest border-b border-zinc-800 pb-2 w-max">
+          Education
+        </h3>
+        {education.map((edu) => (
+          <div key={edu.id} className="text-zinc-300 text-sm space-y-1">
+            <p className="font-bold text-white">{edu.institution}</p>
+            <p>{edu.degree}</p>
+            <p>
+              {edu.startYear} – {edu.endYear}
+            </p>
           </div>
-
-          <p
-            className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
-            onClick={() =>
-              window.open("https://astronuvi.nuviverse.space", "_blank", "noopener,noreferrer")
-            }
-          >
-            astronuvi.nuviverse.space
-          </p>
-
-
-          <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-            <li>Built RatnAI model–powered astrology platform.</li>
-            <li>Serves 1,200+ users and generated 1,000+ kundlis.</li>
-            <li>Working with a 13-member team on product innovation.</li>
-          </ul>
-        </div>
-
-        {/* Freelancing */}
-        <div className="relative border-l border-zinc-800 pl-6 ml-2">
-          <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
-
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Freelance - Full Stack Developer</h4>
-            <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              June 2025 - Present
-            </span>
-          </div>
-
-          <p
-            className=" text-blue-300 text-sm mb-2 text-blue-200 hover:text-blue-500 transition-colors cursor-pointer"
-            onClick={() =>
-              window.open("https://socivo.vercel.app", "_blank", "noopener,noreferrer")
-            }
-          >
-            socivo.vercel.app
-          </p>
-
-          <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-            <li>Working with a London-based marketing agency (Socivo).</li>
-          </ul>
-        </div>
-
-        {/* FED KIIT */}
-        <div className="relative border-l border-zinc-800 pl-6 ml-2">
-          <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
-
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Senior Technical Executive - FED KIIT</h4>
-            <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              Nov 2024 - Present
-            </span>
-          </div>
-
-          <p
-            className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
-            onClick={() =>
-              window.open("https://fedkiit.com", "_blank", "noopener,noreferrer")
-            }
-          >
-            fedkiit.com
-          </p>
-
-          <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-            <li>Supporting technical events and managing web operations.</li>
-          </ul>
-        </div>
-
-        {/* GeeksForGeeks KIIT */}
-        <div className="relative border-l border-zinc-800 pl-6 ml-2">
-          <div className="absolute -left-1.5 top-1.5 w-3 h-3 bg-zinc-600 rounded-full border-4 border-black"></div>
-
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="text-lg font-bold text-white">Web Developer - GeeksForGeeks KIIT</h4>
-            <span className="text-sm text-zinc-500 bg-zinc-900 px-2 py-1">
-              Aug 2024 - Present
-            </span>
-          </div>
-
-          <p
-            className=" text-blue-300 text-sm mb-2   hover:text-blue-500 transition-colors cursor-pointer"
-            onClick={() =>
-              window.open("https://gfgkiit.in", "_blank", "noopener,noreferrer")
-            }
-          >
-            gfgkiit.in
-          </p>
-
-          <ul className="list-disc list-inside text-zinc-400 text-sm space-y-1">
-            <li>Managing website operations and support for technical events.</li>
-          </ul>
-        </div>
-
-
-      </div>
-    </section>
-
-    {/* TECH STACK */}
-    <section className="space-y-4">
-      <h3 className="text-xl font-bold text-white uppercase tracking-widest border-b border-zinc-800 pb-2 w-max">
-        Tech Stack
-      </h3>
-
-      <div className="flex flex-wrap gap-2">
-        {[
-          "ReactJS",
-          "Tailwind CSS",
-          "NodeJS",
-          "ExpressJS",
-          "Git",
-          "GitHub",
-          "Vercel",
-          "C",
-          "HTML",
-          "CSS",
-          "JavaScript",
-          "Firebase",
-          "TypeScript",
-          "PostHog",
-          "Render",
-          "Docker",
-          "Redis",
-        ].map((skill) => (
-          <span
-            key={skill}
-            className="px-3 py-1 border border-zinc-700 text-zinc-300 text-sm hover:bg-white hover:text-black transition-colors cursor-default"
-          >
-            {skill}
-          </span>
         ))}
-      </div>
-    </section>
-
-    {/* EDUCATION */}
-    <section className="space-y-4">
-      <h3 className="text-xl font-bold text-white uppercase tracking-widest border-b border-zinc-800 pb-2 w-max">
-        Education
-      </h3>
-
-      <div className="text-zinc-300 text-sm space-y-1">
-        <p className="font-bold text-white">Kalinga Institute of Industrial Technology</p>
-        <p>CSE - AI/ML</p>
-        <p>2024 – 2028</p>
-      </div>
-    </section>
-  </div>
-);
+      </section>
+    </div>
+  );
+};
 
 const ProjectsContent = () => {
   const { settings } = useDesktopStore();
-  const USERNAME = "hardikguptaofficialgit";
+  const { profile } = usePortfolio();
+  const USERNAME = profile.githubUsername || "hardikguptaofficialgit";
   const API_URL = `https://api.github.com/users/${USERNAME}/repos?per_page=100`;
 
   const [repos, setRepos] = React.useState<any[]>([]);
@@ -935,39 +729,14 @@ const SettingsContent = () => {
 
 const AboutContent = () => {
   const { settings } = useDesktopStore();
-
-  const contactLinks = [
-    {
-      name: 'GitHub',
-      iconName: 'Github',
-      url: 'https://github.com/hardikguptaofficialgit',
-      description: 'Check out my code'
-    },
-    {
-      name: 'LinkedIn',
-      iconName: 'Linkedin',
-      url: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/',
-      description: 'Connect professionally'
-    },
-    {
-      name: 'Instagram',
-      iconName: 'Instagram',
-      url: 'https://www.instagram.com/stryker.inside/',
-      description: 'Personal updates'
-    },
-    {
-      name: 'Twitter',
-      iconName: 'Twitter',
-      url: 'https://x.com/stryker_inside',
-      description: 'Thoughts & threads'
-    },
-    {
-      name: 'Linkit',
-      iconName: 'Link',
-      url: 'https://Linkitapp.in/harvix',
-      description: 'All my links'
-    }
-  ];
+  const { profile, socialLinks, sections } = usePortfolio();
+  const aboutIntro = sections.aboutIntro;
+  const contactLinks = socialLinks.map((link) => ({
+    name: link.name,
+    iconName: link.icon,
+    url: link.url,
+    description: link.description || '',
+  }));
 
   const MailIcon = getIconComponent('Mail', settings.iconStyle);
 
@@ -992,16 +761,16 @@ const AboutContent = () => {
           "text-3xl font-bold mb-2",
           settings.darkMode ? "text-white" : "text-zinc-900"
         )}>
-          Get in Touch
+          {aboutIntro?.title || 'Get in Touch'}
         </h2>
         <p className={cn(
           "text-lg",
           settings.darkMode ? "text-zinc-400" : "text-zinc-500"
         )}>
-          I'm always open to new opportunities and collaborations.
+          {aboutIntro?.subtitle || "I'm always open to new opportunities and collaborations."}
         </p>
         <a
-          href="mailto:hardikgupta8792@gmail.com"
+          href={`mailto:${profile.email}`}
           className={cn(
             "inline-block mt-4 px-6 py-2 rounded-full text-sm font-medium transition-colors",
             settings.darkMode
@@ -1402,11 +1171,12 @@ const CalendarContent = () => {
 
 const VSCodeContent = () => {
   const { settings } = useDesktopStore();
+  const { featuredProjects, sections } = usePortfolio();
   const GithubIcon = getIconComponent('Github', settings.iconStyle);
   const ExternalLinkIcon = getIconComponent('ExternalLink', settings.iconStyle);
-  const [selectedProjectPreview, setSelectedProjectPreview] = useState<any | null>(null);
+  const [selectedProjectPreview, setSelectedProjectPreview] = useState<Project | null>(null);
+  const vscodeIntro = sections.vscodeProjectsIntro;
 
-  // Theme Colors
   const themeMap: Record<string, any> = {
     blue: { text: 'text-blue-500', bg: 'bg-blue-500', border: 'border-blue-500', hoverText: 'hover:text-blue-500', hoverBg: 'hover:bg-blue-500' },
     purple: { text: 'text-purple-500', bg: 'bg-purple-500', border: 'border-purple-500', hoverText: 'hover:text-purple-500', hoverBg: 'hover:bg-purple-500' },
@@ -1416,121 +1186,12 @@ const VSCodeContent = () => {
     zinc: { text: 'text-zinc-500', bg: 'bg-zinc-500', border: 'border-zinc-500', hoverText: 'hover:text-zinc-500', hoverBg: 'hover:bg-zinc-500' },
   };
   const theme = themeMap[settings.themeColor] || themeMap.blue;
-  const projects = [
-    {
-      id: 1,
-      name: "NuviBrainz",
-      description:
-        "AI-driven JEE prep ecosystem with revision intelligence, analytics, and generative tools.",
-      tech: [
-        "ReactJS",
-        "Tailwind CSS",
-        "NodeJS",
-        "ExpressJS",
-        "Firebase",
-        "TypeScript",
-        "PostHog",
-        "Git",
-        "GitHub",
-        "Vercel"
-      ],
-      liveUrl: "https://nuvibrainz.in",
-      githubUrl: "#"
-    },
-    {
-      id: 2,
-      name: "Linkit",
-      description:
-        "AI-powered link manager with smart suggestions and personal AI chatbot.",
-      tech: [
-        "ReactJS",
-        "Tailwind CSS",
-        "TypeScript",
-        "NodeJS",
-        "ExpressJS",
-        "Firebase",
-        "Git",
-        "GitHub",
-        "Vercel"
-      ],
-      liveUrl: "https://Linkitapp.in",
-      githubUrl: "#"
-    },
-    {
-      id: 3,
-      name: "AstroNuvi",
-      description:
-        "RatnAI-powered astrology platform serving 1,200+ users with AI predictions.",
-      tech: [
-        "ReactJS",
-        "Tailwind CSS",
-        "NodeJS",
-        "ExpressJS",
-        "MongoDB",
-        "Git",
-        "GitHub",
-        "Render",
-        "TypeScript"
-      ],
-      liveUrl: "https://astronuvi.nuviverse.space",
-      githubUrl: "#"
-    },
-    {
-      id: 4,
-      name: "NextRound AI",
-      description:
-        "Interview-prep Chrome extension with smart summaries and insights.",
-      tech: [
-        "JavaScript",
-        "TypeScript",
-        "ReactJS",
-        "Tailwind CSS",
-        "Git",
-        "GitHub",
-        "Vercel"
-      ],
-      liveUrl: "https://nextround.tech",
-      githubUrl:
-        "https://github.com/hardikguptaofficialgit/nextround"
-    },
-    {
-      id: 5,
-      name: "Socivo Platform",
-      description:
-        "Freelancing and marketing platform for a London-based agency with analytics.",
-      tech: [
-        "Next.js",
-        "TypeScript",
-        "Tailwind CSS",
-        "PostgreSQL",
-        "Git",
-        "GitHub",
-        "Vercel",
-        "Render"
-      ],
-      liveUrl: "https://socivo.vercel.app",
-      githubUrl: "#"
-    },
-    {
-      id: 6,
-      name: "StrykerOS",
-      description:
-        "Windows 11-inspired portfolio website with a full desktop environment.",
-      tech: [
-        "ReactJS",
-        "TypeScript",
-        "Tailwind CSS",
-        "Framer Motion",
-        "Git",
-        "GitHub",
-        "Vercel"
-      ],
-      liveUrl: "https://strykerinside.vercel.app/",
-      githubUrl:
-        "https://github.com/hardikguptaofficialgit/portfolioone"
-    }
-  ];
+  const projects = featuredProjects;
 
+  const projectGradientIndex = (id: string) => {
+    const hash = id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return (hash % 6) + 1;
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -1542,7 +1203,7 @@ const VSCodeContent = () => {
           "text-2xl font-bold tracking-tight mb-1",
           settings.darkMode ? "text-white" : "text-zinc-900"
         )}>
-          Projects
+          {vscodeIntro?.title || 'Projects'}
         </h2>
         <p
           className={cn(
@@ -1550,7 +1211,8 @@ const VSCodeContent = () => {
             settings.darkMode ? "text-zinc-400" : "text-zinc-500"
           )}
         >
-          Selected works and experiments. some project github links are not shared as they are commercial projects.
+          {vscodeIntro?.subtitle ||
+            'Selected works and experiments. Some project GitHub links are not shared as they are commercial projects.'}
         </p>
 
       </div>
@@ -1574,12 +1236,12 @@ const VSCodeContent = () => {
               )}>
                 <div className={cn(
                   "absolute inset-0 bg-gradient-to-br",
-                  project.id === 1 && "from-fuchsia-500/30 via-rose-500/20 to-amber-500/20",
-                  project.id === 2 && "from-cyan-500/25 via-blue-500/15 to-emerald-500/20",
-                  project.id === 3 && "from-emerald-500/20 via-lime-500/10 to-cyan-500/20",
-                  project.id === 4 && "from-orange-500/20 via-red-500/15 to-yellow-500/15",
-                  project.id === 5 && "from-violet-500/25 via-indigo-500/15 to-sky-500/20",
-                  project.id === 6 && "from-sky-500/25 via-cyan-500/10 to-indigo-500/20"
+                  projectGradientIndex(project.id) === 1 && "from-fuchsia-500/30 via-rose-500/20 to-amber-500/20",
+                  projectGradientIndex(project.id) === 2 && "from-cyan-500/25 via-blue-500/15 to-emerald-500/20",
+                  projectGradientIndex(project.id) === 3 && "from-emerald-500/20 via-lime-500/10 to-cyan-500/20",
+                  projectGradientIndex(project.id) === 4 && "from-orange-500/20 via-red-500/15 to-yellow-500/15",
+                  projectGradientIndex(project.id) === 5 && "from-violet-500/25 via-indigo-500/15 to-sky-500/20",
+                  projectGradientIndex(project.id) === 6 && "from-sky-500/25 via-cyan-500/10 to-indigo-500/20"
                 )} />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_35%)]" />
                 <div className="absolute inset-0 flex flex-col justify-between p-4">

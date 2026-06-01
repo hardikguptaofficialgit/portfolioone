@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mcp:build": "npm run build --prefix packages/portfolio-mcp",
+    "mcp:dev": "npm run dev --prefix packages/portfolio-mcp"
   },
   "dependencies": {
     "@azure-rest/ai-inference": "^1.0.0-beta.6",
