@@ -5,6 +5,7 @@ This project is ready to deploy as a Vite static site with Cloudflare Pages Func
 ## Build Settings
 
 - Framework preset: `Vite`
+- Install command: `npm ci`
 - Build command: `npm run build`
 - Build output directory: `dist`
 - Functions directory: `functions`
