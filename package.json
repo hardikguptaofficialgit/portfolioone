@@ -11,6 +11,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "deploy:cloudflare": "npm run build && npx wrangler pages deploy dist --project-name portfolioone",
     "mcp:build": "npm run build --prefix packages/portfolio-mcp",
     "mcp:dev": "npm run dev --prefix packages/portfolio-mcp"
   },

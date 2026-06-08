@@ -84,7 +84,7 @@ export const Snake = ({ onBack }: SnakeProps) => {
             };
 
             // Prevent spawning on snake
-            for (let part of snake) {
+            for (const part of snake) {
                 if (part.x === food.x && part.y === food.y) {
                     spawnFood();
                     break;
@@ -107,7 +107,7 @@ export const Snake = ({ onBack }: SnakeProps) => {
             const head = { x: headX, y: headY };
 
             // Self collision
-            for (let part of snake) {
+            for (const part of snake) {
                 if (head.x === part.x && head.y === part.y) {
                     setGameState('gameover');
                     return;

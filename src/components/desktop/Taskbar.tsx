@@ -147,9 +147,11 @@ export const Taskbar = () => {
                     <button
                       onClick={() => {
                         if (existingWindow) {
-                          (activeWindowId === existingWindow.id && !existingWindow.isMinimized)
-                            ? minimizeWindow(existingWindow.id)
-                            : restoreWindow(existingWindow.id);
+                          if (activeWindowId === existingWindow.id && !existingWindow.isMinimized) {
+                            minimizeWindow(existingWindow.id);
+                          } else {
+                            restoreWindow(existingWindow.id);
+                          }
                         } else {
                           openOrFocusWindow({
                             title: app.name,
