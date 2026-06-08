@@ -1,4 +1,7 @@
 {
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -6,11 +9,11 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/"
+      "destination": "/index.html"
     }
   ],
   "functions": {
-    "api/portfolio/[[...path]].ts": {
+    "api/**/*.ts": {
       "includeFiles": "api/_lib/**"
     }
   }

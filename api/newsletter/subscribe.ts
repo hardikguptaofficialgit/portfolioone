@@ -1,5 +1,3 @@
-import { getSupabaseAdminClient, sendWelcomeNewsletter } from '../_lib/newsletter';
-
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const parseBody = (req: any) => {
@@ -13,6 +11,12 @@ const parseBody = (req: any) => {
   }
   return req.body;
 };
+
+const hasNewsletterStore = () =>
+  Boolean(
+    (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
 export default async function handler(req: any, res: any) {
   if (req.method === 'OPTIONS') {
@@ -34,6 +38,15 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
+    if (!hasNewsletterStore()) {
+      res.status(501).json({
+        error:
+          'Newsletter storage is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, or disable the newsletter form.',
+      });
+      return;
+    }
+
+    const { getSupabaseAdminClient, sendWelcomeNewsletter } = await import('../_lib/newsletter');
     const supabase = getSupabaseAdminClient();
     const now = new Date().toISOString();
 

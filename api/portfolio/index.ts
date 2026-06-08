@@ -5,5 +5,5 @@ export const config = {
 };
 
 export default async function handler(req: any, res: any) {
-  return routePortfolioRequestSafe(req, res, req.query?.path);
+  return routePortfolioRequestSafe(req, res);
 }
