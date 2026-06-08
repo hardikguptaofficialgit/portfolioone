@@ -5,13 +5,13 @@
   "packageManager": "npm@10.9.2",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node node_modules/vite/bin/vite.js",
     "sync:portfolio-seed": "node scripts/sync-portfolio-seed.mjs",
     "prebuild": "node scripts/sync-portfolio-seed.mjs",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "build:dev": "node node_modules/vite/bin/vite.js build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "node node_modules/vite/bin/vite.js preview",
     "deploy:cloudflare": "npm run build && npx wrangler pages deploy dist --project-name portfolioone",
     "mcp:build": "npm run build --prefix packages/portfolio-mcp",
     "mcp:dev": "npm run dev --prefix packages/portfolio-mcp"
