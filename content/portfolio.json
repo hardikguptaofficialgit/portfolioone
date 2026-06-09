@@ -10,14 +10,13 @@
     "resumePdfUrl": "https://drive.google.com/file/d/16rDrv9O35qYxHeUxuSXyWWDpOUJH0aQZ/view?usp=drive_link",
     "githubUsername": "hardikguptaofficialgit",
     "devtoUsername": "strykerinside",
-    "summary": "Full-stack engineer and SaaS founder with 2+ years of hands-on experience building and shipping production-grade web applications, AI-integrated platforms, and real-time systems. Adept at owning features end-to-end across fast-paced, collaborative environments."
-  },
+"summary": "Software developer focused on building scalable applications, solving complex problems, and delivering reliable production-ready systems. Experienced in developing full-stack products, real-time platforms, and modern web applications while owning features from architecture and implementation to deployment and maintenance."  },
   "socialLinks": [
     { "id": "github", "name": "GitHub", "icon": "Github", "url": "https://github.com/hardikguptaofficialgit", "description": "Check out my code" },
     { "id": "linkedin", "name": "LinkedIn", "icon": "Linkedin", "url": "https://www.linkedin.com/in/hardik-gupta-b528072b3/", "description": "Connect professionally" },
     { "id": "instagram", "name": "Instagram", "icon": "Instagram", "url": "https://www.instagram.com/stryker.inside/", "description": "Personal updates" },
     { "id": "twitter", "name": "Twitter", "icon": "Twitter", "url": "https://x.com/stryker_inside", "description": "Thoughts & threads" },
-    { "id": "linkit", "name": "Linkit", "icon": "Link", "url": "https://Linkitapp.in/harvix", "description": "All my links" }
+    { "id": "linkit", "name": "Linkit", "icon": "Link", "url": "https://linkitapp.in/stryker", "description": "All my links" }
   ],
   "skillCategories": [
     { "label": "Languages", "items": ["TypeScript", "JavaScript", "C++", "C", "Dart", "PHP"] },
@@ -85,7 +84,7 @@
       "tag": "Chrome Extension · 2025",
       "description": "Interview-prep Chrome extension with smart summaries, insights, and personalized suggestions.",
       "tech": ["JavaScript", "TypeScript", "React.js", "Tailwind CSS", "Vercel"],
-      "liveUrl": "https://nextround.tech",
+      "liveUrl": "#",
       "githubUrl": "https://github.com/hardikguptaofficialgit/nextround",
       "imageUrl": null,
       "featured": true,
@@ -189,7 +188,7 @@
       "startDate": "2025-06",
       "endDate": null,
       "current": true,
-      "url": "https://nextround.tech/",
+      "url": "#/",
       "highlights": [
         "Building an AI-powered Chrome extension for interview prep.",
         "Implemented smart summaries, insights, and personalized suggestions."
@@ -282,7 +281,7 @@
     {
       "id": "nextround-intern",
       "org": "NextRound Private Limited",
-      "url": "https://nextround.tech",
+      "url": "#",
       "totalDuration": "Jun 2025 – Aug 2025",
       "badge": "Internship · Remote",
       "bullets": [

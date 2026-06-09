@@ -683,12 +683,12 @@ const SimplifiedResume = () => {
                                             transition={{ delay: 0.55, duration: 0.7, ease: EASE_SMOOTH }}
                                         >
 Hardik Gupta                                        </motion.h1>
-                                        <motion.p
-                                            className={`${mutedText} text-base max-w-lg leading-relaxed`}
-                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
-                                        >
-                                            Full-stack engineer and SaaS founder. 2+ years shipping production-grade web apps, AI-integrated platforms, and real-time systems.
-                                        </motion.p>
+                                      <motion.p
+    className={`${mutedText} text-base max-w-lg leading-relaxed`}
+    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
+>
+    Software developer focused on building scalable products, solving complex problems, and turning ideas into reliable, production-ready systems.
+</motion.p>
                                         <motion.div
                                             className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${subtleText}`}
                                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.72 }}
@@ -721,7 +721,7 @@ Hardik Gupta                                        </motion.h1>
                                                 { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={18} /> },
                                                 { href: 'https://www.instagram.com/stryker.inside/', icon: <Instagram size={18} /> },
                                                 { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={18} /> },
-                                                { href: 'https://linkitapp.in/harvix', icon: <LinkIcon size={18} /> },
+                                                { href: 'https://linkitapp.in/stryker', icon: <LinkIcon size={18} /> },
                                             ].map(({ href, icon }, i) => (
                                                 <motion.a
                                                     key={href} href={href} target="_blank" rel="noopener noreferrer"
