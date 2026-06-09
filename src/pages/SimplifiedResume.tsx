@@ -1362,44 +1362,44 @@ const ProjectCard = memo(({ project: p, isDark, mutedText, subtleText, onPreview
                     </div>
                 )}
             </div>
-            <div className="flex min-h-[310px] flex-1 flex-col p-5">
-                <div className="max-h-[220px] overflow-y-auto pr-1 md:overflow-y-hidden md:group-hover:overflow-y-auto md:group-focus-within:overflow-y-auto">
-                    <div className="space-y-1">
-                        <h3 className="text-xl font-bold leading-tight">{p.name}</h3>
-                        <p className={`text-xs uppercase tracking-widest ${subtleText}`}>{p.tag}</p>
+            <div className="flex min-h-[330px] flex-1 flex-col p-5">
+                <div className="space-y-1">
+                    <h3 className="text-xl font-bold leading-tight">{p.name}</h3>
+                    <p className={`text-xs uppercase tracking-widest ${subtleText}`}>{p.tag}</p>
+                </div>
+
+                {p.tech.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {p.tech.map((tech) => (
+                            <span
+                                key={tech}
+                                className={`inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold leading-none ${
+                                    isDark
+                                        ? 'border-zinc-800 bg-zinc-900 text-zinc-300'
+                                        : 'border-[#e3d2c4] bg-[#fffddb] text-[#4f4036]'
+                                }`}
+                            >
+                                {tech}
+                            </span>
+                        ))}
                     </div>
+                )}
 
-                    {p.tech.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {p.tech.map((tech) => (
-                                <span
-                                    key={tech}
-                                    className={`inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold leading-none ${
-                                        isDark
-                                            ? 'border-zinc-800 bg-zinc-900 text-zinc-300'
-                                            : 'border-[#e3d2c4] bg-[#fffddb] text-[#4f4036]'
-                                    }`}
-                                >
-                                    {tech}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-
-                    <p className={`mt-4 text-sm ${mutedText} leading-relaxed`}>
+                <div className="mt-4 max-h-28 overflow-y-auto pr-1 md:overflow-y-hidden md:group-hover:overflow-y-auto md:group-focus-within:overflow-y-auto">
+                    <p className={`text-sm ${mutedText} leading-relaxed`}>
                         {p.description}
                     </p>
-
-                    {hashtags.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {hashtags.map((tag) => (
-                                <span key={tag} className={`text-xs font-semibold ${isDark ? 'text-[#d0fffe]/80' : 'text-[#7b3e77]'}`}>
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    )}
                 </div>
+
+                {hashtags.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {hashtags.map((tag) => (
+                            <span key={tag} className={`text-xs font-semibold ${isDark ? 'text-[#d0fffe]/80' : 'text-[#7b3e77]'}`}>
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                )}
                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
                     {p.liveUrl !== '#' && (
                         <button type="button" onClick={() => onPreview(p)}

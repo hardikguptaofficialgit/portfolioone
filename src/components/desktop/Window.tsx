@@ -1222,54 +1222,51 @@ const VSCodeContent = () => {
                 )}
               </div>
 
-              <div className="flex min-h-[310px] flex-col p-5">
-                <div className="max-h-[220px] overflow-y-auto pr-1 md:overflow-y-hidden md:group-hover:overflow-y-auto md:group-focus-within:overflow-y-auto">
-                  <div className="space-y-1">
-                    <h3 className={cn("text-xl font-bold leading-tight", settings.darkMode ? "text-white" : "text-zinc-900")}>
-                      {project.name}
-                    </h3>
-                    {project.tag && (
-                      <p className={cn("text-xs uppercase tracking-widest", subtleText)}>
-                        {project.tag}
-                      </p>
-                    )}
-                  </div>
-
-                  {project.tech.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {project.tech.map((tech) => (
-                        <span
-                          key={tech}
-                          className={cn(
-                            "inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold leading-none",
-                            settings.darkMode
-                              ? "border-zinc-800 bg-zinc-900 text-zinc-300"
-                              : "border-[#e3d2c4] bg-[#fffddb] text-[#4f4036]"
-                          )}
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className={cn(
-                    "mt-4 text-sm leading-relaxed",
-                    mutedText
-                  )}>
-                    {project.description}
-                  </p>
-
-                  {getProjectHashtags(project.tag).length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {getProjectHashtags(project.tag).map((tag) => (
-                        <span key={tag} className={cn("text-xs font-semibold", settings.darkMode ? "text-[#d0fffe]/80" : "text-[#7b3e77]")}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+              <div className="flex min-h-[330px] flex-col p-5">
+                <div className="space-y-1">
+                  <h3 className={cn("text-xl font-bold leading-tight", settings.darkMode ? "text-white" : "text-zinc-900")}>
+                    {project.name}
+                  </h3>
+                  {project.tag && (
+                    <p className={cn("text-xs uppercase tracking-widest", subtleText)}>
+                      {project.tag}
+                    </p>
                   )}
                 </div>
+
+                {project.tech.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {project.tech.map((tech) => (
+                      <span
+                        key={tech}
+                        className={cn(
+                          "inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold leading-none",
+                          settings.darkMode
+                            ? "border-zinc-800 bg-zinc-900 text-zinc-300"
+                            : "border-[#e3d2c4] bg-[#fffddb] text-[#4f4036]"
+                        )}
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 max-h-28 overflow-y-auto pr-1 md:overflow-y-hidden md:group-hover:overflow-y-auto md:group-focus-within:overflow-y-auto">
+                  <p className={cn("text-sm leading-relaxed", mutedText)}>
+                    {project.description}
+                  </p>
+                </div>
+
+                {getProjectHashtags(project.tag).length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {getProjectHashtags(project.tag).map((tag) => (
+                      <span key={tag} className={cn("text-xs font-semibold", settings.darkMode ? "text-[#d0fffe]/80" : "text-[#7b3e77]")}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
                   {project.liveUrl !== "#" && (
