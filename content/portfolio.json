@@ -24,7 +24,7 @@
     { "label": "Frontend", "items": ["React.js", "Next.js", "Flutter", "Tailwind CSS", "HTML5", "CSS3", "PWA"] },
     { "label": "Backend", "items": ["Node.js", "Express.js", "REST APIs", "WebSockets", "Socket.IO", "Redis"] },
     { "label": "AI / ML", "items": ["OpenAI", "Anthropic", "Gemini", "Llama", "RAG", "Prompt Engineering", "TensorFlow"] },
-    { "label": "DB & DevOps", "items": ["Firebase", "PostgreSQL", "Docker", "Vercel", "Render", "PostHog", "MCP Servers"] }
+    { "label": "DB & DevOps", "items": ["Firebase", "PostgreSQL", "Docker", "Vercel", "Render", "PostHog", "API Design"] }
   ],
   "skillsFlat": [
     "ReactJS", "Tailwind CSS", "NodeJS", "ExpressJS", "Git", "GitHub", "Vercel", "C", "HTML", "CSS",
@@ -143,8 +143,8 @@
       "id": "strykeros",
       "name": "StrykerOS",
       "tag": "Portfolio · 2025",
-      "description": "Windows 11-inspired portfolio website with a full desktop environment and MCP-managed content.",
-      "tech": ["React.js", "TypeScript", "Tailwind CSS", "Framer Motion", "Vercel", "MCP Servers"],
+      "description": "Windows 11-inspired portfolio website with a full desktop environment and static content.",
+      "tech": ["React.js", "TypeScript", "Tailwind CSS", "Framer Motion", "Vercel", "API Design"],
       "liveUrl": "https://strykerinside.vercel.app/",
       "githubUrl": "https://github.com/hardikguptaofficialgit/portfolioone",
       "imageUrl": null,

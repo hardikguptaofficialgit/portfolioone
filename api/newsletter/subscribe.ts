@@ -1,22 +1,66 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const parseBody = (req: any) => {
+type JsonObject = Record<string, unknown>;
+
+const parseBody = (req: { body?: unknown }): JsonObject => {
   if (!req.body) return {};
   if (typeof req.body === 'string') {
     try {
-      return JSON.parse(req.body);
+      return JSON.parse(req.body) as JsonObject;
     } catch {
       return {};
     }
   }
-  return req.body;
+  return req.body as JsonObject;
 };
 
-const hasNewsletterStore = () =>
-  Boolean(
-    (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+const getSupabaseConfig = () => {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  return url && key ? { url, key } : null;
+};
+
+const renderWelcomeNewsletterHtml = (email: string) => `
+  <div style="margin:0;background:#ffffff;padding:0;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+    <div style="max-width:640px;margin:0 auto;border:1px solid #111111;">
+      <div style="padding:22px 24px;border-bottom:1px solid #111111;background:#ffffff;">
+        <p style="margin:0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">Newsletter Subscription</p>
+      </div>
+      <div style="padding:26px 24px;background:#ffffff;">
+        <h1 style="margin:0 0 10px;font-size:24px;line-height:1.3;font-weight:800;">Thanks for subscribing.</h1>
+        <p style="margin:0 0 14px;font-size:14px;line-height:1.7;">
+          You're in, <strong>${email}</strong>.
+        </p>
+        <p style="margin:0;font-size:14px;line-height:1.7;">
+          You will get updates on AI, engineering, and new DEV.to posts.
+        </p>
+      </div>
+    </div>
+  </div>`;
+
+const sendWelcomeEmail = async (email: string) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.NEWSLETTER_FROM_EMAIL || process.env.VITE_ADMIN_EMAIL;
+  if (!apiKey || !from) {
+    return { sent: false, error: 'Email provider is not configured.' };
+  }
+
+  const { Resend } = await import('resend');
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send({
+    from,
+    to: [email],
+    subject: 'Thanks for subscribing - you are all set',
+    html: renderWelcomeNewsletterHtml(email),
+    text: 'Thanks for subscribing. You will now receive updates about AI and new posts.',
+  });
+
+  if (error) {
+    return { sent: false, error: error.message || 'Welcome email failed.' };
+  }
+
+  return { sent: true, error: null };
+};
 
 export default async function handler(req: any, res: any) {
   if (req.method === 'OPTIONS') {
@@ -38,16 +82,19 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    if (!hasNewsletterStore()) {
+    const config = getSupabaseConfig();
+    if (!config) {
       res.status(501).json({
         error:
-          'Newsletter storage is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, or disable the newsletter form.',
+          'Newsletter storage is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel.',
       });
       return;
     }
 
-    const { getSupabaseAdminClient, sendWelcomeNewsletter } = await import('../_lib/newsletter');
-    const supabase = getSupabaseAdminClient();
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(config.url, config.key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
     const now = new Date().toISOString();
 
     const { data: existingRow, error: existingError } = await supabase
@@ -60,7 +107,7 @@ export default async function handler(req: any, res: any) {
       const raw = existingError.message || 'Failed to check existing subscriber.';
       if (raw.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
         res.status(500).json({
-          error: "Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.",
+          error: 'Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.',
         });
         return;
       }
@@ -77,23 +124,21 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const { error } = await supabase
-      .from('newsletter_subscribers')
-      .upsert(
-        {
-          email,
-          is_active: true,
-          subscribed_at: now,
-          updated_at: now,
-        },
-        { onConflict: 'email' }
-      );
+    const { error } = await supabase.from('newsletter_subscribers').upsert(
+      {
+        email,
+        is_active: true,
+        subscribed_at: existingRow ? undefined : now,
+        updated_at: now,
+      },
+      { onConflict: 'email' }
+    );
 
     if (error) {
       const raw = error.message || 'Failed to save subscriber.';
       if (raw.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
         res.status(500).json({
-          error: "Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.",
+          error: 'Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.',
         });
         return;
       }
@@ -101,22 +146,13 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    let welcomeEmailSent = true;
-    let welcomeEmailError: string | null = null;
-    try {
-      await sendWelcomeNewsletter(email);
-    } catch (mailError) {
-      // Do not fail subscription if mail provider/env is misconfigured.
-      welcomeEmailSent = false;
-      welcomeEmailError =
-        mailError instanceof Error ? mailError.message : 'Welcome email failed.';
-    }
+    const welcome = await sendWelcomeEmail(email);
 
     res.status(200).json({
       ok: true,
       alreadySubscribed: false,
-      welcomeEmailSent,
-      welcomeEmailError,
+      welcomeEmailSent: welcome.sent,
+      welcomeEmailError: welcome.error,
       message: existingRow ? 'Subscription re-activated successfully.' : 'Subscribed successfully.',
     });
   } catch (error) {

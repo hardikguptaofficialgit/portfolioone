@@ -11,10 +11,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/**/*.ts": {
-      "includeFiles": "api/_lib/**"
-    }
-  }
+  ]
 }

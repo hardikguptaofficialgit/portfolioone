@@ -515,21 +515,7 @@ export const BlogListPage = () => {
   const loadPosts = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true); setError(null);
-      let data: DevToArticle[] = [];
-      try {
-        const response = await fetch(
-          `/api/devto/articles?username=${encodeURIComponent(username)}&perPage=24`,
-          { signal, cache: 'no-store' }
-        );
-        const payload = await response.json().catch(() => ({}));
-        if (response.ok && Array.isArray(payload?.articles)) {
-          data = payload.articles as DevToArticle[];
-        } else {
-          throw new Error(typeof payload?.error === 'string' ? payload.error : 'Server fetch failed.');
-        }
-      } catch {
-        data = await fetchDevToArticles(username, 24, { perPage: 24, signal });
-      }
+      const data = await fetchDevToArticles(username, 24, { perPage: 24, signal });
       if (signal?.aborted) return;
       setPosts(data);
     } catch (err: any) {

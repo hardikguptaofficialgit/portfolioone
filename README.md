@@ -1,6 +1,6 @@
 # StrykerOS Portfolio
 
-Windows-inspired portfolio site with a **unified content layer** and **Portfolio MCP** for AI-managed updates.
+Windows-inspired portfolio site with a static portfolio content layer, DEV.to blog views, and newsletter subscription.
 
 ## Quick start
 
@@ -18,23 +18,18 @@ Use Vercel for this project.
 - Output directory: `dist`
 - Framework preset: `Vite`
 
-The portfolio API is served by Vercel Serverless Functions under `/api/portfolio`.
-Public reads work from the committed seed content. Portfolio writes and newsletter
-subscriptions require Supabase environment variables:
+Portfolio content is bundled from `content/portfolio.json`; there is no portfolio API or MCP server.
+Newsletter subscriptions are handled by `api/newsletter/subscribe.ts` and require Supabase storage:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `PORTFOLIO_API_KEY` for protected portfolio writes
 
 Newsletter welcome emails additionally need:
 
 - `RESEND_API_KEY`
 - `NEWSLETTER_FROM_EMAIL`
 
-## Portfolio MCP
-
-See [docs/PORTFOLIO_MCP.md](docs/PORTFOLIO_MCP.md) for API keys, Supabase setup, Cursor/ChatGPT configuration, and available tools.
+## Content
 
 - Canonical content: `content/portfolio.json`
-- API: `/api/portfolio`
-- MCP package: `packages/portfolio-mcp`
+- Newsletter schema: `supabase/newsletter_schema.sql`

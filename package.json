@@ -6,14 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
-    "sync:portfolio-seed": "node scripts/sync-portfolio-seed.mjs",
-    "prebuild": "node scripts/sync-portfolio-seed.mjs",
     "build": "node node_modules/vite/bin/vite.js build",
     "build:dev": "node node_modules/vite/bin/vite.js build --mode development",
     "lint": "eslint .",
-    "preview": "node node_modules/vite/bin/vite.js preview",
-    "mcp:build": "npm run build --prefix packages/portfolio-mcp",
-    "mcp:dev": "npm run dev --prefix packages/portfolio-mcp"
+    "preview": "node node_modules/vite/bin/vite.js preview"
   },
   "dependencies": {
     "@azure-rest/ai-inference": "^1.0.0-beta.6",
