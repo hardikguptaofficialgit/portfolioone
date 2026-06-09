@@ -16,6 +16,21 @@ const emptyProject: Project = {
 
 const tokenKey = 'portfolio_admin_token';
 
+const styles = {
+  page: 'min-h-screen bg-black text-slate-50',
+  shell: 'rounded-[2rem] border border-white/10 bg-slate-950/72 shadow-[0_18px_42px_rgba(0,0,0,0.24)] backdrop-blur-xl',
+  panel: 'rounded-[1.75rem] border border-white/10 bg-slate-950/68 shadow-[0_12px_30px_rgba(0,0,0,0.20)] backdrop-blur-xl',
+  field:
+    'w-full rounded-[1rem] border border-white/12 bg-white/[0.07] px-3 py-2.5 text-sm text-slate-50 outline-none transition placeholder:text-slate-500 hover:border-blue-400/70 hover:bg-white/[0.09] focus:border-blue-400 focus:bg-white/[0.10] focus:ring-4 focus:ring-blue-500/18',
+  label: 'space-y-1.5 text-sm font-medium text-slate-300',
+  primaryButton:
+    'rounded-[1rem] bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 disabled:cursor-not-allowed disabled:opacity-55',
+  secondaryButton:
+    'rounded-[1rem] border border-white/12 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-blue-400/50 hover:bg-blue-500/12 hover:text-blue-100 focus:outline-none focus:ring-4 focus:ring-blue-500/20',
+  dangerButton:
+    'rounded-[1rem] border border-rose-400/25 bg-rose-950/18 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:border-rose-300/50 hover:bg-rose-500/14 hover:text-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-500/18',
+};
+
 const toProjectPayload = (project: Project) => ({
   ...project,
   tech: Array.isArray(project.tech) ? project.tech : [],
@@ -143,64 +158,64 @@ const Admin = () => {
 
   if (!token) {
     return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">
-        <form onSubmit={login} className="w-full max-w-sm border border-white/20 p-6 space-y-5">
+      <main className={`${styles.page} flex items-center justify-center px-4`}>
+        <form onSubmit={login} className={`${styles.shell} w-full max-w-sm space-y-5 p-6`}>
           <div>
-            <h1 className="text-xl font-semibold">Admin</h1>
-            <p className="mt-1 text-sm text-white/55">Sign in to manage portfolio projects.</p>
+            <h1 className="text-xl font-semibold text-slate-50">Admin</h1>
+            <p className="mt-1 text-sm text-slate-400">Sign in to manage portfolio projects.</p>
           </div>
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
             placeholder="Email"
-            className="w-full bg-black border border-white/25 px-3 py-2 text-sm outline-none focus:border-white"
+            className={styles.field}
           />
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             type="password"
             placeholder="Password"
-            className="w-full bg-black border border-white/25 px-3 py-2 text-sm outline-none focus:border-white"
+            className={styles.field}
           />
-          <button disabled={loading} className="w-full bg-white text-black py-2 text-sm font-medium disabled:opacity-50">
+          <button disabled={loading} className={`${styles.primaryButton} w-full`}>
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
-          {message && <p className="text-xs text-white/60">{message}</p>}
+          {message && <p className="text-xs font-medium text-slate-400">{message}</p>}
         </form>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className={styles.page}>
       <div className="mx-auto max-w-6xl px-4 py-6">
-        <header className="flex items-center justify-between border-b border-white/15 pb-4">
+        <header className={`${styles.shell} flex items-center justify-between gap-4 p-5`}>
           <div>
-            <h1 className="text-xl font-semibold">Project Admin</h1>
-            <p className="text-sm text-white/55">Create, edit, archive, feature, and delete portfolio projects.</p>
+            <h1 className="text-xl font-semibold text-slate-50">Project Admin</h1>
+            <p className="text-sm text-slate-400">Create, edit, archive, feature, and delete portfolio projects.</p>
           </div>
           <button
             onClick={() => {
               localStorage.removeItem(tokenKey);
               setToken('');
             }}
-            className="border border-white/25 px-3 py-2 text-sm"
+            className={styles.secondaryButton}
           >
             Sign out
           </button>
         </header>
 
         <div className="grid gap-6 py-6 md:grid-cols-[280px_1fr]">
-          <aside className="border border-white/15">
-            <div className="flex items-center justify-between border-b border-white/15 p-3">
-              <span className="text-sm font-medium">Projects</span>
+          <aside className={`${styles.panel} overflow-hidden`}>
+            <div className="flex items-center justify-between border-b border-white/10 p-3">
+              <span className="text-sm font-semibold text-slate-100">Projects</span>
               <button
                 onClick={() => {
                   setSelectedId('');
                   setDraft({ ...emptyProject, sortOrder: projects.length + 1 });
                 }}
-                className="bg-white px-2 py-1 text-xs text-black"
+                className="rounded-[0.85rem] bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
               >
                 New
               </button>
@@ -210,78 +225,82 @@ const Admin = () => {
                 <button
                   key={project.id}
                   onClick={() => setSelectedId(project.id)}
-                  className={`block w-full border-b border-white/10 px-3 py-3 text-left text-sm ${
-                    selectedId === project.id ? 'bg-white text-black' : 'hover:bg-white/10'
+                  className={`block w-full border-b border-white/10 px-3 py-3 text-left text-sm transition ${
+                    selectedId === project.id
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-200 hover:bg-blue-500/12 hover:text-blue-100'
                   }`}
                 >
                   <span className="block font-medium">{project.name}</span>
-                  <span className="text-xs opacity-60">{project.id}</span>
+                  <span className={`text-xs ${selectedId === project.id ? 'text-blue-100' : 'text-slate-500'}`}>
+                    {project.id}
+                  </span>
                 </button>
               ))}
             </div>
           </aside>
 
-          <form onSubmit={saveProject} className="space-y-4 border border-white/15 p-4">
+          <form onSubmit={saveProject} className={`${styles.panel} space-y-4 p-4`}>
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>ID</span>
-                <input value={draft.id} onChange={(e) => updateDraft('id', e.target.value)} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" placeholder="my-project" />
+                <input value={draft.id} onChange={(e) => updateDraft('id', e.target.value)} className={styles.field} placeholder="my-project" />
               </label>
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>Name</span>
-                <input value={draft.name} onChange={(e) => updateDraft('name', e.target.value)} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <input value={draft.name} onChange={(e) => updateDraft('name', e.target.value)} className={styles.field} />
               </label>
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>Tag</span>
-                <input value={draft.tag || ''} onChange={(e) => updateDraft('tag', e.target.value)} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <input value={draft.tag || ''} onChange={(e) => updateDraft('tag', e.target.value)} className={styles.field} />
               </label>
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>Sort order</span>
-                <input type="number" value={draft.sortOrder ?? 999} onChange={(e) => updateDraft('sortOrder', Number(e.target.value))} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <input type="number" value={draft.sortOrder ?? 999} onChange={(e) => updateDraft('sortOrder', Number(e.target.value))} className={styles.field} />
               </label>
-              <label className="space-y-1 text-sm md:col-span-2">
+              <label className={`${styles.label} md:col-span-2`}>
                 <span>Description</span>
-                <textarea value={draft.description} onChange={(e) => updateDraft('description', e.target.value)} rows={4} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <textarea value={draft.description} onChange={(e) => updateDraft('description', e.target.value)} rows={4} className={styles.field} />
               </label>
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>Live URL</span>
-                <input value={draft.liveUrl} onChange={(e) => updateDraft('liveUrl', e.target.value)} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <input value={draft.liveUrl} onChange={(e) => updateDraft('liveUrl', e.target.value)} className={styles.field} />
               </label>
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>GitHub URL</span>
-                <input value={draft.githubUrl || ''} onChange={(e) => updateDraft('githubUrl', e.target.value)} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <input value={draft.githubUrl || ''} onChange={(e) => updateDraft('githubUrl', e.target.value)} className={styles.field} />
               </label>
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>Image URL</span>
-                <input value={draft.imageUrl || ''} onChange={(e) => updateDraft('imageUrl', e.target.value || null)} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <input value={draft.imageUrl || ''} onChange={(e) => updateDraft('imageUrl', e.target.value || null)} className={styles.field} />
               </label>
-              <label className="space-y-1 text-sm">
+              <label className={styles.label}>
                 <span>Tech, comma separated</span>
-                <input value={draft.tech.join(', ')} onChange={(e) => updateDraft('tech', e.target.value.split(',').map((item) => item.trim()).filter(Boolean))} className="w-full bg-black border border-white/25 px-3 py-2 outline-none focus:border-white" />
+                <input value={draft.tech.join(', ')} onChange={(e) => updateDraft('tech', e.target.value.split(',').map((item) => item.trim()).filter(Boolean))} className={styles.field} />
               </label>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm">
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={draft.featured !== false} onChange={(e) => updateDraft('featured', e.target.checked)} />
+            <div className="flex flex-wrap gap-3 text-sm font-medium text-slate-300">
+              <label className="inline-flex items-center gap-2 rounded-[1rem] border border-white/10 bg-white/[0.06] px-3 py-2">
+                <input className="accent-blue-600" type="checkbox" checked={draft.featured !== false} onChange={(e) => updateDraft('featured', e.target.checked)} />
                 Featured
               </label>
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={Boolean(draft.archived)} onChange={(e) => updateDraft('archived', e.target.checked)} />
+              <label className="inline-flex items-center gap-2 rounded-[1rem] border border-white/10 bg-white/[0.06] px-3 py-2">
+                <input className="accent-blue-600" type="checkbox" checked={Boolean(draft.archived)} onChange={(e) => updateDraft('archived', e.target.checked)} />
                 Archived
               </label>
             </div>
 
-            <div className="flex items-center gap-3 border-t border-white/15 pt-4">
-              <button disabled={loading} className="bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50">
+            <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-4">
+              <button disabled={loading} className={styles.primaryButton}>
                 {loading ? 'Saving...' : 'Save project'}
               </button>
               {draft.id && (
-                <button type="button" onClick={deleteSelected} className="border border-white/25 px-4 py-2 text-sm">
+                <button type="button" onClick={deleteSelected} className={styles.dangerButton}>
                   Delete
                 </button>
               )}
-              {message && <p className="text-sm text-white/60">{message}</p>}
+              {message && <p className="text-sm font-medium text-slate-400">{message}</p>}
             </div>
           </form>
         </div>
