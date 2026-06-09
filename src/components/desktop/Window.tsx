@@ -1227,11 +1227,6 @@ const VSCodeContent = () => {
                   <h3 className={cn("text-xl font-bold leading-tight", settings.darkMode ? "text-white" : "text-zinc-900")}>
                     {project.name}
                   </h3>
-                  {project.tag && (
-                    <p className={cn("text-xs uppercase tracking-widest", subtleText)}>
-                      {project.tag}
-                    </p>
-                  )}
                 </div>
 
                 {project.tech.length > 0 && (

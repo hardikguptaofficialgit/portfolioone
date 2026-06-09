@@ -1365,7 +1365,6 @@ const ProjectCard = memo(({ project: p, isDark, mutedText, subtleText, onPreview
             <div className="flex min-h-[330px] flex-1 flex-col p-5">
                 <div className="space-y-1">
                     <h3 className="text-xl font-bold leading-tight">{p.name}</h3>
-                    <p className={`text-xs uppercase tracking-widest ${subtleText}`}>{p.tag}</p>
                 </div>
 
                 {p.tech.length > 0 && (
