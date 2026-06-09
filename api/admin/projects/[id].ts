@@ -18,7 +18,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const id = String(req.query?.id || '');
-    if (req.method === 'PATCH') {
+    if (req.method === 'PATCH' || req.method === 'PUT' || req.method === 'POST') {
       const project = await updateProject(id, parseBody(req));
       res.status(200).json({ ok: true, data: project });
       return;

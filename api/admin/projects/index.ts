@@ -1,5 +1,5 @@
 import { requireAdmin } from '../../_lib/admin-auth.js';
-import { createProject, listProjects } from '../../_lib/portfolio-store.js';
+import { createProject, deleteProject, listProjects, updateProject } from '../../_lib/portfolio-store.js';
 
 const parseBody = (req: any) => {
   if (!req.body) return {};
@@ -24,7 +24,23 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method === 'POST') {
-      const project = await createProject(parseBody(req));
+      const body = parseBody(req);
+
+      if (body.action === 'update') {
+        const id = String(body.id || body.project?.id || '');
+        const project = await updateProject(id, body.project || body);
+        res.status(200).json({ ok: true, data: project });
+        return;
+      }
+
+      if (body.action === 'delete') {
+        const id = String(body.id || '');
+        await deleteProject(id);
+        res.status(200).json({ ok: true, deleted: id });
+        return;
+      }
+
+      const project = await createProject(body.project || body);
       res.status(201).json({ ok: true, data: project });
       return;
     }

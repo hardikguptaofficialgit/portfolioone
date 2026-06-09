@@ -142,10 +142,13 @@ const Admin = () => {
     setLoading(true);
     try {
       const isNew = !projects.some((project) => project.id === draft.id);
-      const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${encodeURIComponent(draft.id)}`;
-      const payload = await request(url, {
-        method: isNew ? 'POST' : 'PATCH',
-        body: JSON.stringify(toProjectPayload(draft)),
+      const payload = await request('/api/admin/projects', {
+        method: 'POST',
+        body: JSON.stringify(
+          isNew
+            ? toProjectPayload(draft)
+            : { action: 'update', id: draft.id, project: toProjectPayload(draft) }
+        ),
       });
       setMessage(isNew ? 'Project created.' : 'Project updated.');
       const savedId = payload.data?.id || draft.id;
@@ -161,7 +164,10 @@ const Admin = () => {
     if (!draft.id || !confirm(`Delete ${draft.name || draft.id}?`)) return;
     setLoading(true);
     try {
-      await request(`/api/admin/projects/${encodeURIComponent(draft.id)}`, { method: 'DELETE' });
+      await request('/api/admin/projects', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'delete', id: draft.id }),
+      });
       setMessage('Project deleted.');
       await loadProjects('');
     } catch (error) {
