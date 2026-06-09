@@ -19,7 +19,7 @@ const getSupabaseAnonClient = () => {
   return supabaseAnonClient;
 };
 
-  const subscribeViaSupabaseFallback = async (email: string) => {
+const subscribeViaSupabaseFallback = async (email: string) => {
   const client = getSupabaseAnonClient();
   if (!client) throw new Error('Newsletter service unavailable. Missing Supabase config.');
   const now = new Date().toISOString();
@@ -146,7 +146,7 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
               ? payload.message
               : 'Subscribed successfully.';
           if (payload?.welcomeEmailSent === false) {
-            return `${base} Welcome email is pending and will be retried later.`;
+            return `${base} Welcome email may be delayed.`;
           }
           return base;
         })(),

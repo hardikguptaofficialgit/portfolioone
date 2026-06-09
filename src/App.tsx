@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import SimplifiedResume from "./pages/SimplifiedResume";
 import { BlogListPage, BlogPostPage } from "./pages/Blog";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/blogs/:slug" element={<BlogPostPage />} />
           <Route path="/blog" element={<Navigate to="/blogs" replace />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

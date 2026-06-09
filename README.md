@@ -1,6 +1,6 @@
 # StrykerOS Portfolio
 
-Windows-inspired portfolio site with a static portfolio content layer, DEV.to blog views, and newsletter subscription.
+Windows-inspired portfolio site with a Supabase-backed project admin, DEV.to blog views, and newsletter subscription.
 
 ## Quick start
 
@@ -18,11 +18,17 @@ Use Vercel for this project.
 - Output directory: `dist`
 - Framework preset: `Vite`
 
-Portfolio content is bundled from `content/portfolio.json`; there is no portfolio API or MCP server.
-Newsletter subscriptions are handled by `api/newsletter/subscribe.ts` and require Supabase storage:
+Portfolio content falls back to `content/portfolio.json`, but `/admin` edits are saved in Supabase.
+Newsletter subscriptions are handled by `api/newsletter/subscribe.ts` and also use Supabase storage:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+
+Admin login requires:
+
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `ADMIN_SESSION_SECRET`
 
 Newsletter welcome emails additionally need:
 
@@ -32,4 +38,6 @@ Newsletter welcome emails additionally need:
 ## Content
 
 - Canonical content: `content/portfolio.json`
+- Admin route: `/admin`
+- Portfolio table schema: `supabase/portfolio_schema.sql`
 - Newsletter schema: `supabase/newsletter_schema.sql`
