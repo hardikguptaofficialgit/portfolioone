@@ -376,7 +376,9 @@ const SimplifiedResume = () => {
     const navBg = isDark ? 'bg-black border-zinc-800' : 'bg-[#fffef9] border-[#e6d8cb]';
     const mutedText = isDark ? 'text-zinc-400' : 'text-[#5f5248]';
     const subtleText = isDark ? 'text-zinc-500' : 'text-[#7d6b5c]';
-    const cardBg = isDark ? 'bg-black border-black' : 'bg-[#fffaf1] border-[#e7dacb]';
+    const cardBg = isDark
+        ? 'bg-zinc-950 border-zinc-800 shadow-[0_18px_44px_rgba(0,0,0,0.22)]'
+        : 'bg-[#fffef9] border-[#d8c8b9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
     const accent = isDark ? 'text-[#d0fffe]' : 'text-[#7b3e77]';
     const accentBorder = isDark ? 'border-[#d0fffe]/40 text-[#d0fffe]' : 'border-[#d39ad0] text-[#7b3e77]';
     const accentHover = isDark ? 'hover:bg-[#d0fffe] hover:text-black' : 'hover:bg-[#ffd3fd] hover:text-[#3f2a3d]';

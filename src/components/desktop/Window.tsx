@@ -1147,23 +1147,15 @@ const VSCodeContent = () => {
   const GithubIcon = getIconComponent('Github', settings.iconStyle);
   const ExternalLinkIcon = getIconComponent('ExternalLink', settings.iconStyle);
   const [selectedProjectPreview, setSelectedProjectPreview] = useState<Project | null>(null);
+  const [previewErrors, setPreviewErrors] = useState<Record<string, boolean>>({});
   const vscodeIntro = sections.vscodeProjectsIntro;
-
-  const themeMap: Record<string, any> = {
-    blue: { text: 'text-blue-500', bg: 'bg-blue-500', border: 'border-blue-500', hoverText: 'hover:text-blue-500', hoverBg: 'hover:bg-blue-500' },
-    purple: { text: 'text-purple-500', bg: 'bg-purple-500', border: 'border-purple-500', hoverText: 'hover:text-purple-500', hoverBg: 'hover:bg-purple-500' },
-    green: { text: 'text-green-500', bg: 'bg-green-500', border: 'border-green-500', hoverText: 'hover:text-green-500', hoverBg: 'hover:bg-green-500' },
-    orange: { text: 'text-orange-500', bg: 'bg-orange-500', border: 'border-orange-500', hoverText: 'hover:text-orange-500', hoverBg: 'hover:bg-orange-500' },
-    red: { text: 'text-red-500', bg: 'bg-red-500', border: 'border-red-500', hoverText: 'hover:text-red-500', hoverBg: 'hover:bg-red-500' },
-    zinc: { text: 'text-zinc-500', bg: 'bg-zinc-500', border: 'border-zinc-500', hoverText: 'hover:text-zinc-500', hoverBg: 'hover:bg-zinc-500' },
-  };
-  const theme = themeMap[settings.themeColor] || themeMap.blue;
   const projects = featuredProjects;
-
-  const projectGradientIndex = (id: string) => {
-    const hash = id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    return (hash % 6) + 1;
-  };
+  const cardSurface = settings.darkMode
+    ? "bg-zinc-950 border-zinc-800 shadow-[0_18px_44px_rgba(0,0,0,0.22)]"
+    : "bg-[#fffef9] border-[#d8c8b9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]";
+  const divider = settings.darkMode ? "border-zinc-800" : "border-[#d8c8b9]";
+  const mutedText = settings.darkMode ? "text-zinc-400" : "text-[#5f5248]";
+  const subtleText = settings.darkMode ? "text-zinc-500" : "text-[#7d6b5c]";
 
   return (
     <div className="h-full flex flex-col">
@@ -1190,134 +1182,102 @@ const VSCodeContent = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {projects.map((project) => (
-            <div
+            <article
               key={project.id}
               onClick={() => project.liveUrl !== "#" && setSelectedProjectPreview(project)}
               className={cn(
-                "group rounded-xl border flex flex-col overflow-hidden cursor-pointer",
-                settings.darkMode
-                  ? "bg-zinc-900/50 border-zinc-800"
-                  : "bg-white border-zinc-200"
+                "group w-full border rounded-xl overflow-hidden text-left transition-transform duration-200",
+                project.liveUrl !== "#" && "cursor-pointer hover:-translate-y-0.5",
+                cardSurface
               )}
             >
               <div className={cn(
-                "w-full h-48 border-b relative transition-opacity overflow-hidden",
-                settings.darkMode ? "bg-zinc-800 border-zinc-800" : "bg-zinc-100 border-zinc-200"
+                "relative h-44 w-full bg-black overflow-hidden border-b",
+                divider
               )}>
-                <div className={cn(
-                  "absolute inset-0 bg-gradient-to-br",
-                  projectGradientIndex(project.id) === 1 && "from-fuchsia-500/30 via-rose-500/20 to-amber-500/20",
-                  projectGradientIndex(project.id) === 2 && "from-cyan-500/25 via-blue-500/15 to-emerald-500/20",
-                  projectGradientIndex(project.id) === 3 && "from-emerald-500/20 via-lime-500/10 to-cyan-500/20",
-                  projectGradientIndex(project.id) === 4 && "from-orange-500/20 via-red-500/15 to-yellow-500/15",
-                  projectGradientIndex(project.id) === 5 && "from-violet-500/25 via-indigo-500/15 to-sky-500/20",
-                  projectGradientIndex(project.id) === 6 && "from-sky-500/25 via-cyan-500/10 to-indigo-500/20"
-                )} />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_35%)]" />
-                <div className="absolute inset-0 flex flex-col justify-between p-4">
-                  <span className={cn(
-                    "w-fit rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.25em]",
-                    settings.darkMode ? "border-white/15 bg-black/15 text-zinc-100" : "border-black/10 bg-white/40 text-zinc-700"
-                  )}>
-                    {project.liveUrl !== "#" ? "Click to preview" : "Private build"}
-                  </span>
-                  <div>
-                    <p className={cn(
-                      "text-4xl font-black tracking-tight leading-none",
-                      settings.darkMode ? "text-white/85" : "text-zinc-900/75"
-                    )}>
-                      {project.name}
-                    </p>
-                    <p className={cn(
-                      "mt-3 text-[11px] uppercase tracking-[0.3em]",
-                      settings.darkMode ? "text-zinc-200/80" : "text-zinc-700/70"
-                    )}>
-                      {project.liveUrl !== "#" ? "Live preview in popup" : "Source only"}
-                    </p>
+                {project.imageUrl && !previewErrors[project.id] ? (
+                  <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">
+                    <img
+                      src={project.imageUrl}
+                      alt={project.name}
+                      className="max-h-[82%] max-w-[88%] object-contain"
+                      loading="lazy"
+                      onError={() => setPreviewErrors((prev) => ({ ...prev, [project.id]: true }))}
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black px-5 text-center">
+                    <h3 className="text-4xl font-black tracking-tight leading-none text-white md:text-5xl">
+                      {project.name}
+                    </h3>
+                  </div>
+                )}
               </div>
 
-              <div className="p-5 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className={cn(
-                    "font-bold text-lg transition-colors",
-                    settings.darkMode ? "text-white" : "text-zinc-900",
-                    theme.hoverText
-                  )}>
+              <div className="p-5 space-y-4">
+                <div className="space-y-1">
+                  <h3 className={cn("text-xl font-bold leading-tight", settings.darkMode ? "text-white" : "text-zinc-900")}>
                     {project.name}
                   </h3>
-                  <div className="flex gap-2">
+                  {project.tag && (
+                    <p className={cn("text-xs uppercase tracking-widest", subtleText)}>
+                      {project.tag}
+                    </p>
+                  )}
+                </div>
+
+                <p className={cn(
+                  "text-sm leading-relaxed",
+                  mutedText
+                )}>
+                  {project.description}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {project.liveUrl !== "#" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProjectPreview(project);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-black transition-colors hover:bg-zinc-100"
+                    >
+                      <Eye size={13} /> Preview
+                    </button>
+                  )}
+                  {project.githubUrl && project.githubUrl !== "#" && (
                     <a
                       href={project.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className={cn(
-                        "p-1.5 rounded-lg transition-colors",
-                        settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
-                        theme.hoverText
+                        "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide border",
+                        settings.darkMode
+                          ? "bg-zinc-800 text-white hover:bg-zinc-700 border-white/10"
+                          : "bg-[#ffd3fd] text-[#3f2a3d] hover:bg-[#f8bbf5] border-[#f1b4ee]"
                       )}
                     >
-                      <GithubIcon size={16} />
+                      <GithubIcon size={13} /> Code
                     </a>
+                  )}
+                  {project.liveUrl !== "#" && (
                     <a
                       href={project.liveUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className={cn(
-                        "p-1.5 rounded-lg transition-colors",
-                        settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
-                        theme.hoverText
-                      )}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-black/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-black/80"
                     >
-                      <ExternalLinkIcon size={16} />
+                      <ExternalLinkIcon size={13} /> Open Site
                     </a>
-                    {project.liveUrl !== "#" && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedProjectPreview(project);
-                        }}
-                        className={cn(
-                          "p-1.5 rounded-lg transition-colors",
-                          settings.darkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500",
-                          theme.hoverText
-                        )}
-                      >
-                        <Eye size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <p className={cn(
-                  "text-sm mb-4 flex-1",
-                  settings.darkMode ? "text-zinc-400" : "text-zinc-600"
-                )}>
-                  {project.description}
-                </p>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (project.liveUrl !== "#") setSelectedProjectPreview(project);
-                  }}
-                  className={cn(
-                    "mt-auto inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.25em]",
-                    settings.darkMode ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-zinc-900"
                   )}
-                >
-                  {project.liveUrl !== "#" ? <Eye size={14} /> : <GithubIcon size={14} />}
-                  {project.liveUrl !== "#" ? "Preview Site" : "Code Link Only"}
-                </button>
+                </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>
