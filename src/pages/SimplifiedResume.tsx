@@ -1338,11 +1338,14 @@ interface ProjectCardProps {
     onImgError: (id: string) => void;
     imgError: boolean;
 }
-const ProjectCard = memo(({ project: p, isDark, cardBg, divider, mutedText, subtleText, onPreview, onImgError, imgError }: ProjectCardProps) => {
+const ProjectCard = memo(({ project: p, isDark, mutedText, subtleText, onPreview, onImgError, imgError }: ProjectCardProps) => {
     const hasVisual = !!p.img && !imgError;
+    const surface = isDark
+        ? 'bg-[#09090b] shadow-[0_18px_44px_rgba(0,0,0,0.28)]'
+        : 'bg-[#fffef9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
     return (
-        <article className={`group w-full border ${cardBg} rounded-xl overflow-hidden text-left`}>
-            <div className={`relative h-44 w-full bg-black overflow-hidden border-b ${divider}`}>
+        <article className={`group flex h-full w-full flex-col ${surface} rounded-xl overflow-hidden text-left`}>
+            <div className="relative h-44 w-full bg-black overflow-hidden shrink-0">
                 {hasVisual ? (
                     <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">
                         <img src={p.img} alt={p.name} className="max-h-[82%] max-w-[88%] object-contain"
@@ -1354,13 +1357,18 @@ const ProjectCard = memo(({ project: p, isDark, cardBg, divider, mutedText, subt
                     </div>
                 )}
             </div>
-            <div className="p-5 space-y-4">
+            <div className="flex flex-1 flex-col p-5">
                 <div className="space-y-1">
                     <h3 className="text-xl font-bold leading-tight">{p.name}</h3>
                     <p className={`text-xs uppercase tracking-widest ${subtleText}`}>{p.tag}</p>
                 </div>
-                <p className={`text-sm ${mutedText} leading-relaxed`}>{p.description}</p>
-                <div className="flex flex-wrap items-center gap-2">
+                <p
+                    className={`mt-4 overflow-hidden text-sm ${mutedText} leading-relaxed`}
+                    style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 5 }}
+                >
+                    {p.description}
+                </p>
+                <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
                     {p.liveUrl !== '#' && (
                         <button type="button" onClick={() => onPreview(p)}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-black hover:bg-zinc-100 transition-colors">
