@@ -17,18 +17,18 @@ const emptyProject: Project = {
 const tokenKey = 'portfolio_admin_token';
 
 const styles = {
-  page: 'min-h-screen bg-black text-slate-50',
-  shell: 'rounded-[2rem] border border-white/10 bg-slate-950/72 shadow-[0_18px_42px_rgba(0,0,0,0.24)] backdrop-blur-xl',
-  panel: 'rounded-[1.75rem] border border-white/10 bg-slate-950/68 shadow-[0_12px_30px_rgba(0,0,0,0.20)] backdrop-blur-xl',
+  page: 'min-h-dvh overflow-y-auto bg-black text-slate-50',
+  shell: 'rounded-[1.5rem] border border-white/10 bg-[#090909]',
+  panel: 'rounded-[1.5rem] border border-white/10 bg-[#090909]',
   field:
-    'w-full rounded-[1rem] border border-white/12 bg-white/[0.07] px-3 py-2.5 text-sm text-slate-50 outline-none transition placeholder:text-slate-500 hover:border-blue-400/70 hover:bg-white/[0.09] focus:border-blue-400 focus:bg-white/[0.10] focus:ring-4 focus:ring-blue-500/18',
+    'w-full rounded-[1rem] border border-white/12 bg-black px-3 py-3 text-base text-slate-50 outline-none transition placeholder:text-slate-500 hover:border-blue-400/70 focus:border-blue-400 sm:py-2.5 sm:text-sm',
   label: 'space-y-1.5 text-sm font-medium text-slate-300',
   primaryButton:
-    'rounded-[1rem] bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 disabled:cursor-not-allowed disabled:opacity-55',
+    'rounded-[1rem] bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none disabled:cursor-not-allowed disabled:opacity-55 sm:py-2.5',
   secondaryButton:
-    'rounded-[1rem] border border-white/12 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-blue-400/50 hover:bg-blue-500/12 hover:text-blue-100 focus:outline-none focus:ring-4 focus:ring-blue-500/20',
+    'rounded-[1rem] border border-white/12 bg-black px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-blue-400/50 hover:bg-blue-950/60 hover:text-blue-100 focus:outline-none sm:py-2.5',
   dangerButton:
-    'rounded-[1rem] border border-rose-400/25 bg-rose-950/18 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:border-rose-300/50 hover:bg-rose-500/14 hover:text-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-500/18',
+    'rounded-[1rem] border border-rose-400/25 bg-black px-4 py-3 text-sm font-semibold text-rose-200 transition hover:border-rose-300/50 hover:bg-rose-950/70 hover:text-rose-100 focus:outline-none sm:py-2.5',
 };
 
 const toProjectPayload = (project: Project) => ({
@@ -73,14 +73,16 @@ const Admin = () => {
     return payload;
   };
 
-  const loadProjects = async () => {
+  const loadProjects = async (preferredId = selectedId) => {
     if (!token) return;
     setLoading(true);
     try {
       const payload = await request('/api/admin/projects');
       const next = Array.isArray(payload.data) ? payload.data : [];
       setProjects(next);
-      if (!selectedId && next[0]) setSelectedId(next[0].id);
+      const nextSelected = next.find((project) => project.id === preferredId) ?? next[0];
+      setSelectedId(nextSelected?.id || '');
+      setDraft(nextSelected || emptyProject);
       setMessage(`Loaded ${next.length} projects.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load projects.');
@@ -127,8 +129,8 @@ const Admin = () => {
         body: JSON.stringify(toProjectPayload(draft)),
       });
       setMessage(isNew ? 'Project created.' : 'Project updated.');
-      await loadProjects();
-      if (payload.data?.id) setSelectedId(payload.data.id);
+      const savedId = payload.data?.id || draft.id;
+      await loadProjects(savedId);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Save failed.');
     } finally {
@@ -141,10 +143,8 @@ const Admin = () => {
     setLoading(true);
     try {
       await request(`/api/admin/projects/${encodeURIComponent(draft.id)}`, { method: 'DELETE' });
-      setSelectedId('');
-      setDraft(emptyProject);
       setMessage('Project deleted.');
-      await loadProjects();
+      await loadProjects('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Delete failed.');
     } finally {
@@ -158,7 +158,7 @@ const Admin = () => {
 
   if (!token) {
     return (
-      <main className={`${styles.page} flex items-center justify-center px-4`}>
+      <main className={`${styles.page} flex items-center justify-center px-4 py-6`}>
         <form onSubmit={login} className={`${styles.shell} w-full max-w-sm space-y-5 p-6`}>
           <div>
             <h1 className="text-xl font-semibold text-slate-50">Admin</h1>
@@ -189,9 +189,9 @@ const Admin = () => {
 
   return (
     <main className={styles.page}>
-      <div className="mx-auto max-w-6xl px-4 py-6">
-        <header className={`${styles.shell} flex items-center justify-between gap-4 p-5`}>
-          <div>
+      <div className="mx-auto flex w-full max-w-6xl flex-col px-3 py-4 sm:px-4 sm:py-6">
+        <header className={`${styles.shell} flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5`}>
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold text-slate-50">Project Admin</h1>
             <p className="text-sm text-slate-400">Create, edit, archive, feature, and delete portfolio projects.</p>
           </div>
@@ -200,13 +200,13 @@ const Admin = () => {
               localStorage.removeItem(tokenKey);
               setToken('');
             }}
-            className={styles.secondaryButton}
+            className={`${styles.secondaryButton} w-full sm:w-auto`}
           >
             Sign out
           </button>
         </header>
 
-        <div className="grid gap-6 py-6 md:grid-cols-[280px_1fr]">
+        <div className="grid gap-4 py-4 md:grid-cols-[280px_minmax(0,1fr)] md:gap-6 md:py-6">
           <aside className={`${styles.panel} overflow-hidden`}>
             <div className="flex items-center justify-between border-b border-white/10 p-3">
               <span className="text-sm font-semibold text-slate-100">Projects</span>
@@ -215,12 +215,12 @@ const Admin = () => {
                   setSelectedId('');
                   setDraft({ ...emptyProject, sortOrder: projects.length + 1 });
                 }}
-                className="rounded-[0.85rem] bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+                className="rounded-[0.85rem] bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none"
               >
                 New
               </button>
             </div>
-            <div className="max-h-[70vh] overflow-auto">
+            <div className="max-h-[36dvh] overflow-y-auto overscroll-contain md:max-h-[calc(100dvh-12rem)]">
               {projects.map((project) => (
                 <button
                   key={project.id}
@@ -237,11 +237,16 @@ const Admin = () => {
                   </span>
                 </button>
               ))}
+              {!loading && projects.length === 0 && (
+                <div className="px-3 py-5 text-sm text-slate-500">
+                  No projects found. Create one to start.
+                </div>
+              )}
             </div>
           </aside>
 
           <form onSubmit={saveProject} className={`${styles.panel} space-y-4 p-4`}>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <label className={styles.label}>
                 <span>ID</span>
                 <input value={draft.id} onChange={(e) => updateDraft('id', e.target.value)} className={styles.field} placeholder="my-project" />
@@ -291,12 +296,12 @@ const Admin = () => {
               </label>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-4">
-              <button disabled={loading} className={styles.primaryButton}>
+            <div className="flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:flex-wrap sm:items-center">
+              <button disabled={loading} className={`${styles.primaryButton} w-full sm:w-auto`}>
                 {loading ? 'Saving...' : 'Save project'}
               </button>
               {draft.id && (
-                <button type="button" onClick={deleteSelected} className={styles.dangerButton}>
+                <button type="button" onClick={deleteSelected} className={`${styles.dangerButton} w-full sm:w-auto`}>
                   Delete
                 </button>
               )}
