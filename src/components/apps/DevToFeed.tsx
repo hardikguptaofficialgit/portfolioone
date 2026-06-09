@@ -5,6 +5,7 @@ import { Check, Copy, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { fetchDevToArticles, DevToArticle } from '@/lib/devto';
 import { useDesktopStore } from '@/store/desktopStore';
 import { cn } from '@/lib/utils';
+import { getDevUsername } from '@/lib/runtimeConfig';
 
 export const DevToFeed = () => {
     const { settings } = useDesktopStore();
@@ -15,10 +16,7 @@ export const DevToFeed = () => {
     const [error, setError] = useState<string | null>(null);
     const [copiedId, setCopiedId] = useState<number | null>(null);
 
-    const getUsername = () => {
-        const envUser = (import.meta.env.VITE_DEV_USERNAME || 'strykerinside') as string;
-        return envUser.replace(/^@/, '').trim() || 'strykerinside';
-    };
+    const [devUsername, setDevUsername] = useState('strykerinside');
 
     const copyToClipboard = async (value: string) => {
         try {
@@ -67,7 +65,9 @@ export const DevToFeed = () => {
         try {
             setLoading(true);
             setError(null);
-            const articles = await fetchDevToArticles(getUsername(), 24, { perPage: 24 });
+            const username = await getDevUsername();
+            setDevUsername(username);
+            const articles = await fetchDevToArticles(username, 24, { perPage: 24 });
             setPosts(articles);
         } catch (err) {
             console.error('Error fetching DEV.to posts:', err);
@@ -124,7 +124,7 @@ export const DevToFeed = () => {
                         </p>
                     </div>
                     <a
-                        href={`https://dev.to/${getUsername()}`}
+                        href={`https://dev.to/${devUsername}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={cn(

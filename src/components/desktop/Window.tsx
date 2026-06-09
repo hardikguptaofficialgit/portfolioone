@@ -1026,20 +1026,46 @@ You speak, think, and respond as Hardik - with the technical depth, product back
     setInput('');
     setError('');
 
-    // Add user message to chat
     const newMessages = [...messages, { role: 'user' as const, content: userMessage }];
     setMessages(newMessages);
     setIsLoading(true);
 
-    setMessages([
-      ...newMessages,
-      {
-        role: 'assistant',
-        content:
-          'AI chat is disabled on the public site so no browser-exposed API token is required. Email me instead and I will reply directly.',
-      },
-    ]);
-    setIsLoading(false);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newMessages
+            .filter((message) => message.role !== 'system')
+            .map((message) => ({ role: message.role, content: message.content })),
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || 'AI chat is unavailable right now.');
+      }
+
+      setMessages([
+        ...newMessages,
+        {
+          role: 'assistant',
+          content: payload.message || 'I could not generate a response. Email me and I will reply directly.',
+        },
+      ]);
+    } catch (err) {
+      const fallback = 'AI chat is unavailable right now. Email me instead and I will reply directly.';
+      setError(err instanceof Error ? err.message : fallback);
+      setMessages([
+        ...newMessages,
+        {
+          role: 'assistant',
+          content: fallback,
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

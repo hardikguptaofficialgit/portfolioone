@@ -4,23 +4,23 @@ import { motion } from 'framer-motion';
 import { Moon, Sun } from 'lucide-react';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useDesktopStore } from '@/store/desktopStore';
+import { getPublicRuntimeConfig } from '@/lib/runtimeConfig';
 
 interface EmailEntryProps {
   onComplete: (email?: string) => void;
 }
 
 let supabaseAnonClient: SupabaseClient | null = null;
-const getSupabaseAnonClient = () => {
+const getSupabaseAnonClient = async () => {
   if (supabaseAnonClient) return supabaseAnonClient;
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !anon) return null;
-  supabaseAnonClient = createClient(url, anon);
+  const config = await getPublicRuntimeConfig();
+  if (!config.supabaseUrl || !config.supabaseAnonKey) return null;
+  supabaseAnonClient = createClient(config.supabaseUrl, config.supabaseAnonKey);
   return supabaseAnonClient;
 };
 
 const subscribeViaSupabaseFallback = async (email: string) => {
-  const client = getSupabaseAnonClient();
+  const client = await getSupabaseAnonClient();
   if (!client) throw new Error('Newsletter service unavailable. Missing Supabase config.');
   const now = new Date().toISOString();
   const { error } = await client.from('newsletter_subscribers').upsert(

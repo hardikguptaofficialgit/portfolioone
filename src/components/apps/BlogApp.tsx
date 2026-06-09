@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Interfaces, Files } from 'doodle-icons';
 import { format } from 'date-fns';
+import { getDevUsername } from '@/lib/runtimeConfig';
 
 interface BlogPost {
   id: number;
@@ -28,7 +29,7 @@ export const BlogApp = () => {
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const username = (import.meta.env.VITE_DEV_USERNAME || 'strykerinside').replace(/^@/, '');
+        const username = await getDevUsername();
         const data = await fetchDevToArticles(username, 24, { perPage: 24 });
         setPosts(
           data.map((post) => ({

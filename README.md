@@ -22,13 +22,25 @@ Portfolio content falls back to `content/portfolio.json`, but `/admin` edits are
 Newsletter subscriptions are handled by `api/newsletter/subscribe.ts` and also use Supabase storage:
 
 - `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+
+Public runtime config is served by `/api/config` from server env vars:
+
+- `DEV_USERNAME`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
 
 Admin login requires:
 
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 - `ADMIN_SESSION_SECRET`
+
+AI chat uses GitHub Models through a server-side API route:
+
+- `GITHUB_TOKEN` with the GitHub Models `models` scope
+- `GITHUB_MODELS_MODEL` optional, defaults to `openai/gpt-4o`
 
 Newsletter welcome emails additionally need:
 

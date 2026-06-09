@@ -11,6 +11,7 @@ import {
 import { format } from 'date-fns';
 import photosData from '@/data/photos.json';
 import { DevToArticle, fetchDevToArticles } from '@/lib/devto';
+import { getDevUsername } from '@/lib/runtimeConfig';
 import { useDesktopStore } from '@/store/desktopStore';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import type { Project } from '@/content/types';
@@ -223,10 +224,7 @@ const SimplifiedResume = () => {
     const sortedEvents = [...photosData].sort((a, b) =>
         a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1
     );
-    const devUsername = useMemo(() => {
-        const envUser = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_DEV_USERNAME : '';
-        return (envUser || 'strykerinside').replace(/^@/, '');
-    }, []);
+    const [devUsername, setDevUsername] = useState('strykerinside');
 
     useEffect(() => {
         fetch(`https://api.github.com/users/${profile.githubUsername || 'hardikguptaofficialgit'}/repos?per_page=100`)
@@ -241,7 +239,10 @@ const SimplifiedResume = () => {
             try {
                 setBlogLoading(true);
                 setBlogError(null);
-                const articles = await fetchDevToArticles(devUsername, 30, { perPage: 30, signal: controller.signal });
+                const username = await getDevUsername();
+                if (controller.signal.aborted) return;
+                setDevUsername(username);
+                const articles = await fetchDevToArticles(username, 30, { perPage: 30, signal: controller.signal });
                 if (controller.signal.aborted) return;
                 const sorted = [...articles]
                     .sort((a, b) => {
@@ -263,7 +264,7 @@ const SimplifiedResume = () => {
 
         loadPopularArticles();
         return () => controller.abort();
-    }, [devUsername]);
+    }, []);
 
     useEffect(() => {
         let list = [...repos];

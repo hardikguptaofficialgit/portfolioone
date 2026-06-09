@@ -29,6 +29,7 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
 import { DevToArticle, DevToComment, fetchDevToArticleById, fetchDevToArticleBySlug, fetchDevToArticles, fetchDevToComments } from '@/lib/devto';
+import { getDevUsername } from '@/lib/runtimeConfig';
 import { Input } from '@/components/ui/input';
 import { useDesktopStore } from '@/store/desktopStore';
 
@@ -41,12 +42,22 @@ type SortMode = 'latest' | 'popular';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-const getUsername = () => {
-  const envUser =
-    typeof import.meta !== 'undefined' && import.meta.env
-      ? import.meta.env.VITE_DEV_USERNAME
-      : '';
-  return (envUser || 'strykerinside').replace(/^@/, '');
+const DEFAULT_DEV_USERNAME = 'strykerinside';
+
+const useDevUsername = () => {
+  const [username, setUsername] = useState(DEFAULT_DEV_USERNAME);
+
+  useEffect(() => {
+    let mounted = true;
+    getDevUsername().then((value) => {
+      if (mounted) setUsername(value);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return username;
 };
 
 const buildAppPostUrl = (slug: string) => {
@@ -487,7 +498,7 @@ export const BlogListPage = () => {
   const [sortMode, setSortMode] = useState<SortMode>('latest');
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-  const username = getUsername();
+  const username = useDevUsername();
 
   const copyToClipboard = async (value: string) => {
     try { await navigator.clipboard.writeText(value); return true; } catch { return false; }
@@ -844,7 +855,7 @@ export const BlogPostPage = () => {
   const [commentsError, setCommentsError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [coverError, setCoverError] = useState(false);
-  const username = getUsername();
+  const username = useDevUsername();
 
   const appPostUrl = useMemo(() => (post?.slug ? buildAppPostUrl(post.slug) : ''), [post?.slug]);
 

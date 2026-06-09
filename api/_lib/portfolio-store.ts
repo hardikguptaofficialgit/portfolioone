@@ -10,7 +10,7 @@ const seedPath = fileURLToPath(new URL('../../content/portfolio.json', import.me
 const seed = JSON.parse(readFileSync(seedPath, 'utf8')) as unknown;
 
 const getSupabaseConfig = () => {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return url && key ? { url, key } : null;
 };
