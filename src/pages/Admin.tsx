@@ -17,7 +17,7 @@ const emptyProject: Project = {
 const tokenKey = 'portfolio_admin_token';
 
 const styles = {
-  page: 'min-h-dvh overflow-y-auto bg-black text-slate-50',
+  page: 'fixed inset-0 w-full overflow-y-auto bg-black text-slate-50',
   shell: 'rounded-[1.5rem] border border-white/10 bg-[#090909]',
   panel: 'rounded-[1.5rem] border border-white/10 bg-[#090909]',
   field:
@@ -54,6 +54,25 @@ const Admin = () => {
     () => projects.find((project) => project.id === selectedId),
     [projects, selectedId]
   );
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyHeight = document.body.style.height;
+    const previousHtmlHeight = document.documentElement.style.height;
+
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    document.body.style.height = 'auto';
+    document.documentElement.style.height = 'auto';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.height = previousBodyHeight;
+      document.documentElement.style.height = previousHtmlHeight;
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedProject) setDraft(selectedProject);
