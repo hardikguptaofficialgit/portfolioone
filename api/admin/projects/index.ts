@@ -14,6 +14,11 @@ const parseBody = (req: any) => {
 };
 
 export default async function handler(req: any, res: any) {
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
   if (!requireAdmin(req, res)) return;
 
   try {

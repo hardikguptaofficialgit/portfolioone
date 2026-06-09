@@ -14,12 +14,18 @@ const parseBody = (req: any) => {
 };
 
 export default async function handler(req: any, res: any) {
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
   if (!requireAdmin(req, res)) return;
 
   try {
     const id = String(req.query?.id || '');
     if (req.method === 'PATCH' || req.method === 'PUT' || req.method === 'POST') {
-      const project = await updateProject(id, parseBody(req));
+      const body = parseBody(req);
+      const project = await updateProject(id, body.project || body);
       res.status(200).json({ ok: true, data: project });
       return;
     }
