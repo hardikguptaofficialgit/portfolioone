@@ -12,8 +12,6 @@
     "preview": "node node_modules/vite/bin/vite.js preview"
   },
   "dependencies": {
-    "@azure-rest/ai-inference": "^1.0.0-beta.6",
-    "@azure/core-auth": "^1.10.1",
     "@calcom/embed-react": "^1.5.3",
     "@hookform/resolvers": "^3.10.0",
     "@lobehub/fluent-emoji": "^4.1.0",

@@ -1031,43 +1031,15 @@ You speak, think, and respond as Hardik - with the technical depth, product back
     setMessages(newMessages);
     setIsLoading(true);
 
-    try {
-      // Import the GitHub Models SDK dynamically
-      const ModelClient = (await import('@azure-rest/ai-inference')).default;
-      const { AzureKeyCredential } = await import('@azure/core-auth');
-      const { isUnexpected } = await import('@azure-rest/ai-inference');
-
-      const token = import.meta.env.VITE_GITHUB_TOKEN;
-      if (!token) {
-        throw new Error('GITHUB_TOKEN not found in environment variables');
-      }
-
-      const endpoint = "https://models.github.ai/inference";
-      const model = "openai/gpt-4o-mini";
-
-      const client = ModelClient(endpoint, new AzureKeyCredential(token));
-
-      const response = await client.path("/chat/completions").post({
-        body: {
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          temperature: 1,
-          top_p: 1,
-          model: model
-        }
-      });
-
-      if (isUnexpected(response)) {
-        throw new Error(response.body?.error?.message || 'API request failed');
-      }
-
-      const assistantMessage = response.body.choices[0].message.content;
-      setMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get response from AI');
-      console.error('Chat error:', err);
-    } finally {
-      setIsLoading(false);
-    }
+    setMessages([
+      ...newMessages,
+      {
+        role: 'assistant',
+        content:
+          'AI chat is disabled on the public site so no browser-exposed API token is required. Email me instead and I will reply directly.',
+      },
+    ]);
+    setIsLoading(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

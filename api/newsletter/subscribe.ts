@@ -40,7 +40,7 @@ const renderWelcomeNewsletterHtml = (email: string) => `
 
 const sendWelcomeEmail = async (email: string) => {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.NEWSLETTER_FROM_EMAIL || process.env.VITE_ADMIN_EMAIL;
+  const from = process.env.NEWSLETTER_FROM_EMAIL;
   if (!apiKey || !from) {
     return { sent: false, error: 'Email provider is not configured.' };
   }
