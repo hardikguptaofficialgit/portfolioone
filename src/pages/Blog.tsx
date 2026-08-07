@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -6,62 +6,34 @@ import {
   ArrowUpRight,
   Calendar,
   Check,
-  Copy,
   Clock,
+  ExternalLink,
   Flame,
-  Heart,
-  MessageCircle,
+  Copy,
   Moon,
   RefreshCw,
   Search,
   Share2,
   Sun,
   Tag,
-  ExternalLink,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Copilot from '@lobehub/icons/es/Copilot';
 import { ModelIcon } from '@lobehub/icons/es/features';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import remarkGfm from 'remark-gfm';
+import { oneLight, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkBreaks from 'remark-breaks';
+import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { DevToArticle, DevToComment, fetchDevToArticleById, fetchDevToArticleBySlug, fetchDevToArticles, fetchDevToComments } from '@/lib/devto';
-import { getDevUsername } from '@/lib/runtimeConfig';
 import { Input } from '@/components/ui/input';
 import { useDesktopStore } from '@/store/desktopStore';
+import type { BlogPost } from '@/content/types';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 type BlogTheme = 'dark' | 'light';
-type SortMode = 'latest' | 'popular';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-const DEFAULT_DEV_USERNAME = 'strykerinside';
-
-const useDevUsername = () => {
-  const [username, setUsername] = useState(DEFAULT_DEV_USERNAME);
-
-  useEffect(() => {
-    let mounted = true;
-    getDevUsername().then((value) => {
-      if (mounted) setUsername(value);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return username;
-};
-
-const buildAppPostUrl = (slug: string) => {
-  const path = `/blog/${slug}`;
+const buildPostUrl = (slug: string) => {
+  const path = `/blogs/${slug}`;
   if (typeof window === 'undefined') return path;
   return new URL(path, window.location.origin).toString();
 };
@@ -69,190 +41,6 @@ const buildAppPostUrl = (slug: string) => {
 const readingTime = (text: string) =>
   Math.max(1, Math.round((text || '').split(/\s+/).filter(Boolean).length / 220));
 
-const stripHtml = (value: string) =>
-  value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-
-const flattenComments = (comments: DevToComment[]): DevToComment[] => {
-  const output: DevToComment[] = [];
-  const walk = (nodes: DevToComment[]) => {
-    nodes.forEach((node) => {
-      output.push(node);
-      if (node.children?.length) walk(node.children);
-    });
-  };
-  walk(comments);
-  return output;
-};
-
-/**
- * Normalize DEV.to body_markdown for external rendering.
- *
- * DEV.to uses Liquid tags ({% %} blocks) for rich embeds that only work
- * inside their platform. We strip/convert them here so markdown renders
- * cleanly in react-markdown.
- *
- * Liquid patterns handled:
- *   {% embed https://... %}          → clickable link block
- *   {% youtube VIDEO_ID %}           → YouTube link
- *   {% twitter TWEET_ID %}           → Twitter/X link
- *   {% codepen ... %}                → CodePen link
- *   {% gist ... %}                   → GitHub Gist link
- *   {% link ... %}                   → plain link
- *   {% raw %}...{% endraw %}         → strip wrapper, keep content
- *   {% ... %}                        → remove unknown tags
- *
- * Also fixes:
- *   - Relative image paths (DEV CDN)
- *   - Windows-style line endings
- */
-const normalizeDEVMarkdown = (raw: string): string => {
-  if (!raw) return '';
-
-  let md = raw;
-
-  // Normalize line endings
-  md = md.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-  // {% raw %} / {% endraw %}- keep inner content
-  md = md.replace(/\{%\s*raw\s*%\}([\s\S]*?)\{%\s*endraw\s*%\}/gi, '$1');
-
-  // {% embed url %} → markdown link block
-  md = md.replace(
-    /\{%\s*embed\s+(https?:\/\/[^\s%}]+)\s*%\}/gi,
-    (_m, url) => `\n> 🔗 [View embed](${url})\n`
-  );
-
-  // {% youtube VIDEO_ID %} → YouTube link
-  md = md.replace(
-    /\{%\s*youtube\s+([A-Za-z0-9_-]+)\s*%\}/gi,
-    (_m, id) => `\n> ▶️ [Watch on YouTube](https://www.youtube.com/watch?v=${id})\n`
-  );
-
-  // {% twitter TWEET_ID %} or {% tweet TWEET_ID %}
-  md = md.replace(
-    /\{%\s*(?:twitter|tweet)\s+([0-9]+)\s*%\}/gi,
-    (_m, id) => `\n> 🐦 [View tweet](https://twitter.com/i/web/status/${id})\n`
-  );
-
-  // {% codepen slug %}- minimal
-  md = md.replace(
-    /\{%\s*codepen\s+([^\s%}]+)\s*[^%]*%\}/gi,
-    (_m, slug) => `\n> 🖊️ [View on CodePen](https://codepen.io/pen/${slug})\n`
-  );
-
-  // {% gist user/hash %} or {% gist hash %}
-  md = md.replace(
-    /\{%\s*gist\s+([^\s%}]+)\s*%\}/gi,
-    (_m, ref) => `\n> 📋 [View Gist](https://gist.github.com/${ref})\n`
-  );
-
-  // {% link url_or_slug %} or {% post_url ... %}
-  md = md.replace(
-    /\{%\s*(?:link|post_url)\s+(https?:\/\/[^\s%}]+)\s*%\}/gi,
-    (_m, url) => `\n> 🔗 [Read more](${url})\n`
-  );
-  md = md.replace(
-    /\{%\s*(?:link|post_url)\s+([^\s%}]+)\s*%\}/gi,
-    (_m, slug) => `\n> 🔗 [Read more](https://dev.to/${slug})\n`
-  );
-
-  // Remove any remaining unrecognized {% ... %} liquid tags
-  md = md.replace(/\{%[^%]*%\}/g, '');
-
-  // Fix DEV.to relative image URLs (shouldn't be common but just in case)
-  md = md.replace(
-    /!\[([^\]]*)\]\(\/\/(.+?)\)/g,
-    '![$1](https://$2)'
-  );
-
-  return md;
-};
-
-// ---------------------------------------------------------------------------
-// Markdown Code Block component
-// ---------------------------------------------------------------------------
-const MarkdownCodeBlock = ({
-  inline,
-  className,
-  children,
-  theme,
-  ...props
-}: any) => {
-  const match = /language-(\w+)/.exec(className || '');
-  const code = String(children ?? '').replace(/\n$/, '');
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
-
-  if (inline) {
-    return (
-      <code
-        className={`rounded px-1.5 py-0.5 font-mono text-[0.85em] ${
-          theme === 'dark' ? 'bg-white/10 text-[#ffd3c4]' : 'bg-black/6 text-[#c7254e]'
-        }`}
-        {...props}
-      >
-        {children}
-      </code>
-    );
-  }
-
-  return (
-    <div
-      className={`not-prose group relative my-5 overflow-hidden rounded-xl border ${
-        theme === 'dark' ? 'border-white/10 bg-[#0b0d0d]' : 'border-black/10 bg-[#f8f8f8]'
-      }`}
-    >
-      {/* Language label + copy button */}
-      <div
-        className={`flex items-center justify-between px-4 py-2 text-[10px] font-mono ${
-          theme === 'dark' ? 'border-b border-white/8 text-white/40' : 'border-b border-black/8 text-black/40'
-        }`}
-      >
-        <span>{match?.[1] || 'code'}</span>
-        <button
-          onClick={handleCopy}
-          className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
-            theme === 'dark' ? 'hover:bg-white/10 hover:text-white/70' : 'hover:bg-black/8 hover:text-black/70'
-          }`}
-        >
-          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-          {copied ? 'Copied' : 'Copy'}
-        </button>
-      </div>
-      <SyntaxHighlighter
-        language={match?.[1] || 'text'}
-        style={theme === 'dark' ? vscDarkPlus : oneLight}
-        customStyle={{
-          margin: 0,
-          padding: '1rem',
-          background: 'transparent',
-          fontSize: '0.875rem',
-          lineHeight: 1.65,
-        }}
-        codeTagProps={{
-          style: {
-            fontFamily:
-              'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-          },
-        }}
-        PreTag="div"
-        {...props}
-      >
-        {code}
-      </SyntaxHighlighter>
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// AI Quick Actions
-// ---------------------------------------------------------------------------
 type AIToolOption = {
   label: string;
   shortLabel: string;
@@ -272,52 +60,45 @@ const AI_TOOL_OPTIONS: AIToolOption[] = [
 const PRIMARY_AI_TOOLS = AI_TOOL_OPTIONS.slice(0, 3);
 const EXTRA_AI_TOOLS = AI_TOOL_OPTIONS.slice(3);
 
-const buildAIConversationPrompt = (post: Pick<DevToArticle, 'title' | 'url' | 'description'>) =>
+const buildAIConversationPrompt = (post: BlogPost) =>
   [
     `Let's discuss this article in detail.`,
     `Title: ${post.title}`,
-    `Summary: ${post.description || 'No summary provided.'}`,
-    `URL: ${post.url}`,
+    `Summary: ${post.excerpt || 'No summary provided.'}`,
+    `URL: ${post.sourceUrl || buildPostUrl(post.slug)}`,
     `I want key takeaways, critique, practical next steps, and production-grade implementation ideas.`,
   ].join('\n');
 
-const AIQuickActions = ({
-  post,
-  buttonClass,
-}: {
-  post: Pick<DevToArticle, 'title' | 'url' | 'description'>;
-  buttonClass: string;
-}) => {
+const AIQuickActions = ({ post, buttonClass }: { post: BlogPost; buttonClass: string }) => {
   const [visibleSet, setVisibleSet] = useState<'primary' | 'extra'>('primary');
-  const prompt = useMemo(
-    () => buildAIConversationPrompt(post),
-    [post.title, post.url, post.description]
-  );
+  const prompt = useMemo(() => buildAIConversationPrompt(post), [post]);
+  const tools = visibleSet === 'primary' ? PRIMARY_AI_TOOLS : EXTRA_AI_TOOLS;
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {(visibleSet === 'primary' ? PRIMARY_AI_TOOLS : EXTRA_AI_TOOLS).map((tool) => (
+    <div className="flex flex-wrap items-center gap-1">
+      {tools.map((tool) => (
         <a
           key={tool.label}
           href={`${tool.urlBase}${encodeURIComponent(prompt)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className={`inline-flex h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-medium transition-colors ${buttonClass}`}
+          className={`inline-flex h-5 items-center gap-1 rounded-[4px] px-1.5 text-[9px] font-medium transition-colors ${buttonClass}`}
           title={tool.label}
         >
           {tool.model === 'copilot' ? (
-            <Copilot.Color size={16} />
+            <Copilot.Color size={10} />
           ) : (
-            <ModelIcon model={tool.model} size={16} type="color" />
+            <ModelIcon model={tool.model} size={10} type="color" />
           )}
           <span>{tool.shortLabel}</span>
         </a>
       ))}
 
       {EXTRA_AI_TOOLS.length > 0 && (
-        <GhostBtn
-          onClick={() => setVisibleSet((v) => (v === 'primary' ? 'extra' : 'primary'))}
-          className={buttonClass}
+        <button
+          type="button"
+          onClick={() => setVisibleSet((value) => (value === 'primary' ? 'extra' : 'primary'))}
+          className={`inline-flex h-5 items-center gap-1 rounded-[4px] px-1.5 text-[9px] font-medium transition-colors ${buttonClass}`}
           aria-pressed={visibleSet === 'extra'}
         >
           {visibleSet === 'primary' ? 'More...' : 'Back'}
@@ -326,17 +107,53 @@ const AIQuickActions = ({
             transition={{ type: 'spring', stiffness: 420, damping: 28 }}
             className="inline-flex"
           >
-            <ArrowUpRight className="h-3 w-3 rotate-45" />
+            <ArrowUpRight className="h-2.5 w-2.5 rotate-45" />
           </motion.span>
-        </GhostBtn>
+        </button>
       )}
     </div>
   );
 };
 
-// ---------------------------------------------------------------------------
-// Hooks
-// ---------------------------------------------------------------------------
+const T = {
+  dark: {
+    root: 'bg-[#0d0f0f] text-[#f0f0ee]',
+    surface: 'bg-[#111414]',
+    card: 'bg-[#141818] hover:bg-[#181d1d]',
+    input: 'bg-[#1a1f1f] border-0 text-[#f0f0ee] placeholder:text-white/35 focus-visible:ring-1 focus-visible:ring-white/20 rounded-md',
+    muted: 'text-white/60',
+    subtle: 'text-white/40',
+    badge: 'bg-white/8 text-white/70',
+    btn: 'bg-white/6 hover:bg-white/10 text-white/70 hover:text-white',
+    accentBtn: 'bg-[#d0fffe] text-[#0d1515] hover:bg-[#b8f5f3]',
+    divider: 'bg-white/8',
+    border: 'border-white/10',
+    codeHeader: 'bg-white/[0.04] text-white/55 border-white/10',
+    codeSurface: '#0b0d0d',
+    tableHeader: 'bg-white/[0.05] text-white/80',
+    quote: 'border-[#d0fffe]/45 bg-white/[0.035] text-white/78',
+    prose: 'prose-invert prose-headings:text-[#f0f0ee] prose-p:text-white/78 prose-li:text-white/78 prose-a:text-[#d0fffe] prose-code:text-[#ffd3c4] prose-pre:bg-transparent prose-strong:text-white',
+  },
+  light: {
+    root: 'bg-[#f6f5f0] text-[#1a1a1a]',
+    surface: 'bg-[#eeede8]',
+    card: 'bg-white hover:bg-[#fafaf8]',
+    input: 'bg-white border-0 text-[#1a1a1a] placeholder:text-black/35 focus-visible:ring-1 focus-visible:ring-black/15 rounded-md',
+    muted: 'text-black/55',
+    subtle: 'text-black/38',
+    badge: 'bg-black/6 text-black/55',
+    btn: 'bg-black/5 hover:bg-black/9 text-black/60 hover:text-black',
+    accentBtn: 'bg-[#1a1a1a] text-white hover:bg-[#333]',
+    divider: 'bg-black/8',
+    border: 'border-black/10',
+    codeHeader: 'bg-black/[0.04] text-black/55 border-black/10',
+    codeSurface: '#f4f3ee',
+    tableHeader: 'bg-black/[0.04] text-black/75',
+    quote: 'border-black/25 bg-black/[0.035] text-black/70',
+    prose: 'prose-headings:text-[#1a1a1a] prose-p:text-black/72 prose-li:text-black/72 prose-a:text-[#0056b3] prose-code:text-[#b42318] prose-pre:bg-transparent prose-strong:text-black',
+  },
+};
+
 const useBlogTheme = () => {
   const { settings, updateSettings } = useDesktopStore();
   const theme: BlogTheme = settings.darkMode ? 'dark' : 'light';
@@ -356,476 +173,242 @@ const usePageScroll = () => {
   }, []);
 };
 
-const useMobileCompactHeader = (threshold = 56) => {
-  const [isCompact, setIsCompact] = useState(false);
-  useEffect(() => {
-    const update = () => setIsCompact(window.innerWidth < 768 && window.scrollY > threshold);
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
-  }, [threshold]);
-  return isCompact;
+const fetchPosts = async (): Promise<BlogPost[]> => {
+  const response = await fetch('/api/blogs', { cache: 'no-store' });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'Unable to load posts.');
+  return Array.isArray(payload.data) ? payload.data : [];
 };
 
-// ---------------------------------------------------------------------------
-// Theme tokens
-// ---------------------------------------------------------------------------
-const T = {
-  dark: {
-    root: 'bg-[#0d0f0f] text-[#f0f0ee]',
-    sidebar: 'bg-[#111414]',
-    card: 'bg-[#141818] hover:bg-[#181d1d]',
-    featuredCard: 'bg-[#141818]',
-    input: 'bg-[#1a1f1f] border-0 text-[#f0f0ee] placeholder:text-white/35 focus-visible:ring-1 focus-visible:ring-white/20 rounded-lg',
-    muted: 'text-white/60',
-    subtle: 'text-white/40',
-    badge: 'bg-white/8 text-white/70 border-0',
-    pill: { active: 'bg-white/12 text-white font-medium', inactive: 'text-white/50 hover:bg-white/6 hover:text-white/80' },
-    btn: 'bg-white/6 hover:bg-white/10 text-white/70 hover:text-white',
-    accentBtn: 'bg-[#d0fffe] text-[#0d1515] hover:bg-[#b8f5f3]',
-    coverFallback: 'bg-[#1a1f1f] text-white/25',
-    divider: 'bg-white/8',
-    prose: 'prose-invert prose-headings:text-[#f0f0ee] prose-a:text-[#d0fffe] prose-code:text-[#ffd3c4] prose-pre:bg-[#0d0f0f] prose-blockquote:border-l-white/20 prose-blockquote:text-white/60 prose-strong:text-white prose-th:text-white',
-    accent: '#d0fffe',
-    accentFg: '#0d1515',
-    spinnerColor: '#d0fffe',
-    embedBlock: 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/8',
-    imgBorder: 'border-white/10',
-  },
-  light: {
-    root: 'bg-[#f6f5f0] text-[#1a1a1a]',
-    sidebar: 'bg-[#eeede8]',
-    card: 'bg-white hover:bg-[#fafaf8]',
-    featuredCard: 'bg-white',
-    input: 'bg-white border-0 text-[#1a1a1a] placeholder:text-black/35 focus-visible:ring-1 focus-visible:ring-black/15 rounded-lg',
-    muted: 'text-black/55',
-    subtle: 'text-black/38',
-    badge: 'bg-black/6 text-black/55 border-0',
-    pill: { active: 'bg-black/10 text-black font-medium', inactive: 'text-black/45 hover:bg-black/5 hover:text-black/70' },
-    btn: 'bg-black/5 hover:bg-black/9 text-black/60 hover:text-black',
-    accentBtn: 'bg-[#1a1a1a] text-white hover:bg-[#333]',
-    coverFallback: 'bg-[#e8e7e2] text-black/25',
-    divider: 'bg-black/8',
-    prose: 'prose-headings:text-[#1a1a1a] prose-a:text-[#0070f3] prose-code:text-[#c7254e] prose-pre:bg-[#f0efe9] prose-blockquote:border-l-black/20 prose-blockquote:text-black/60',
-    accent: '#1a1a1a',
-    accentFg: '#ffffff',
-    spinnerColor: '#1a1a1a',
-    embedBlock: 'bg-black/4 border border-black/10 text-black/60 hover:bg-black/6',
-    imgBorder: 'border-black/10',
-  },
+const fetchPost = async (slug: string): Promise<BlogPost> => {
+  const response = await fetch(`/api/blogs/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'Unable to load article.');
+  return payload.data;
 };
 
-// ---------------------------------------------------------------------------
-// Shared sub-components
-// ---------------------------------------------------------------------------
-const ArticleMeta = ({ post, subtle }: { post: DevToArticle; subtle: string }) => (
-  <div className={`flex flex-wrap items-center gap-3 text-[11px] font-mono tracking-wide ${subtle}`}>
-    <span className="inline-flex items-center gap-1">
-      <Calendar className="h-3 w-3" />
-      {format(new Date(post.published_at), 'MMM d, yyyy')}
-    </span>
-    <span className="inline-flex items-center gap-1">
-      <Clock className="h-3 w-3" />
-      {post.reading_time_minutes || readingTime(post.description)} min read
-    </span>
-    {post.public_reactions_count > 0 && (
-      <span className="inline-flex items-center gap-1">
-        <Heart className="h-3 w-3" />
-        {post.public_reactions_count}
-      </span>
-    )}
-    {post.comments_count > 0 && (
-      <span className="inline-flex items-center gap-1">
-        <MessageCircle className="h-3 w-3" />
-        {post.comments_count}
-      </span>
-    )}
-  </div>
-);
+const MarkdownCodeBlock = ({ inline, className, children, theme, ...props }: any) => {
+  const match = /language-(\w+)/.exec(className || '');
+  const code = String(children ?? '').replace(/\n$/, '');
+  const [copied, setCopied] = useState(false);
+  const isBlock = Boolean(match) || code.includes('\n');
+  const C = T[theme as BlogTheme];
 
-const GhostBtn = ({
-  onClick,
-  children,
-  className = '',
-  size = 'sm',
-  ...buttonProps
-}: {
-  onClick?: (e: React.MouseEvent) => void;
-  children: React.ReactNode;
-  className?: string;
-  size?: 'sm' | 'md';
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button
-    type="button"
-    onClick={onClick}
-    {...buttonProps}
-    className={`inline-flex items-center gap-1.5 rounded-lg font-medium transition-colors
-      ${size === 'sm' ? 'h-7 px-2.5 text-[11px]' : 'h-9 px-3.5 text-xs'}
-      ${className}`}
-  >
-    {children}
-  </button>
-);
+  if (inline || !isBlock) {
+    return (
+      <code
+        className={`rounded border px-1 py-[0.1rem] font-mono text-[0.7em] ${C.border} ${theme === 'dark' ? 'bg-white/7' : 'bg-black/5'}`}
+        {...props}
+      >
+        {children}
+      </code>
+    );
+  }
 
-// ---------------------------------------------------------------------------
-// Spinner
-// ---------------------------------------------------------------------------
-const Spinner = ({ color }: { color: string }) => (
-  <span
-    className="inline-block h-4 w-4 rounded-full border-2 animate-spin"
-    style={{ borderColor: `${color} transparent transparent transparent` }}
-  />
-);
+  return (
+    <div className={`not-prose my-3 overflow-hidden rounded-md border ${C.border}`}>
+      <div className={`flex items-center justify-between border-b px-2 py-1.5 text-[9px] ${C.codeHeader}`}>
+        <span className="font-mono uppercase tracking-wider">{match?.[1] || 'code'}</span>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(code);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1200);
+          }}
+          className="inline-flex items-center gap-1 rounded-[4px] px-1.5 py-0.5 font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        >
+          {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <SyntaxHighlighter
+        language={match?.[1] || 'text'}
+        style={theme === 'dark' ? vscDarkPlus : oneLight}
+        customStyle={{
+          margin: 0,
+          padding: '0.6rem',
+          background: C.codeSurface,
+          fontSize: '0.7rem',
+          lineHeight: 1.4,
+          overflowX: 'auto',
+        }}
+        PreTag="div"
+        {...props}
+      >
+        {code}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
 
-// ---------------------------------------------------------------------------
-// BlogListPage
-// ---------------------------------------------------------------------------
 export const BlogListPage = () => {
   usePageScroll();
-  const isMobileCompact = useMobileCompactHeader(56);
   const { theme, toggleTheme } = useBlogTheme();
   const C = T[theme];
-
-  const [posts, setPosts] = useState<DevToArticle[]>([]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [activeTag, setActiveTag] = useState<string>('all');
-  const [sortMode, setSortMode] = useState<SortMode>('latest');
-  const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-  const username = useDevUsername();
-
-  const copyToClipboard = async (value: string) => {
-    try { await navigator.clipboard.writeText(value); return true; } catch { return false; }
-  };
-
-  const openComments = (post: DevToArticle) =>
-    window.open(`${post.url}#comments`, '_blank', 'noopener,noreferrer');
-
-  const sharePost = async (post: DevToArticle) => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: post.title, text: post.description || post.title, url: post.url });
-        return;
-      }
-    } catch (err: any) { if (err?.name === 'AbortError') return; }
-    const copied = await copyToClipboard(post.url);
-    if (copied) { setCopiedId(post.id); window.setTimeout(() => setCopiedId((c) => (c === post.id ? null : c)), 1200); }
-  };
-
-  const copyLink = async (post: DevToArticle) => {
-    const copied = await copyToClipboard(buildAppPostUrl(post.slug));
-    if (copied) { setCopiedId(post.id); window.setTimeout(() => setCopiedId((c) => (c === post.id ? null : c)), 1200); }
-  };
-
-  const loadPosts = useCallback(async (signal?: AbortSignal) => {
-    try {
-      setLoading(true); setError(null);
-      const data = await fetchDevToArticles(username, 24, { perPage: 24, signal });
-      if (signal?.aborted) return;
-      setPosts(data);
-    } catch (err: any) {
-      if (signal?.aborted || err.name === 'AbortError') return;
-      setError(err instanceof Error ? err.message : 'Unable to load DEV.to posts.');
-      setPosts([]);
-    } finally { if (!signal?.aborted) setLoading(false); }
-  }, [username]);
+  const [activeTag, setActiveTag] = useState('all');
+  const [sort, setSort] = useState<'latest' | 'popular'>('latest');
 
   useEffect(() => {
-    const ctrl = new AbortController();
-    loadPosts(ctrl.signal);
-    return () => ctrl.abort();
-  }, [loadPosts]);
+    fetchPosts()
+      .then(setPosts)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load posts.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const tagStats = useMemo(() => {
     const map = new Map<string, number>();
-    posts.forEach((p) => p.tag_list.forEach((t) => map.set(t, (map.get(t) || 0) + 1)));
-    return Array.from(map.entries())
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+    posts.forEach((post) => post.tags.forEach((tag) => map.set(tag, (map.get(tag) || 0) + 1)));
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   }, [posts]);
 
-  const searched = useMemo(() => {
-    if (!search.trim()) return posts;
-    const q = search.toLowerCase();
-    return posts.filter((p) =>
-      [p.title, p.description, p.tag_list.join(' ')].join(' ').toLowerCase().includes(q)
-    );
-  }, [posts, search]);
-
-  const filtered = useMemo(() => {
-    const tagFiltered = activeTag === 'all' ? searched : searched.filter((p) => p.tag_list.includes(activeTag));
-    return [...tagFiltered].sort((a, b) => {
-      if (sortMode === 'popular')
-        return (b.public_reactions_count * 2 + b.comments_count) - (a.public_reactions_count * 2 + a.comments_count);
-      return +new Date(b.published_at) - +new Date(a.published_at);
+  const filteredPosts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const next = posts.filter((post) => {
+      const matchesSearch =
+        !q ||
+        post.title.toLowerCase().includes(q) ||
+        post.excerpt.toLowerCase().includes(q) ||
+        post.tags.some((tag) => tag.toLowerCase().includes(q));
+      const matchesTag = activeTag === 'all' || post.tags.includes(activeTag);
+      return matchesSearch && matchesTag;
     });
-  }, [searched, activeTag, sortMode]);
+    return next.sort((a, b) => {
+      if (sort === 'popular') {
+        return Number(b.featured === true) - Number(a.featured === true) || (b.readingTimeMinutes || 0) - (a.readingTimeMinutes || 0);
+      }
+      return +new Date(b.publishedAt) - +new Date(a.publishedAt);
+    });
+  }, [activeTag, posts, search, sort]);
 
-  const featured = filtered[0];
-  const rest = filtered.slice(1);
+  const featuredPost = filteredPosts[0];
+  const remainingPosts = filteredPosts.slice(1);
+  const devToUrl = posts.find((post) => post.sourceUrl)?.sourceUrl || 'https://dev.to/strykerinside';
 
   return (
     <div className={`min-h-screen font-sans antialiased ${C.root}`}>
-      <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-12">
-        {/* Header */}
-        <header className="mb-8 md:mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-          >
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Blogs</h1>
-              <p className={`mt-1.5 max-w-xl text-sm leading-relaxed ${C.muted}`}>
-                Thoughts, deep dives, and things I'm learning- documented.
-              </p>
-            </div>
-            <div className={`flex items-center gap-2 ${isMobileCompact ? 'hidden md:flex' : 'flex'}`}>
-              <GhostBtn onClick={() => loadPosts()} className={C.btn} size="md">
-                <RefreshCw className="h-3.5 w-3.5" />
-              </GhostBtn>
-              <GhostBtn onClick={toggleTheme} className={C.btn} size="md">
-                {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                {theme === 'dark' ? 'Light' : 'Dark'}
-              </GhostBtn>
-              <a
-                href={`https://dev.to/${username}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-xs font-semibold transition-colors ${C.accentBtn}`}
-              >
-                DEV.to <ArrowUpRight className="h-3.5 w-3.5" />
-              </a>
-            </div>
-          </motion.div>
+      <div className="mx-auto max-w-6xl px-3 py-4 md:px-5 md:py-6">
+        <header className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-xl font-black leading-none tracking-tight md:text-2xl">Blogs</h1>
+            <p className={`mt-1.5 max-w-xl text-xs md:text-sm md:leading-5 ${C.muted}`}>
+              Thoughts, deep dives, and things I'm learning- documented.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => window.location.reload()} className={`inline-flex h-6 w-6 items-center justify-center rounded-md ${C.btn}`} aria-label="Reload posts">
+              <RefreshCw className="h-3 w-3" />
+            </button>
+            <button onClick={toggleTheme} className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-[10px] font-semibold ${C.btn}`}>
+              {theme === 'dark' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
+            <a href={devToUrl} target="_blank" rel="noopener noreferrer" className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-[10px] font-bold ${C.accentBtn}`}>
+              DEV.to <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
-          {/* Sidebar */}
-          <aside>
-            <div className={`space-y-1 rounded-xl p-3 lg:sticky lg:top-6 ${C.sidebar}`}>
-              {/* Search */}
-              <div className="px-1 pb-3">
-                <div className="relative">
-                  <Search className={`pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${C.subtle}`} />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search posts…"
-                    className={`pl-9 h-9 text-sm ${C.input}`}
-                  />
-                </div>
-                {posts.length > 0 && (
-                  <p className={`mt-2 px-1 text-[11px] font-mono ${C.subtle}`}>
-                    {filtered.length} of {posts.length} posts
-                  </p>
-                )}
+        <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)]">
+          <aside className={`h-max rounded-lg p-3 lg:sticky lg:top-4 border ${C.border} ${C.surface}`}>
+            <div className="relative">
+              <Search className={`absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 ${C.subtle}`} />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search posts..." className={`h-6 pl-6 text-[10px] ${C.input}`} />
+            </div>
+            <p className={`mt-2 font-mono text-[9px] ${C.muted}`}>{filteredPosts.length} of {posts.length} posts</p>
+
+            <div className="mt-5">
+              <p className={`mb-2 font-mono text-[9px] uppercase tracking-[0.1em] ${C.subtle}`}>Sort By</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button onClick={() => setSort('latest')} className={`inline-flex items-center justify-center gap-1 rounded-[4px] px-1 py-1.5 text-[9px] font-semibold transition-colors ${sort === 'latest' ? C.accentBtn : C.btn}`}>
+                  <Clock className="h-2.5 w-2.5" /> Latest
+                </button>
+                <button onClick={() => setSort('popular')} className={`inline-flex items-center justify-center gap-1 rounded-[4px] px-1 py-1.5 text-[9px] font-semibold transition-colors ${sort === 'popular' ? C.accentBtn : C.btn}`}>
+                  <Flame className="h-2.5 w-2.5" /> Popular
+                </button>
               </div>
+            </div>
 
-              <div className={`h-px mx-1 ${C.divider}`} />
-
-              {/* Sort */}
-              <div className="px-1 py-2">
-                <p className={`mb-2 text-[10px] uppercase tracking-[0.3em] font-mono px-1 ${C.subtle}`}>Sort</p>
-                <div className="flex gap-1">
-                  {(['latest', 'popular'] as SortMode[]).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setSortMode(m)}
-                      className={`flex-1 rounded-lg py-1.5 text-xs capitalize transition-colors ${sortMode === m ? C.pill.active : C.pill.inactive}`}
-                    >
-                      {m === 'latest'
-                        ? <span className="flex items-center justify-center gap-1"><Clock className="h-3 w-3" />{m}</span>
-                        : <span className="flex items-center justify-center gap-1"><Flame className="h-3 w-3" />{m}</span>
-                      }
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className={`h-px mx-1 ${C.divider}`} />
-
-              {/* Tags */}
-              <div className="px-1 py-2">
-                <p className={`mb-2 text-[10px] uppercase tracking-[0.3em] font-mono px-1 flex items-center gap-1.5 ${C.subtle}`}>
-                  <Tag className="h-3 w-3" />Tags
-                </p>
-                <div className="flex flex-col gap-0.5">
-                  <button
-                    onClick={() => setActiveTag('all')}
-                    className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left transition-colors ${activeTag === 'all' ? C.pill.active : C.pill.inactive}`}
-                  >
-                    <span>All posts</span>
-                    <span className={`text-[10px] font-mono ${C.subtle}`}>{posts.length}</span>
+            <div className="mt-5">
+              <p className={`mb-2 inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.1em] ${C.subtle}`}>
+                <Tag className="h-2.5 w-2.5" /> Tags
+              </p>
+              <div className="flex flex-col gap-1">
+                <button onClick={() => setActiveTag('all')} className={`flex items-center justify-between rounded-[4px] px-2 py-1 text-left text-[10px] transition-colors ${activeTag === 'all' ? C.accentBtn : C.btn}`}>
+                  <span>All posts</span><span className="opacity-70">{posts.length}</span>
+                </button>
+                {tagStats.map(([tag, count]) => (
+                  <button key={tag} onClick={() => setActiveTag(tag)} className={`flex items-center justify-between rounded-[4px] px-2 py-1 text-left text-[10px] transition-colors ${activeTag === tag ? C.accentBtn : C.btn}`}>
+                    <span>#{tag}</span><span className="opacity-70">{count}</span>
                   </button>
-                  {tagStats.slice(0, 14).map(({ tag, count }) => (
-                    <button
-                      key={tag}
-                      onClick={() => setActiveTag(tag)}
-                      className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left transition-colors ${activeTag === tag ? C.pill.active : C.pill.inactive}`}
-                    >
-                      <span>#{tag}</span>
-                      <span className={`text-[10px] font-mono ${C.subtle}`}>{count}</span>
-                    </button>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           </aside>
 
-          {/* Main */}
-          <main className="min-w-0 pb-8">
-            {loading && (
-              <div className="flex items-center gap-2.5 py-8 text-sm">
-                <Spinner color={C.spinnerColor} />
-                <span className={C.muted}>Loading posts…</span>
-              </div>
-            )}
+          <main>
+            {loading && <p className={`py-4 text-[10px] ${C.muted}`}>Loading posts...</p>}
+            {error && <p className="py-4 text-[10px] text-rose-400">{error}</p>}
+            {!loading && !error && filteredPosts.length === 0 && <p className={`py-4 text-[10px] ${C.muted}`}>No posts found.</p>}
 
-            {error && (
-              <div className="py-8">
-                <p className="text-sm text-rose-400 font-mono mb-3">{error}</p>
-                <GhostBtn onClick={() => loadPosts()} className={C.btn} size="md">
-                  <RefreshCw className="h-3.5 w-3.5" /> Retry
-                </GhostBtn>
-              </div>
-            )}
-
-            {!loading && !error && filtered.length === 0 && (
-              <p className={`py-8 text-sm ${C.muted}`}>No posts match this filter.</p>
-            )}
-
-            {!loading && !error && filtered.length > 0 && (
-              <div className="space-y-6">
-                {/* Featured post */}
-                {featured && (
-                  <Link
-                    to={`/blog/${featured.slug}`}
-                    className={`group block rounded-2xl overflow-hidden transition-colors ${C.featuredCard}`}
-                  >
-                    <div className="grid md:grid-cols-[minmax(0,1fr)_420px] md:items-stretch">
-                      <div className="flex flex-col justify-between gap-5 p-6 md:p-8">
-                        <div className="space-y-3">
-                          <p className={`text-[10px] font-mono uppercase tracking-[0.3em] ${C.subtle}`}>Featured</p>
-                          <h2 className="text-xl font-bold leading-snug md:text-2xl group-hover:opacity-90 transition-opacity">
-                            {featured.title}
-                          </h2>
-                          <p className={`text-sm leading-relaxed line-clamp-3 ${C.muted}`}>
-                            {featured.description || 'No description.'}
-                          </p>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap gap-1.5">
-                            {featured.tag_list.slice(0, 4).map((tag) => (
-                              <span key={tag} className={`rounded-md px-2 py-0.5 text-[10px] font-mono ${C.badge}`}>#{tag}</span>
-                            ))}
-                          </div>
-                          <ArticleMeta post={featured} subtle={C.subtle} />
-                          <div className={`flex flex-wrap gap-2 ${isMobileCompact ? 'hidden md:flex' : 'flex'}`}>
-                            <GhostBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); sharePost(featured); }} className={C.btn}>
-                              <Share2 className="h-3 w-3" />Share
-                            </GhostBtn>
-                            <GhostBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); copyLink(featured); }} className={C.btn}>
-                              {copiedId === featured.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                              {copiedId === featured.id ? 'Copied' : 'Copy link'}
-                            </GhostBtn>
-                            <GhostBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); openComments(featured); }} className={C.btn}>
-                              <MessageCircle className="h-3 w-3" />Comments
-                            </GhostBtn>
-                          </div>
-                        </div>
+            {featuredPost && (
+              <div className="grid gap-4">
+                <motion.article initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <Link to={`/blogs/${featuredPost.slug}`} className={`grid min-h-[200px] overflow-hidden rounded-xl border ${C.border} lg:grid-cols-[1.5fr_1fr] ${C.card}`}>
+                    <div className="flex flex-col justify-center p-4">
+                      <p className={`mb-2 font-mono text-[9px] uppercase tracking-[0.2em] ${C.subtle}`}>Featured</p>
+                      <h2 className="text-base font-bold leading-tight tracking-tight sm:text-lg">{featuredPost.title}</h2>
+                      <p className={`mt-2 line-clamp-2 text-[10px] leading-relaxed ${C.muted}`}>{featuredPost.excerpt || 'No description.'}</p>
+                      
+                      <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[9px]">
+                        {featuredPost.tags.slice(0, 3).map((tag) => (
+                           <span key={tag} className={`rounded-[4px] px-1.5 py-0.5 ${C.badge}`}>#{tag}</span>
+                        ))}
                       </div>
-
-                      <div className="relative min-h-[240px] overflow-hidden md:h-full bg-black">
-                        {featured.cover_image && !imageErrors[featured.id] ? (
-                          <img
-                            src={featured.cover_image}
-                            alt={featured.title}
-                            className="absolute inset-0 h-full w-full object-contain object-center"
-                            loading="lazy"
-                            decoding="async"
-                            referrerPolicy="no-referrer"
-                            onError={() => setImageErrors((p) => ({ ...p, [featured.id]: true }))}
-                          />
-                        ) : (
-                          <div className={`absolute inset-0 flex items-center justify-center text-xs font-mono ${C.coverFallback}`}>
-                            no cover
-                          </div>
-                        )}
+                      
+                      <div className={`mt-3 flex flex-wrap items-center gap-3 font-mono text-[9px] ${C.subtle}`}>
+                        <span className="inline-flex items-center gap-1"><Calendar className="h-2.5 w-2.5" />{format(new Date(featuredPost.publishedAt), 'MMM d, yyyy')}</span>
+                        <span className="inline-flex items-center gap-1"><Clock className="h-2.5 w-2.5" />{featuredPost.readingTimeMinutes || readingTime(featuredPost.body || featuredPost.excerpt)} min read</span>
                       </div>
                     </div>
+                    
+                    <div className="h-40 lg:h-full w-full bg-black shrink-0 relative">
+                      {featuredPost.coverImage ? (
+                        <img src={featuredPost.coverImage} alt={featuredPost.title} className="absolute inset-0 h-full w-full object-cover" loading="eager" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center px-4 text-center text-sm font-bold text-white/20">
+                          {featuredPost.title}
+                        </div>
+                      )}
+                    </div>
                   </Link>
-                )}
+                </motion.article>
 
-                {/* Post grid */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {rest.map((post, idx) => (
-                    <motion.div
-                      key={post.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.02, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <Link
-                        to={`/blog/${post.slug}`}
-                        className={`group flex h-full flex-col rounded-xl overflow-hidden transition-colors ${C.card}`}
-                      >
-                        <div className="relative w-full shrink-0 overflow-hidden aspect-video bg-black">
-                          {post.cover_image && !imageErrors[post.id] ? (
-                            <img
-                              src={post.cover_image}
-                              alt={post.title}
-                              className="absolute inset-0 h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.02]"
-                              loading="lazy"
-                              decoding="async"
-                              referrerPolicy="no-referrer"
-                              onError={() => setImageErrors((p) => ({ ...p, [post.id]: true }))}
-                            />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {remainingPosts.map((post, index) => (
+                    <motion.article key={post.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }}>
+                      <Link to={`/blogs/${post.slug}`} className={`flex flex-col h-full overflow-hidden rounded-lg border ${C.border} ${C.card}`}>
+                        <div className="h-24 sm:h-28 bg-black shrink-0 relative">
+                          {post.coverImage ? (
+                            <img src={post.coverImage} alt={post.title} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                           ) : (
-                            <div className={`absolute inset-0 flex items-center justify-center text-[11px] font-mono ${C.coverFallback}`}>
-                              no cover
-                            </div>
+                            <div className="flex h-full items-center justify-center p-4 text-center text-xs font-bold text-white/20">{post.title}</div>
                           )}
                         </div>
-
-                        <div className="flex flex-1 flex-col gap-2.5 p-4">
-                          <h3 className="text-sm font-semibold leading-snug line-clamp-2 group-hover:opacity-80 transition-opacity">
-                            {post.title}
-                          </h3>
-                          <p className={`text-xs leading-relaxed line-clamp-2 ${C.muted}`}>
-                            {post.description || 'No description.'}
-                          </p>
-
-                          <div className="mt-auto space-y-2">
-                            <div className="flex flex-wrap gap-1">
-                              {post.tag_list.slice(0, 3).map((tag) => (
-                                <span key={tag} className={`rounded px-1.5 py-0.5 text-[10px] font-mono ${C.badge}`}>#{tag}</span>
-                              ))}
-                            </div>
-                            <ArticleMeta post={post} subtle={C.subtle} />
-                            <div className={`flex items-center gap-1.5 ${isMobileCompact ? 'hidden md:flex' : 'flex'}`}>
-                              <GhostBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); sharePost(post); }} className={C.btn}>
-                                <Share2 className="h-3 w-3" />Share
-                              </GhostBtn>
-                              <GhostBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); copyLink(post); }} className={C.btn}>
-                                {copiedId === post.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                                {copiedId === post.id ? 'Copied' : 'Copy'}
-                              </GhostBtn>
-                              <GhostBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); openComments(post); }} className={C.btn}>
-                                <MessageCircle className="h-3 w-3" />
-                              </GhostBtn>
-                            </div>
+                        <div className="flex flex-col grow p-3">
+                          <h2 className="line-clamp-2 text-[11px] font-bold leading-tight">{post.title}</h2>
+                          <p className={`mt-1.5 line-clamp-2 text-[9px] leading-relaxed grow ${C.muted}`}>{post.excerpt || 'No description.'}</p>
+                          <div className={`mt-3 flex flex-wrap items-center gap-2 font-mono text-[8px] ${C.subtle}`}>
+                            <span className="inline-flex items-center gap-1"><Calendar className="h-2 w-2" />{format(new Date(post.publishedAt), 'MMM d, yyyy')}</span>
+                            <span className="inline-flex items-center gap-1"><Clock className="h-2 w-2" />{post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min</span>
                           </div>
                         </div>
                       </Link>
-                    </motion.div>
+                    </motion.article>
                   ))}
                 </div>
               </div>
@@ -837,477 +420,189 @@ export const BlogListPage = () => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// BlogPostPage- core fix: always use body_markdown + normalizeDEVMarkdown
-// ---------------------------------------------------------------------------
 export const BlogPostPage = () => {
   usePageScroll();
-  const isMobileCompact = useMobileCompactHeader(56);
   const { theme, toggleTheme } = useBlogTheme();
   const C = T[theme];
-
   const { slug } = useParams<{ slug: string }>();
-  const [post, setPost] = useState<DevToArticle | null>(null);
+  const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [comments, setComments] = useState<DevToComment[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentsError, setCommentsError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [coverError, setCoverError] = useState(false);
-  const username = useDevUsername();
 
-  const appPostUrl = useMemo(() => (post?.slug ? buildAppPostUrl(post.slug) : ''), [post?.slug]);
+  useEffect(() => {
+    if (!slug) {
+      setError('Missing article slug.');
+      setLoading(false);
+      return;
+    }
+    fetchPost(slug)
+      .then(setPost)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load article.'))
+      .finally(() => setLoading(false));
+  }, [slug]);
 
-  /**
-   * CORE FIX: We always render from body_markdown (after normalization) using
-   * react-markdown + rehype-raw. This gives us:
-   * - Proper heading hierarchy
-   * - Correct code blocks with language detection
-   * - GFM tables, task lists, strikethrough
-   * - DEV liquid tags stripped/converted to links
-   * - No broken Liquid HTML fragments from body_html
-   *
-   * We only fall back to body_html as a last resort.
-   */
-  const renderedMarkdown = useMemo(
-    () => normalizeDEVMarkdown(post?.body_markdown || ''),
-    [post?.body_markdown]
-  );
-
-  // Markdown component overrides
-  const markdownComponents: any = useMemo(() => ({
-    // Code blocks + inline code
-    code: ({ inline, className, children, node, ...props }: any) => (
+  const markdownComponents = useMemo(() => ({
+    pre: ({ children }: any) => <>{children}</>,
+    h1: ({ children, ...props }: any) => (
+      <h1 className="mb-2 mt-4 text-xl font-bold leading-tight tracking-tight" {...props}>{children}</h1>
+    ),
+    h2: ({ children, ...props }: any) => (
+      <h2 className="mb-2 mt-4 border-b border-current/10 pb-1 text-lg font-bold leading-tight tracking-tight" {...props}>{children}</h2>
+    ),
+    h3: ({ children, ...props }: any) => (
+      <h3 className="mb-1 mt-3 text-base font-bold leading-snug" {...props}>{children}</h3>
+    ),
+    h4: ({ children, ...props }: any) => (
+      <h4 className="mb-1 mt-2 text-sm font-bold leading-snug" {...props}>{children}</h4>
+    ),
+    p: ({ children, ...props }: any) => (
+      <p className="my-2 text-[10px] leading-5 md:text-xs md:leading-6" {...props}>{children}</p>
+    ),
+    a: ({ href, children, ...props }: any) => (
+      <a
+        href={href}
+        target={href?.startsWith('http') ? '_blank' : undefined}
+        rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+        className="font-medium underline decoration-current/35 underline-offset-[3px] hover:decoration-current transition-colors"
+        {...props}
+      >
+        {children}
+      </a>
+    ),
+    ul: ({ children, ...props }: any) => (
+      <ul className="my-2 list-disc space-y-1 pl-4 marker:text-current/45 text-[10px] md:text-xs" {...props}>{children}</ul>
+    ),
+    ol: ({ children, ...props }: any) => (
+      <ol className="my-2 list-decimal space-y-1 pl-4 marker:font-semibold marker:text-current/55 text-[10px] md:text-xs" {...props}>{children}</ol>
+    ),
+    li: ({ children, ...props }: any) => (
+      <li className="pl-1 leading-5 md:leading-6" {...props}>{children}</li>
+    ),
+    blockquote: ({ children, ...props }: any) => (
+      <blockquote className={`my-3 rounded-r-md border-l-2 px-3 py-2 text-[10px] md:text-xs italic leading-5 ${C.quote}`} {...props}>
+        {children}
+      </blockquote>
+    ),
+    hr: (props: any) => <hr className={`my-4 border-0 border-t ${C.border}`} {...props} />,
+    table: ({ children, ...props }: any) => (
+      <div className={`not-prose my-3 overflow-x-auto rounded-md border ${C.border}`}>
+        <table className="w-full min-w-[400px] border-collapse text-left text-[9px]" {...props}>{children}</table>
+      </div>
+    ),
+    thead: ({ children, ...props }: any) => <thead className={C.tableHeader} {...props}>{children}</thead>,
+    th: ({ children, ...props }: any) => (
+      <th className={`border-b px-2 py-1.5 font-semibold ${C.border}`} {...props}>{children}</th>
+    ),
+    td: ({ children, ...props }: any) => (
+      <td className={`border-b px-2 py-1.5 align-top leading-4 ${C.border}`} {...props}>{children}</td>
+    ),
+    tr: ({ children, ...props }: any) => <tr className="last:[&>td]:border-b-0" {...props}>{children}</tr>,
+    code: ({ inline, className, children, ...props }: any) => (
       <MarkdownCodeBlock inline={inline} className={className} theme={theme} {...props}>
         {children}
       </MarkdownCodeBlock>
     ),
-
-    // Images- responsive, rounded, no overflow
-    img: ({ node, src, alt, ...props }: any) => (
-      <span className="block my-6">
-        <img
-          src={src}
-          alt={alt || ''}
-          className={`rounded-xl w-full h-auto border shadow-sm ${C.imgBorder}`}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          {...props}
-        />
-        {alt && (
-          <span className={`block text-center text-xs mt-2 font-mono ${C.subtle}`}>{alt}</span>
-        )}
+    img: ({ src, alt, ...props }: any) => (
+      <span className="my-3 block">
+        <img src={src} alt={alt || ''} className={`mx-auto h-auto max-h-[300px] w-full max-w-full rounded-lg border object-cover ${C.border}`} loading="lazy" {...props} />
+        {alt && <span className={`mt-1.5 block text-center text-[9px] leading-4 ${C.subtle}`}>{alt}</span>}
       </span>
     ),
+  }), [C, theme]);
 
-    // Links- open external in new tab
-    a: ({ node, href, children, ...props }: any) => {
-      const isExternal = href?.startsWith('http');
-      return (
-        <a
-          href={href}
-          target={isExternal ? '_blank' : undefined}
-          rel={isExternal ? 'noopener noreferrer' : undefined}
-          className="font-medium underline underline-offset-4 decoration-current/30 hover:decoration-current/70 transition-colors"
-          {...props}
-        >
-          {children}
-          {isExternal && <ExternalLink className="inline h-3 w-3 ml-0.5 opacity-50" />}
-        </a>
-      );
-    },
-
-    // Blockquote- styled embed blocks from liquid tag conversion
-    blockquote: ({ node, children, ...props }: any) => (
-      <blockquote
-        className={`my-5 flex items-start gap-3 rounded-xl px-4 py-3 border-l-4 not-italic ${
-          theme === 'dark'
-            ? 'border-white/20 bg-white/4 text-white/70'
-            : 'border-black/15 bg-black/3 text-black/60'
-        }`}
-        {...props}
-      >
-        <div className="min-w-0">{children}</div>
-      </blockquote>
-    ),
-
-    // Tables- make them scrollable
-    table: ({ node, children, ...props }: any) => (
-      <div className="my-6 overflow-x-auto rounded-xl">
-        <table
-          className={`w-full border-collapse text-sm ${
-            theme === 'dark' ? 'border border-white/10' : 'border border-black/10'
-          }`}
-          {...props}
-        >
-          {children}
-        </table>
-      </div>
-    ),
-    th: ({ node, children, ...props }: any) => (
-      <th
-        className={`px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide ${
-          theme === 'dark' ? 'bg-white/8 border-b border-white/10' : 'bg-black/5 border-b border-black/10'
-        }`}
-        {...props}
-      >
-        {children}
-      </th>
-    ),
-    td: ({ node, children, ...props }: any) => (
-      <td
-        className={`px-4 py-2 text-sm ${
-          theme === 'dark' ? 'border-b border-white/6' : 'border-b border-black/6'
-        }`}
-        {...props}
-      >
-        {children}
-      </td>
-    ),
-
-    // Headings with anchor IDs
-    h1: ({ node, children, ...props }: any) => (
-      <h1 className="text-2xl font-bold mt-10 mb-4 tracking-tight" {...props}>{children}</h1>
-    ),
-    h2: ({ node, children, ...props }: any) => (
-      <h2 className="text-xl font-bold mt-8 mb-3 tracking-tight" {...props}>{children}</h2>
-    ),
-    h3: ({ node, children, ...props }: any) => (
-      <h3 className="text-lg font-semibold mt-6 mb-2" {...props}>{children}</h3>
-    ),
-    h4: ({ node, children, ...props }: any) => (
-      <h4 className="text-base font-semibold mt-5 mb-2" {...props}>{children}</h4>
-    ),
-
-    // Horizontal rule
-    hr: ({ node, ...props }: any) => (
-      <hr className={`my-8 border-0 h-px ${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`} {...props} />
-    ),
-
-    // Paragraph
-    p: ({ node, children, ...props }: any) => (
-      <p className="my-5 leading-8" {...props}>{children}</p>
-    ),
-  }), [theme]);
-
-  const articleProseClass = `prose max-w-none
-    text-[0.9375rem] leading-8
-    prose-li:my-1 prose-li:leading-7
-    prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
-    prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
-    prose-strong:font-semibold
-    prose-em:italic
-    ${C.prose}
-  `;
-
-  const copyToClipboard = async (value: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
-      return true;
-    } catch { return false; }
-  };
-
-  const openComments = (target?: DevToArticle | null) => {
-    if (!target?.url) return;
-    window.open(`${target.url}#comments`, '_blank', 'noopener,noreferrer');
-  };
-
-  const sharePost = async (target?: DevToArticle | null) => {
-    if (!target?.url) return;
+  const share = async () => {
+    if (!post) return;
+    const url = buildPostUrl(post.slug);
     try {
       if (navigator.share) {
-        await navigator.share({ title: target.title, text: target.description || target.title, url: target.url });
+        await navigator.share({ title: post.title, text: post.excerpt, url });
         return;
       }
-    } catch (err: any) { if (err?.name === 'AbortError') return; }
-    await copyToClipboard(target.url);
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return;
+    }
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
   };
-
-  // Load article
-  useEffect(() => {
-    const ctrl = new AbortController();
-    const load = async () => {
-      if (!slug) { setError('Missing article slug.'); setLoading(false); return; }
-      try {
-        setLoading(true); setError(null);
-        const slugData = await fetchDevToArticleBySlug(username, slug, ctrl.signal);
-        let article = slugData;
-
-        // Fetch by ID to get body_markdown (sometimes missing from slug endpoint)
-        if (slugData?.id) {
-          try {
-            const idData = await fetchDevToArticleById(slugData.id, ctrl.signal);
-            article = {
-              ...slugData,
-              ...idData,
-              // Prefer body_markdown- it's the source of truth, always use it
-              body_markdown: idData.body_markdown ?? slugData.body_markdown,
-              body_html: idData.body_html ?? slugData.body_html,
-            };
-          } catch {
-            // Fall back to slug payload
-          }
-        }
-
-        if (!ctrl.signal.aborted) setPost(article);
-      } catch (err: any) {
-        if (err.name === 'AbortError' || ctrl.signal.aborted) return;
-        setError(err instanceof Error ? err.message : 'Unable to load article.');
-      } finally { if (!ctrl.signal.aborted) setLoading(false); }
-    };
-    load();
-    return () => ctrl.abort();
-  }, [slug, username]);
-
-  useEffect(() => { setCoverError(false); }, [post?.id]);
-
-  // Load comments
-  useEffect(() => {
-    if (!post?.id) { setComments([]); setCommentsError(null); return; }
-    const ctrl = new AbortController();
-    const loadComments = async () => {
-      try {
-        setCommentsLoading(true); setCommentsError(null);
-        const tree = await fetchDevToComments(post.id, ctrl.signal);
-        if (!ctrl.signal.aborted) setComments(flattenComments(tree));
-      } catch (err: any) {
-        if (err?.name === 'AbortError' || ctrl.signal.aborted) return;
-        setCommentsError(err instanceof Error ? err.message : 'Unable to load comments.');
-        setComments([]);
-      } finally { if (!ctrl.signal.aborted) setCommentsLoading(false); }
-    };
-    loadComments();
-    return () => ctrl.abort();
-  }, [post?.id]);
 
   return (
     <div className={`min-h-screen font-sans antialiased ${C.root}`}>
-      <div className="mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {/* Top nav */}
-          <div className="mb-6 flex items-center justify-between">
-            <Link
-              to="/blogs"
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${C.btn}`}
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              All posts
-            </Link>
+      <main className="mx-auto max-w-3xl px-3 py-4 md:px-5 md:py-6">
+        <div className="mb-4 flex items-center justify-between">
+          <Link to="/blogs" className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-medium transition-colors ${C.btn}`}>
+            <ArrowLeft className="h-2.5 w-2.5" /> All posts
+          </Link>
+          <button onClick={toggleTheme} className={`inline-flex h-5 items-center gap-1 rounded-md px-2 text-[9px] font-medium transition-colors ${C.btn}`}>
+            {theme === 'dark' ? <Sun className="h-2.5 w-2.5" /> : <Moon className="h-2.5 w-2.5" />}
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
+        </div>
 
-            <div className={`items-center gap-2 ${isMobileCompact ? 'hidden md:flex' : 'flex'}`}>
-              {post?.url && (
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors ${C.btn}`}
-                >
-                  DEV.to <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-              )}
-              <GhostBtn onClick={toggleTheme} className={C.btn} size="md">
-                {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                {theme === 'dark' ? 'Light' : 'Dark'}
-              </GhostBtn>
+        {loading && <p className={`py-6 text-center text-[10px] ${C.muted}`}>Loading article...</p>}
+        {error && <p className="py-6 text-center text-[10px] text-rose-400">{error}</p>}
+        
+        {!loading && post && (
+          <article>
+            {post.coverImage && (
+              <div className={`mb-5 w-full overflow-hidden rounded-xl border aspect-[16/6] md:aspect-[21/8] ${C.border} ${theme === 'dark' ? 'bg-black' : 'bg-white'}`}>
+                <img src={post.coverImage} alt={post.title} className="h-full w-full object-cover" loading="eager" />
+              </div>
+            )}
+            <header className="mx-auto mb-5 max-w-2xl space-y-2">
+              <h1 className="text-xl font-bold leading-tight tracking-tight md:text-2xl">{post.title}</h1>
+              {post.excerpt && <p className={`text-[10px] leading-5 md:text-xs md:leading-6 ${C.muted}`}>{post.excerpt}</p>}
+              
+              <div className={`flex flex-wrap items-center gap-3 text-[9px] font-mono mt-1 ${C.subtle}`}>
+                <span className="inline-flex items-center gap-1"><Calendar className="h-2.5 w-2.5" />{format(new Date(post.publishedAt), 'MMM d, yyyy')}</span>
+                <span className="inline-flex items-center gap-1"><Clock className="h-2.5 w-2.5" />{post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min read</span>
+              </div>
+              
+              <div className="flex flex-wrap gap-1.5 pt-1.5">
+                {post.tags.map((tag) => (
+                   <span key={tag} className={`rounded-[4px] px-1.5 py-0.5 text-[8px] font-medium ${C.badge}`}>#{tag}</span>
+                ))}
+              </div>
+            </header>
+            
+            <div className={`mx-auto mb-5 h-px max-w-2xl ${C.divider}`} />
+            
+            <div className={`mx-auto max-w-2xl rounded-xl border p-3 sm:p-5 md:p-6 ${C.border} ${C.surface}`}>
+              <div className={`prose max-w-none text-[10px] leading-5 md:text-xs md:leading-6 ${C.prose}`}>
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]} components={markdownComponents as any}>
+                  {post.body || post.excerpt || 'No content available.'}
+                </ReactMarkdown>
+              </div>
             </div>
-          </div>
-
-          {/* Loading state */}
-          {loading && (
-            <div className="flex items-center gap-2.5 py-16 text-sm">
-              <Spinner color={C.spinnerColor} />
-              <span className={C.muted}>Loading article…</span>
-            </div>
-          )}
-
-          {/* Error state */}
-          {error && (
-            <div className="py-16">
-              <p className="text-sm text-rose-400 font-mono mb-4">{error}</p>
-              <Link
-                to="/blogs"
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${C.btn}`}
+            
+            <div className="mx-auto mt-5 flex max-w-2xl flex-wrap items-center gap-2">
+              <button onClick={share} className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-semibold transition-colors ${C.btn}`}>
+                <Share2 className="h-3 w-3" /> Share
+              </button>
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(buildPostUrl(post.slug));
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1200);
+                }}
+                className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-semibold transition-colors ${C.btn}`}
               >
-                <ArrowLeft className="h-3.5 w-3.5" /> Back to posts
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? 'Copied' : 'Copy link'}
+              </button>
+              <Link to="/blogs" className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-semibold transition-colors ${C.btn}`}>
+                <ArrowLeft className="h-3 w-3" /> All articles
               </Link>
             </div>
-          )}
 
-          {!loading && post && (
-            <article>
-              {/* Cover image */}
-              {post.cover_image && !coverError && (
-                <div className="relative w-full overflow-hidden rounded-2xl bg-black aspect-video mb-8">
-                  <img
-                    src={post.cover_image}
-                    alt={post.title}
-                    className="absolute inset-0 h-full w-full object-contain"
-                    loading="eager"
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    onError={() => setCoverError(true)}
-                  />
-                </div>
-              )}
-
-              {/* Title + meta */}
-              <div className="space-y-3 mb-8">
-                <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-3xl">{post.title}</h1>
-                {post.description && (
-                  <p className={`text-base leading-relaxed ${C.muted}`}>{post.description}</p>
-                )}
-                <ArticleMeta post={post} subtle={C.subtle} />
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {post.tag_list.map((tag) => (
-                    <span key={tag} className={`rounded-md px-2 py-0.5 text-[11px] font-mono ${C.badge}`}>#{tag}</span>
-                  ))}
-                </div>
-              </div>
-
-              <div className={`h-px w-full mb-8 ${C.divider}`} />
-
-              {/* Article body- always use body_markdown */}
-              <div className={`rounded-2xl p-5 md:p-8 ${C.sidebar}`}>
-                {renderedMarkdown ? (
-                  <div className={articleProseClass}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkBreaks]}
-                      rehypePlugins={[rehypeRaw]}
-                      components={markdownComponents}
-                    >
-                      {renderedMarkdown}
-                    </ReactMarkdown>
-                  </div>
-                ) : post.body_html ? (
-                  /* Last resort: sanitized HTML fallback */
-                  <div
-                    className={articleProseClass}
-                    dangerouslySetInnerHTML={{ __html: post.body_html }}
-                  />
-                ) : (
-                  <p className={`text-sm whitespace-pre-wrap ${C.muted}`}>
-                    {post.description || 'No content available.'}
-                  </p>
-                )}
-              </div>
-
-              {/* Post actions */}
-              <div className="mt-6 flex flex-wrap gap-2">
-                {post?.url && (
-                  <>
-                    <GhostBtn onClick={() => sharePost(post)} className={C.btn} size="md">
-                      <Share2 className="h-3.5 w-3.5" />Share
-                    </GhostBtn>
-                    <GhostBtn onClick={() => appPostUrl && copyToClipboard(appPostUrl)} className={C.btn} size="md">
-                      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                      {copied ? 'Copied' : 'Copy link'}
-                    </GhostBtn>
-                    <GhostBtn onClick={() => openComments(post)} className={C.btn} size="md">
-                      <MessageCircle className="h-3.5 w-3.5" />Comments
-                    </GhostBtn>
-                    <a
-                      href={post.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition-colors ${C.btn}`}
-                    >
-                      <Heart className="h-3.5 w-3.5" />React on DEV.to
-                    </a>
-                  </>
-                )}
-                <Link
-                  to="/blogs"
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition-colors ${C.btn}`}
-                >
-                  ← All articles
-                </Link>
-              </div>
-
-              {/* AI quick actions */}
-              {post?.url && (
-                <div className={`mt-4 rounded-2xl p-4 md:p-5 ${C.sidebar}`}>
-                  <p className={`text-[10px] uppercase tracking-[0.3em] font-mono mb-3 ${C.subtle}`}>
-                    Discuss with AI
-                  </p>
-                  <AIQuickActions post={post} buttonClass={C.btn} />
-                </div>
-              )}
-
-              {/* Comments */}
-              <section className={`mt-6 rounded-2xl p-5 md:p-6 ${C.sidebar}`}>
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-base font-semibold">Comments</h2>
-                  {comments.length > 0 && (
-                    <span className={`text-[11px] font-mono ${C.subtle}`}>{comments.length} visible</span>
-                  )}
-                </div>
-
-                {commentsLoading && (
-                  <div className="flex items-center gap-2 py-2">
-                    <Spinner color={C.spinnerColor} />
-                    <span className={`text-sm ${C.muted}`}>Loading comments…</span>
-                  </div>
-                )}
-                {commentsError && <p className="text-sm text-rose-400">{commentsError}</p>}
-                {!commentsLoading && !commentsError && comments.length === 0 && (
-                  <p className={`text-sm ${C.muted}`}>No comments yet.</p>
-                )}
-
-                {!commentsLoading && !commentsError && comments.length > 0 && (
-                  <div className="space-y-3">
-                    {comments.slice(0, 12).map((comment) => {
-                      const text =
-                        comment.body_markdown?.trim() ||
-                        (comment.body_html ? stripHtml(comment.body_html) : '');
-                      return (
-                        <div key={comment.id} className={`rounded-xl p-3.5 ${C.card}`}>
-                          <div className="flex items-center gap-2.5 mb-2">
-                            {comment.user.profile_image ? (
-                              <img
-                                src={comment.user.profile_image}
-                                alt={comment.user.name || comment.user.username}
-                                className="h-8 w-8 rounded-full object-cover shrink-0 ring-1 ring-white/10"
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold ${C.coverFallback}`}>
-                                {(comment.user.name || comment.user.username || '?')[0].toUpperCase()}
-                              </div>
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-xs font-semibold truncate">
-                                {comment.user.name || `@${comment.user.username}`}
-                              </p>
-                              <p className={`text-[11px] ${C.subtle}`}>
-                                {format(new Date(comment.created_at), 'MMM d, yyyy')}
-                              </p>
-                            </div>
-                          </div>
-                          <p className={`text-sm leading-relaxed ${C.muted} line-clamp-4`}>
-                            {text || 'Comment body unavailable.'}
-                          </p>
-                        </div>
-                      );
-                    })}
-                    <GhostBtn onClick={() => openComments(post)} className={`mt-1 ${C.btn}`} size="md">
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      View full thread on DEV.to
-                    </GhostBtn>
-                  </div>
-                )}
-              </section>
-            </article>
-          )}
-        </motion.div>
-      </div>
+            <section className={`mx-auto mt-5 max-w-2xl rounded-xl p-4 border ${C.border} ${C.surface}`}>
+              <p className={`mb-3 font-mono text-[9px] uppercase tracking-[0.1em] ${C.subtle}`}>Discuss with AI</p>
+              <AIQuickActions post={post} buttonClass={C.btn} />
+            </section>
+          </article>
+        )}
+      </main>
     </div>
   );
 };

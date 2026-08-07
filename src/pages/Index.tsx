@@ -8,7 +8,7 @@ import { Taskbar } from '@/components/desktop/Taskbar';
 import { StartMenu } from '@/components/desktop/StartMenu';
 import { Clock } from '@/components/widgets/Clock';
 import { WeatherWidget } from '@/components/widgets/WeatherWidget';
-import { DevToWidget } from '@/components/widgets/DevToWidget';
+import { BlogWidget } from '@/components/widgets/BlogWidget';
 import { AskMeWidget } from '@/components/widgets/AskMeWidget';
 import { LockScreen } from '@/components/auth/LockScreen';
 import { EmailEntry } from '@/components/auth/EmailEntry';
@@ -359,7 +359,7 @@ const Index = () => {
                 <WeatherWidget />
               </div>
               <div className="grayscale opacity-90 hover:opacity-100 ">
-                <DevToWidget />
+                <BlogWidget />
               </div>
             </>
           )}

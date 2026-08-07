@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { fetchDevToArticles } from '@/lib/devto';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Interfaces, Files } from 'doodle-icons';
 import { format } from 'date-fns';
-import { getDevUsername } from '@/lib/runtimeConfig';
+import type { BlogPost as PortfolioBlogPost } from '@/content/types';
 
 interface BlogPost {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   excerpt: string;
@@ -29,19 +28,21 @@ export const BlogApp = () => {
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const username = await getDevUsername();
-        const data = await fetchDevToArticles(username, 24, { perPage: 24 });
+        const response = await fetch('/api/blogs', { cache: 'no-store' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || 'Unable to load posts.');
+        const data = Array.isArray(payload.data) ? (payload.data as PortfolioBlogPost[]) : [];
         setPosts(
           data.map((post) => ({
             id: post.id,
             title: post.title,
             slug: post.slug,
-            excerpt: post.description || 'No description.',
-            featured_image: post.cover_image || undefined,
-            tags: post.tag_list || [],
-            published_at: post.published_at,
-            created_at: post.published_at,
-            views: post.public_reactions_count + post.comments_count,
+            excerpt: post.excerpt || 'No description.',
+            featured_image: post.coverImage || undefined,
+            tags: post.tags || [],
+            published_at: post.publishedAt,
+            created_at: post.publishedAt,
+            views: post.readingTimeMinutes || 1,
           }))
         );
       } catch (error) {
@@ -131,7 +132,7 @@ export const BlogApp = () => {
                       />
                     </div>
                   )}
-                  
+
                   <div>
                     <h3 className="font-bold text-sm mb-1.5 line-clamp-2">
                       {post.title}

@@ -26,12 +26,28 @@ const getSupabase = () => {
 const parsePortfolio = (value: unknown): PortfolioDocument =>
   portfolioDocumentSchema.parse(value) as PortfolioDocument;
 
+const withSeedFallbacks = (doc: PortfolioDocument): PortfolioDocument => {
+  const seeded = parsePortfolio(seed);
+  return {
+    ...doc,
+    photoEvents:
+      doc.photoEvents && doc.photoEvents.length > 0
+        ? doc.photoEvents
+        : seeded.photoEvents,
+    sections: {
+      ...seeded.sections,
+      ...doc.sections,
+    },
+    newsletterSettings: doc.newsletterSettings ?? seeded.newsletterSettings,
+  };
+};
+
 export const getPortfolio = async () => {
   const supabase = getSupabase();
   if (supabase) {
     const { data, error } = await supabase.from(TABLE).select('data').eq('id', CONTENT_ID).maybeSingle();
     if (!error && data?.data) {
-      return { data: parsePortfolio(data.data), source: 'supabase' as const, writable: true };
+      return { data: withSeedFallbacks(parsePortfolio(data.data)), source: 'supabase' as const, writable: true };
     }
   }
   return { data: parsePortfolio(seed), source: 'seed' as const, writable: Boolean(supabase) };

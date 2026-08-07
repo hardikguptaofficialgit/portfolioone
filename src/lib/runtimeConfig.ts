@@ -1,19 +1,14 @@
 export type PublicRuntimeConfig = {
-  devUsername: string;
   supabaseUrl: string;
   supabaseAnonKey: string;
 };
 
 const defaultConfig: PublicRuntimeConfig = {
-  devUsername: 'strykerinside',
   supabaseUrl: '',
   supabaseAnonKey: '',
 };
 
 let configPromise: Promise<PublicRuntimeConfig> | null = null;
-
-export const normalizeDevUsername = (value?: string | null) =>
-  (value || defaultConfig.devUsername).replace(/^@/, '').trim() || defaultConfig.devUsername;
 
 export const getPublicRuntimeConfig = async () => {
   if (!configPromise) {
@@ -23,7 +18,6 @@ export const getPublicRuntimeConfig = async () => {
         const payload = await response.json();
         const config = payload?.config || {};
         return {
-          devUsername: normalizeDevUsername(config.devUsername),
           supabaseUrl: typeof config.supabaseUrl === 'string' ? config.supabaseUrl : '',
           supabaseAnonKey: typeof config.supabaseAnonKey === 'string' ? config.supabaseAnonKey : '',
         };
@@ -32,9 +26,4 @@ export const getPublicRuntimeConfig = async () => {
   }
 
   return configPromise;
-};
-
-export const getDevUsername = async () => {
-  const config = await getPublicRuntimeConfig();
-  return normalizeDevUsername(config.devUsername);
 };

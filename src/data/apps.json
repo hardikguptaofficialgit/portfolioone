@@ -1,6 +1,46 @@
 {
     "apps": [
         {
+            "id": "ask-ai",
+            "name": "Ask AI",
+            "icon": "MessageCircle",
+            "content": "terminal",
+            "pinned": true,
+            "color": "from-cyan-400 to-blue-600"
+        },
+        {
+            "id": "ask-chatgpt",
+            "name": "Ask ChatGPT",
+            "icon": "ChatGPT",
+            "content": "terminal",
+            "pinned": false,
+            "color": "from-neutral-700 to-neutral-900"
+        },
+        {
+            "id": "ask-claude",
+            "name": "Ask Claude",
+            "icon": "Claude",
+            "content": "terminal",
+            "pinned": false,
+            "color": "from-neutral-700 to-neutral-900"
+        },
+        {
+            "id": "ask-gemini",
+            "name": "Ask Gemini",
+            "icon": "Gemini",
+            "content": "terminal",
+            "pinned": false,
+            "color": "from-neutral-700 to-neutral-900"
+        },
+        {
+            "id": "ask-perplexity",
+            "name": "Ask Perplexity",
+            "icon": "Perplexity",
+            "content": "terminal",
+            "pinned": false,
+            "color": "from-neutral-700 to-neutral-900"
+        },
+        {
             "id": "blog",
             "name": "Blog",
             "icon": "BookOpen",

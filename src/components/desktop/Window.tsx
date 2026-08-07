@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import filesData from '@/data/files.json';
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { getIconComponent } from '@/utils/apps';
-import { DevToFeed } from '@/components/apps/DevToFeed';
 import { BlogApp } from '@/components/apps/BlogApp';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePortfolio } from '@/hooks/usePortfolio';
@@ -236,7 +235,6 @@ export const Window = (props: WindowProps) => {
                 {content === 'documents' && <div className="p-6"><DocumentsContent /></div>}
                 {content === 'terminal' && <TerminalContent />}
                 {content === 'calendar' && <div className="h-full"><CalendarContent /></div>}
-                {content === 'devto' && <div className={cn("h-full", isMaximized ? "p-4 md:p-6" : "p-6")}><DevToFeed /></div>}
                 {content === 'blog' && <BlogApp />}
                 {content === 'file-preview' && <FilePreviewContent file={data} />}
               </div>

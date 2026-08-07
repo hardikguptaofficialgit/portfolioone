@@ -21,6 +21,11 @@ import {
     Linkedin,
     ExternalLink,
     BookOpen,
+    MessageCircle,
+    Bot,
+    BrainCircuit,
+    Sparkles,
+    SearchCheck,
 } from 'lucide-react';
 
 import {
@@ -45,6 +50,7 @@ import {
     Linkedin as LinkedinIconoir,
     OpenNewWindow as ExternalLinkIconoir,
     Book as BookIconoir,
+    Message as MessageIconoir,
 } from 'iconoir-react';
 
 import { Logos, Interfaces, Files, Misc } from 'doodle-icons';
@@ -81,6 +87,11 @@ const lucideMap: Record<string, any> = {
     Linkedin,
     ExternalLink,
     BookOpen,
+    MessageCircle,
+    ChatGPT: Bot,
+    Claude: BrainCircuit,
+    Gemini: Sparkles,
+    Perplexity: SearchCheck,
 };
 
 const iconoirMap: Record<string, any> = {
@@ -105,6 +116,11 @@ const iconoirMap: Record<string, any> = {
     Linkedin: LinkedinIconoir,
     ExternalLink: ExternalLinkIconoir,
     BookOpen: BookIconoir,
+    MessageCircle: MessageIconoir,
+    ChatGPT: MessageIconoir,
+    Claude: MessageIconoir,
+    Gemini: MessageIconoir,
+    Perplexity: MessageIconoir,
 };
 
 // Doodle Icons wrapper components with consistent API
@@ -129,6 +145,38 @@ const DoodleIcon = (Component: any) => {
     return WrappedIcon;
 };
 
+const SvgPathIcon = (label: string, path: string) => {
+    const WrappedIcon = (props: any) => {
+        const size = props.size || 24;
+        const color = props.color || props.fill || 'currentColor';
+        const { className, ...rest } = props;
+        return React.createElement(
+            'svg',
+            {
+                viewBox: '0 0 24 24',
+                width: size,
+                height: size,
+                fill: color,
+                className,
+                role: 'img',
+                'aria-label': label,
+                ...rest,
+            },
+            React.createElement('path', { d: path })
+        );
+    };
+    WrappedIcon.displayName = `${label}Icon`;
+    return WrappedIcon;
+};
+
+const ChatGPTIcon = SvgPathIcon(
+    'ChatGPT',
+    'M22.3 9.8a6 6 0 0 0-.5-4.9 6.1 6.1 0 0 0-6.5-2.9A6.1 6.1 0 0 0 5 4.2a6 6 0 0 0-4 2.9 6.1 6.1 0 0 0 .7 7.1 6 6 0 0 0 .5 4.9 6.1 6.1 0 0 0 6.5 2.9A6 6 0 0 0 13.3 24a6.1 6.1 0 0 0 5.8-4.2 6 6 0 0 0 4-2.9 6.1 6.1 0 0 0-.8-7.1ZM13.3 22.4a4.5 4.5 0 0 1-2.9-1l.1-.1 4.8-2.8a.8.8 0 0 0 .4-.7v-6.7l2 1.2v5.6a4.5 4.5 0 0 1-4.4 4.5ZM3.6 18.3a4.5 4.5 0 0 1-.5-3l.1.1 4.8 2.8a.8.8 0 0 0 .8 0l5.8-3.4v2.3l-4.8 2.8a4.5 4.5 0 0 1-6.2-1.6ZM2.3 7.9a4.5 4.5 0 0 1 2.4-2V11.6a.8.8 0 0 0 .4.7l5.8 3.4-2 1.1H8.8L4 14a4.5 4.5 0 0 1-1.7-6.1Zm16.6 3.9-5.8-3.4 2-1.2h.1L20 10a4.5 4.5 0 0 1-.7 8.1v-5.7a.8.8 0 0 0-.4-.6Zm2-3.1-.1-.1L16 5.8a.8.8 0 0 0-.8 0L9.4 9.2V6.9l4.8-2.8a4.5 4.5 0 0 1 6.7 4.6ZM8.3 12.9l-2-1.2V6.1a4.5 4.5 0 0 1 7.4-3.5l-.2.1-4.8 2.8a.8.8 0 0 0-.4.7v6.7Zm1.1-2.4 2.6-1.5 2.6 1.5v3l-2.6 1.5-2.6-1.5v-3Z'
+);
+const ClaudeIcon = SvgPathIcon('Claude', 'M13.8 3.5h3.6L24 20h-3.6L13.8 3.5Zm-7 0h3.6L17 20h-3.6L6.8 3.5ZM0 20 6.6 3.5h3.6L3.6 20H0Z');
+const GeminiIcon = SvgPathIcon('Gemini', 'M12 1.5c-.8 5.7-4.8 9.8-10.5 10.5 5.7.8 9.7 4.8 10.5 10.5.8-5.7 4.8-9.7 10.5-10.5-5.7-.7-9.7-4.8-10.5-10.5Z');
+const PerplexityIcon = SvgPathIcon('Perplexity', 'M4.5 2.8 10.8 8V3h2.4v5l6.3-5.2V21l-6.3-5.2V21h-2.4v-5.2L4.5 21V2.8Zm2.4 5.1v8l3.9-3.2v-1.6L6.9 7.9Zm10.2 0-3.9 3.2v1.6l3.9 3.2v-8Z');
+
 const doodleMap: Record<string, any> = {
     Github: DoodleIcon(Files.FileCode),
     Code2: DoodleIcon(Interfaces.Pencil),
@@ -151,6 +199,11 @@ const doodleMap: Record<string, any> = {
     Linkedin: DoodleIcon(Logos.Linkedin),
     ExternalLink: DoodleIcon(Interfaces.Link),
     BookOpen: DoodleIcon(Files.FileText),
+    MessageCircle: DoodleIcon(Interfaces.Message),
+    ChatGPT: ChatGPTIcon,
+    Claude: ClaudeIcon,
+    Gemini: GeminiIcon,
+    Perplexity: PerplexityIcon,
 };
 
 // Get the icon component from the icon name

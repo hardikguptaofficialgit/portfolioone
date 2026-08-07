@@ -1,6 +1,6 @@
 # StrykerOS Portfolio
 
-Windows-inspired portfolio site with a Supabase-backed project admin, DEV.to blog views, and newsletter subscription.
+Windows-inspired portfolio site with a Supabase-backed content admin, local blog publishing, Cloudinary image uploads, and Resend newsletter subscription.
 
 ## Quick start
 
@@ -19,17 +19,11 @@ Use Vercel for this project.
 - Framework preset: `Vite`
 
 Portfolio content falls back to `content/portfolio.json`, but `/admin` edits are saved in Supabase.
-Newsletter subscriptions are handled by `api/newsletter/subscribe.ts` and also use Supabase storage:
+Portfolio content falls back to `content/portfolio.json`, but `/admin` edits are saved in Supabase. Newsletter subscriptions are handled by `api/newsletter/subscribe.ts` and also use Supabase storage:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-
-Public runtime config is served by `/api/config` from server env vars:
-
-- `DEV_USERNAME`
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
 
 Admin login requires:
 
@@ -46,6 +40,17 @@ Newsletter welcome emails additionally need:
 
 - `RESEND_API_KEY`
 - `NEWSLETTER_FROM_EMAIL`
+
+Cloudinary image uploads and blog image imports need:
+
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+The authenticated admin blog importer can do a one-time import from DEV:
+
+- `DEV_IMPORT_USERNAME` optional
+- `DEV_API_KEY` optional, useful for importing authenticated/personal articles
 
 ## Content
 

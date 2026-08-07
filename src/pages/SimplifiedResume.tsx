@@ -9,12 +9,9 @@ import {
     MapPin, Calendar, Sun, Moon
 } from 'lucide-react';
 import { format } from 'date-fns';
-import photosData from '@/data/photos.json';
-import { DevToArticle, fetchDevToArticles } from '@/lib/devto';
-import { getDevUsername } from '@/lib/runtimeConfig';
 import { useDesktopStore } from '@/store/desktopStore';
 import { usePortfolio } from '@/hooks/usePortfolio';
-import type { Project } from '@/content/types';
+import type { BlogPost, PhotoEvent, Project } from '@/content/types';
 
 /* ─── Theme Context ──────────────────────────────────────────── */
 type Theme = 'dark' | 'light';
@@ -174,7 +171,7 @@ type ResumeProject = Project & { img?: string | null };
 
 const SimplifiedResume = () => {
     const { settings, updateSettings } = useDesktopStore();
-    const { profile, projects, skillCategories, achievements, simplifiedExperience } = usePortfolio();
+    const { profile, projects, skillCategories, achievements, simplifiedExperience, photoEvents, blogPosts, sections, isLoading } = usePortfolio();
     const resumeProjects: ResumeProject[] = projects.map((p) => ({
         ...p,
         img: p.imageUrl ?? null,
@@ -186,12 +183,9 @@ const SimplifiedResume = () => {
     const [filteredRepos, setFilteredRepos] = useState<any[]>([]);
     const [filterMode, setFilterMode] = useState<'top' | 'latest' | 'pushed' | 'all'>('top');
     const [searchQuery, setSearchQuery] = useState('');
-    const [popularArticles, setPopularArticles] = useState<DevToArticle[]>([]);
-    const [blogLoading, setBlogLoading] = useState(true);
-    const [blogError, setBlogError] = useState<string | null>(null);
     const [previewErrors, setPreviewErrors] = useState<Record<string, boolean>>({});
     const [selectedProject, setSelectedProject] = useState<ResumeProject | null>(null);
-    const [selectedEvent, setSelectedEvent] = useState<typeof photosData[0] | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<PhotoEvent | null>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [projectControlsCollapsed, setProjectControlsCollapsed] = useState(false);
     const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
@@ -221,49 +215,13 @@ const SimplifiedResume = () => {
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
-    const sortedEvents = [...photosData].sort((a, b) =>
-        a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1
-    );
-    const [devUsername, setDevUsername] = useState('strykerinside');
+    const popularArticles = blogPosts.filter((post) => post.featured !== false).slice(0, 6);
 
     useEffect(() => {
         fetch(`https://api.github.com/users/${profile.githubUsername || 'hardikguptaofficialgit'}/repos?per_page=100`)
             .then(r => r.json())
             .then(d => Array.isArray(d) && setRepos(d))
             .catch(() => {});
-    }, []);
-
-    useEffect(() => {
-        const controller = new AbortController();
-        const loadPopularArticles = async () => {
-            try {
-                setBlogLoading(true);
-                setBlogError(null);
-                const username = await getDevUsername();
-                if (controller.signal.aborted) return;
-                setDevUsername(username);
-                const articles = await fetchDevToArticles(username, 30, { perPage: 30, signal: controller.signal });
-                if (controller.signal.aborted) return;
-                const sorted = [...articles]
-                    .sort((a, b) => {
-                        const scoreA = a.public_reactions_count * 2 + a.comments_count;
-                        const scoreB = b.public_reactions_count * 2 + b.comments_count;
-                        return scoreB - scoreA;
-                    })
-                    .slice(0, 6);
-                setPopularArticles(sorted);
-            } catch (error) {
-                if (controller.signal.aborted) return;
-                const message = error instanceof Error ? error.message : 'Unable to load popular DEV.to posts.';
-                setBlogError(message);
-                setPopularArticles([]);
-            } finally {
-                if (!controller.signal.aborted) setBlogLoading(false);
-            }
-        };
-
-        loadPopularArticles();
-        return () => controller.abort();
     }, []);
 
     useEffect(() => {
@@ -300,7 +258,7 @@ const SimplifiedResume = () => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const openGallery = (ev: typeof photosData[0]) => { setSelectedEvent(ev); setCurrentImageIndex(0); };
+    const openGallery = (ev: PhotoEvent) => { setSelectedEvent(ev); setCurrentImageIndex(0); };
     const nextImg = (e?: React.MouseEvent) => {
         e?.stopPropagation();
         setCurrentImageIndex(p => selectedEvent ? (p + 1) % selectedEvent.images.length : 0);
@@ -743,7 +701,11 @@ Hardik Gupta                                        </motion.h1>
                                     <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Summary</SectionLabel>
                                     <p className={`text-base ${mutedText} leading-relaxed max-w-3xl`}>
                                         {profile.summary || profile.title}{' '}
-                                        <span className={isDark ? 'text-zinc-200' : 'text-zinc-800'}>Selected for YC Hackathon (top applicants globally); GDG Hackathon winner.</span>
+                                        {sections.simplifiedSummaryHighlight && (
+                                            <span className={isDark ? 'text-zinc-200' : 'text-zinc-800'}>
+                                                {sections.simplifiedSummaryHighlight}
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                             </RevealSection>
@@ -880,8 +842,12 @@ Hardik Gupta                                        </motion.h1>
                         <RevealSection>
                             <section id="projects" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#d0fffe]'}`}>
                                 <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Projects</SectionLabel>
-                                    <span className={`text-xs ${subtleText} uppercase tracking-widest`}>Selected Works</span>
+                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                        {sections.simplifiedProjectsIntro?.title || 'Projects'}
+                                    </SectionLabel>
+                                    <span className={`text-xs ${subtleText} uppercase tracking-widest`}>
+                                        {sections.simplifiedProjectsIntro?.subtitle || 'Selected Works'}
+                                    </span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {resumeProjects.map((p, i) => (
@@ -904,8 +870,10 @@ Hardik Gupta                                        </motion.h1>
                             <section id="github" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#e4ffde]'}`}>
                                 <div className={`flex flex-col gap-5 border-b ${divider} pb-5`}>
                                     <div className="flex items-end justify-between">
-                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>My GitHub</SectionLabel>
-                                        <a href="https://github.com/hardikguptaofficialgit" target="_blank" rel="noopener noreferrer"
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                            {sections.simplifiedGithubIntro?.title || 'My GitHub'}
+                                        </SectionLabel>
+                                        <a href={`https://github.com/${profile.githubUsername || 'hardikguptaofficialgit'}`} target="_blank" rel="noopener noreferrer"
                                             className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors`}>
                                             View Profile <ArrowUpRight size={12} />
                                         </a>
@@ -958,11 +926,15 @@ Hardik Gupta                                        </motion.h1>
                         <RevealSection>
                             <section id="photos" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#ffe7d3]'}`}>
                                 <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Photos</SectionLabel>
-                                    <span className={`text-xs ${subtleText} uppercase tracking-widest`}>Recent Highlights</span>
+                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                        {sections.simplifiedPhotosIntro?.title || 'Photos'}
+                                    </SectionLabel>
+                                    <span className={`text-xs ${subtleText} uppercase tracking-widest`}>
+                                        {sections.simplifiedPhotosIntro?.subtitle || 'Recent Highlights'}
+                                    </span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-                                    {sortedEvents.map((ev, i) => (
+                                    {photoEvents.map((ev, i) => (
                                         <StaggerItem key={ev.id} index={i}>
                                             <motion.div
                                                 onClick={() => openGallery(ev)}
@@ -1004,25 +976,24 @@ Hardik Gupta                                        </motion.h1>
                         <RevealSection>
                             <section id="blog" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#efe7ff]'}`}>
                                 <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Blog</SectionLabel>
-                                    <a
-                                        href={`https://dev.to/${devUsername}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                        {sections.simplifiedBlogIntro?.title || 'Blog'}
+                                    </SectionLabel>
+                                    <RouterLink
+                                        to="/blogs"
                                         className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors uppercase tracking-widest`}
                                     >
-                                        Dev.to Profile <ArrowUpRight size={12} />
-                                    </a>
+                                        All Posts <ArrowUpRight size={12} />
+                                    </RouterLink>
                                 </div>
 
-                                {blogLoading && <p className={`text-sm ${mutedText}`}>Loading popular articles...</p>}
-                                {blogError && <p className="text-sm text-rose-400">{blogError}</p>}
+                                {isLoading && <p className={`text-sm ${mutedText}`}>Loading articles...</p>}
 
-                                {!blogLoading && !blogError && popularArticles.length === 0 && (
+                                {!isLoading && popularArticles.length === 0 && (
                                     <p className={`text-sm ${mutedText}`}>No blog posts found right now.</p>
                                 )}
 
-                                {!blogLoading && !blogError && popularArticles.length > 0 && (
+                                {!isLoading && popularArticles.length > 0 && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {popularArticles.map((article, index) => (
                                             <StaggerItem key={article.id} index={index}>
@@ -1030,10 +1001,10 @@ Hardik Gupta                                        </motion.h1>
                                                     to={`/blogs/${article.slug}`}
                                                     className={`block border ${cardBg} rounded-xl p-4 transition-colors`}
                                                 >
-                                                    {article.cover_image && (
+                                                    {article.coverImage && (
                                                         <div className={`mb-3 h-40 overflow-hidden rounded-lg border ${divider}`}>
                                                             <img
-                                                                src={article.cover_image}
+                                                                src={article.coverImage}
                                                                 alt={article.title}
                                                                 className="h-full w-full object-cover"
                                                                 loading="lazy"
@@ -1042,20 +1013,16 @@ Hardik Gupta                                        </motion.h1>
                                                     )}
                                                     <h3 className="text-base font-bold leading-snug line-clamp-2">{article.title}</h3>
                                                     <p className={`mt-2 text-sm ${mutedText} line-clamp-2`}>
-                                                        {article.description || 'No description.'}
+                                                        {article.excerpt || 'No description.'}
                                                     </p>
                                                     <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs ${subtleText}`}>
                                                         <span className="inline-flex items-center gap-1">
                                                             <Calendar size={12} />
-                                                            {format(new Date(article.published_at), 'MMM d, yyyy')}
+                                                            {format(new Date(article.publishedAt), 'MMM d, yyyy')}
                                                         </span>
                                                         <span className="inline-flex items-center gap-1">
                                                             <Clock size={12} />
-                                                            {article.reading_time_minutes || 1} min
-                                                        </span>
-                                                        <span className="inline-flex items-center gap-1">
-                                                            <Star size={12} />
-                                                            {article.public_reactions_count}
+                                                            {article.readingTimeMinutes || 1} min
                                                         </span>
                                                     </div>
                                                 </RouterLink>

@@ -9,7 +9,6 @@
     "website": "https://strykerinside.vercel.app",
     "resumePdfUrl": "https://drive.google.com/file/d/16rDrv9O35qYxHeUxuSXyWWDpOUJH0aQZ/view?usp=drive_link",
     "githubUsername": "hardikguptaofficialgit",
-    "devtoUsername": "strykerinside",
 "summary": "Software developer focused on building scalable applications, solving complex problems, and delivering reliable production-ready systems. Experienced in developing full-stack products, real-time platforms, and modern web applications while owning features from architecture and implementation to deployment and maintenance."  },
   "socialLinks": [
     { "id": "github", "name": "GitHub", "icon": "Github", "url": "https://github.com/hardikguptaofficialgit", "description": "Check out my code" },
@@ -151,6 +150,66 @@
       "sortOrder": 10
     }
   ],
+  "photoEvents": [
+    {
+      "id": "growth-hackathon-banglore-2025",
+      "title": "Growth Hackathon Banglore - The Residency",
+      "description": "Recent participation in major tech hackathons and community meetups.",
+      "date": "Dec 2025",
+      "pinned": true,
+      "sortOrder": 1,
+      "images": [
+        "https://res.cloudinary.com/ddx6avza4/image/upload/v1770743285/1764948681199_h5kftg.jpg",
+        "https://res.cloudinary.com/ddx6avza4/image/upload/v1770743085/growthhack_khmjaz.jpg"
+      ]
+    },
+    {
+      "id": "gdg-hackathon-2025",
+      "title": "Google Dev Hackathon",
+      "description": "Building Bad Hackathon, won cash prize.",
+      "date": "Nov 2025",
+      "pinned": false,
+      "sortOrder": 2,
+      "images": [
+        "https://res.cloudinary.com/ddx6avza4/image/upload/v1770743085/googledev_jea6og.jpg"
+      ]
+    },
+    {
+      "id": "ycombinator-hackathon-2025",
+      "title": "Y Combinator Hackathon",
+      "description": "Got selected among many participants in the hackathon held in San Francisco.",
+      "date": "Nov 2025",
+      "pinned": true,
+      "sortOrder": 3,
+      "images": [
+        "https://res.cloudinary.com/ddx6avza4/image/upload/v1770743086/ycombinator_lfwhvf.jpg"
+      ]
+    },
+    {
+      "id": "sih2025",
+      "title": "Smart India Hackthon 2025",
+      "description": "Ranked 13th out of 522 teams in SIH.",
+      "date": "Oct 2025",
+      "pinned": false,
+      "sortOrder": 4,
+      "images": [
+        "https://res.cloudinary.com/ddx6avza4/image/upload/v1770743085/sih_syvawh.jpg",
+        "https://res.cloudinary.com/ddx6avza4/image/upload/v1770743085/1758603766202_xdnag2.jpg"
+      ]
+    },
+    {
+      "id": "fabrithon",
+      "title": "Fabrithon",
+      "description": "Participated in a hackathon focused on incubating startup ideas, understanding customer needs, and delivering investor pitches.",
+      "date": "May 2025",
+      "pinned": false,
+      "sortOrder": 5,
+      "images": [
+        "https://res.cloudinary.com/ddx6avza4/image/upload/v1770743085/fabrithon_cxglxr.jpg"
+      ]
+    }
+  ],
+  "blogPosts": [],
   "experience": [
     {
       "id": "nuvibrainz-founder",
@@ -330,6 +389,23 @@
     "aboutIntro": {
       "title": "Get in Touch",
       "subtitle": "I'm always open to new opportunities and collaborations."
-    }
+    },
+    "simplifiedProjectsIntro": {
+      "title": "Projects",
+      "subtitle": "Selected Works"
+    },
+    "simplifiedGithubIntro": {
+      "title": "My GitHub",
+      "subtitle": "Open-source activity"
+    },
+    "simplifiedPhotosIntro": {
+      "title": "Photos",
+      "subtitle": "Recent Highlights"
+    },
+    "simplifiedBlogIntro": {
+      "title": "Blog",
+      "subtitle": "Latest writing"
+    },
+    "simplifiedSummaryHighlight": "Selected for YC Hackathon (top applicants globally); GDG Hackathon winner."
   }
 }

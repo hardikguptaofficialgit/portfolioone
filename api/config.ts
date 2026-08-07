@@ -1,11 +1,9 @@
 type PublicConfig = {
-  devUsername: string;
   supabaseUrl: string;
   supabaseAnonKey: string;
 };
 
 const getPublicConfig = (): PublicConfig => ({
-  devUsername: process.env.DEV_USERNAME || 'strykerinside',
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
 });

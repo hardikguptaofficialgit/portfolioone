@@ -15,6 +15,44 @@ export const projectSchema = z.object({
   archived: z.boolean().optional(),
 });
 
+export const photoEventSchema = z.object({
+  id: z.string().min(1).regex(/^[a-z0-9-]+$/),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  date: z.string().min(1),
+  pinned: z.boolean().optional(),
+  images: z.array(z.string().min(1)).default([]),
+  sortOrder: z.number().optional(),
+});
+
+export const blogPostSchema = z.object({
+  id: z.string().min(1).regex(/^[a-z0-9-]+$/),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
+  title: z.string().min(1),
+  excerpt: z.string().default(''),
+  body: z.string().default(''),
+  coverImage: z.string().nullable().optional(),
+  tags: z.array(z.string()).default([]),
+  publishedAt: z.string().min(1),
+  readingTimeMinutes: z.number().optional(),
+  featured: z.boolean().optional(),
+  archived: z.boolean().optional(),
+  sortOrder: z.number().optional(),
+  sourceUrl: z.string().optional(),
+});
+
+export const newsletterSettingsSchema = z.object({
+  title: z.string().min(1).default('Stryker Newsletter'),
+  description: z.string().min(1).default('Updates on products, engineering, AI, and things I am building.'),
+  welcomeSubject: z.string().min(1).default('Thanks for subscribing'),
+  welcomeText: z.string().min(1).default('You are subscribed to Stryker updates.'),
+  fromName: z.string().optional(),
+  campaignSubject: z.string().optional(),
+  campaignPreviewText: z.string().optional(),
+  campaignHtml: z.string().optional(),
+  campaignText: z.string().optional(),
+});
+
 export const experienceSchema = z.object({
   id: z.string().min(1).regex(/^[a-z0-9-]+$/),
   role: z.string().min(1),
@@ -38,7 +76,6 @@ export const portfolioDocumentSchema = z.object({
     website: z.string().min(1),
     resumePdfUrl: z.string().optional(),
     githubUsername: z.string().optional(),
-    devtoUsername: z.string().optional(),
     summary: z.string().optional(),
   }),
   socialLinks: z.array(
@@ -58,6 +95,9 @@ export const portfolioDocumentSchema = z.object({
   ),
   skillsFlat: z.array(z.string()),
   projects: z.array(projectSchema),
+  photoEvents: z.array(photoEventSchema).default([]),
+  blogPosts: z.array(blogPostSchema).default([]),
+  newsletterSettings: newsletterSettingsSchema.optional(),
   experience: z.array(experienceSchema),
   education: z.array(
     z.object({
@@ -109,7 +149,19 @@ export const portfolioDocumentSchema = z.object({
       })
     )
     .optional(),
-  sections: z.record(z.unknown()).default({}),
+  sections: z
+    .object({
+      portfolioIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
+      vscodeProjectsIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
+      aboutIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
+      simplifiedProjectsIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
+      simplifiedGithubIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
+      simplifiedPhotosIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
+      simplifiedBlogIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
+      simplifiedSummaryHighlight: z.string().optional(),
+    })
+    .passthrough()
+    .default({}),
   updatedAt: z.string().optional(),
 });
 

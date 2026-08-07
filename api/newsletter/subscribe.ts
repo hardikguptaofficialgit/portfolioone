@@ -16,15 +16,15 @@ const parseBody = (req: { body?: unknown }): JsonObject => {
 
 const getSupabaseConfig = () => {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return url && key ? { url, key } : null;
 };
 
-const renderWelcomeNewsletterHtml = (email: string) => `
+const renderWelcomeNewsletterHtml = (email: string, text: string) => `
   <div style="margin:0;background:#ffffff;padding:0;font-family:Arial,Helvetica,sans-serif;color:#111111;">
     <div style="max-width:640px;margin:0 auto;border:1px solid #111111;">
       <div style="padding:22px 24px;border-bottom:1px solid #111111;background:#ffffff;">
-        <p style="margin:0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">Newsletter Subscription</p>
+        <p style="margin:0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">Stryker Newsletter</p>
       </div>
       <div style="padding:26px 24px;background:#ffffff;">
         <h1 style="margin:0 0 10px;font-size:24px;line-height:1.3;font-weight:800;">Thanks for subscribing.</h1>
@@ -32,13 +32,13 @@ const renderWelcomeNewsletterHtml = (email: string) => `
           You're in, <strong>${email}</strong>.
         </p>
         <p style="margin:0;font-size:14px;line-height:1.7;">
-          You will get updates on AI, engineering, and new DEV.to posts.
+          ${text}
         </p>
       </div>
     </div>
   </div>`;
 
-const sendWelcomeEmail = async (email: string) => {
+const sendWelcomeEmail = async (email: string, settings: { welcomeSubject: string; welcomeText: string; fromName?: string }) => {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.NEWSLETTER_FROM_EMAIL;
   if (!apiKey || !from) {
@@ -48,11 +48,11 @@ const sendWelcomeEmail = async (email: string) => {
   const { Resend } = await import('resend');
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
-    from,
+    from: settings.fromName ? `${settings.fromName} <${from}>` : from,
     to: [email],
-    subject: 'Thanks for subscribing - you are all set',
-    html: renderWelcomeNewsletterHtml(email),
-    text: 'Thanks for subscribing. You will now receive updates about AI and new posts.',
+    subject: settings.welcomeSubject,
+    html: renderWelcomeNewsletterHtml(email, settings.welcomeText),
+    text: settings.welcomeText,
   });
 
   if (error) {
@@ -82,7 +82,10 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const config = getSupabaseConfig();
+    const [{ data: portfolio }, config] = await Promise.all([
+      getPortfolio(),
+      Promise.resolve(getSupabaseConfig()),
+    ]);
     if (!config) {
       res.status(501).json({
         error:
@@ -90,6 +93,10 @@ export default async function handler(req: any, res: any) {
       });
       return;
     }
+    const newsletterSettings = portfolio.newsletterSettings ?? {
+      welcomeSubject: 'Thanks for subscribing - you are all set',
+      welcomeText: 'You will now receive updates about AI, engineering, and new posts.',
+    };
 
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(config.url, config.key, {
@@ -146,7 +153,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const welcome = await sendWelcomeEmail(email);
+    const welcome = await sendWelcomeEmail(email, newsletterSettings);
 
     res.status(200).json({
       ok: true,
@@ -160,3 +167,4 @@ export default async function handler(req: any, res: any) {
     res.status(500).json({ error: message });
   }
 }
+import { getPortfolio } from '../_lib/portfolio-store.js';

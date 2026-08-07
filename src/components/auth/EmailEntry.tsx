@@ -1,46 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Moon, Sun } from 'lucide-react';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useDesktopStore } from '@/store/desktopStore';
-import { getPublicRuntimeConfig } from '@/lib/runtimeConfig';
 
 interface EmailEntryProps {
   onComplete: (email?: string) => void;
 }
-
-let supabaseAnonClient: SupabaseClient | null = null;
-const getSupabaseAnonClient = async () => {
-  if (supabaseAnonClient) return supabaseAnonClient;
-  const config = await getPublicRuntimeConfig();
-  if (!config.supabaseUrl || !config.supabaseAnonKey) return null;
-  supabaseAnonClient = createClient(config.supabaseUrl, config.supabaseAnonKey);
-  return supabaseAnonClient;
-};
-
-const subscribeViaSupabaseFallback = async (email: string) => {
-  const client = await getSupabaseAnonClient();
-  if (!client) throw new Error('Newsletter service unavailable. Missing Supabase config.');
-  const now = new Date().toISOString();
-  const { error } = await client.from('newsletter_subscribers').upsert(
-    {
-      email,
-      is_active: true,
-      subscribed_at: now,
-      updated_at: now,
-    },
-    { onConflict: 'email' }
-  );
-
-  if (error) {
-    const msg = error.message || 'Subscription failed.';
-    if (msg.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
-      throw new Error('Supabase table is missing. Run supabase/newsletter_schema.sql in Supabase SQL editor first.');
-    }
-    throw new Error(msg);
-  }
-};
 
 export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
   const navigate = useNavigate();
@@ -52,8 +18,6 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
     type: 'success' | 'error' | 'info';
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [devLogoFailed, setDevLogoFailed] = useState(false);
-  const followPopupTimerRef = useRef<number | null>(null);
   const T = isDark
     ? {
         overlay: 'bg-black/75',
@@ -105,60 +69,33 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
       throw new Error('Enter a valid email address.');
     }
 
-    if (import.meta.env.DEV) {
-      // Vite dev server doesn't serve Vercel `/api` routes, so avoid 404 noise.
-      await subscribeViaSupabaseFallback(normalized);
-      return { alreadySubscribed: false, message: 'Subscribed successfully.' };
+    const response = await fetch('/api/newsletter/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: normalized }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(
+        typeof payload?.error === 'string'
+          ? payload.error
+          : 'Subscription failed.'
+      );
     }
-
-    try {
-      const response = await fetch('/api/newsletter/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: normalized }),
-      });
-
-      if (response.status === 404 || response.status >= 500) {
-        // If API route is unavailable or backend errors, fallback to direct Supabase insert.
-        await subscribeViaSupabaseFallback(normalized);
-        return {
-          alreadySubscribed: false,
-          message:
-            response.status >= 500
-              ? 'Subscribed successfully. Backend email may be delayed.'
-              : 'Subscribed successfully.',
-        };
-      }
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(
-          typeof payload?.error === 'string'
-            ? payload.error
-            : 'Subscription failed.'
-        );
-      }
-      return {
-        alreadySubscribed: Boolean(payload?.alreadySubscribed),
-        message: (() => {
-          const base =
-            typeof payload?.message === 'string'
-              ? payload.message
-              : 'Subscribed successfully.';
-          if (payload?.welcomeEmailSent === false) {
-            return `${base} Welcome email may be delayed.`;
-          }
-          return base;
-        })(),
-      };
-    } catch (error) {
-      // Network failures during local dev: fallback to Supabase directly.
-      if (error instanceof TypeError) {
-        await subscribeViaSupabaseFallback(normalized);
-        return { alreadySubscribed: false, message: 'Subscribed successfully.' };
-      }
-      throw error;
-    }
+    return {
+      alreadySubscribed: Boolean(payload?.alreadySubscribed),
+      message: (() => {
+        const base =
+          typeof payload?.message === 'string'
+            ? payload.message
+            : 'Subscribed successfully.';
+        if (payload?.welcomeEmailSent === false) {
+          return `${base} Welcome email may be delayed.`;
+        }
+        return base;
+      })(),
+    };
   };
 
   const handleNewsletterSubscribe = async () => {
@@ -188,62 +125,12 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
     }
   };
 
-  const handleDevFollowClick = () => {
-    const popupWidth = 520;
-    const popupHeight = 760;
-    const left = Math.max(0, window.screenX + (window.outerWidth - popupWidth) / 2);
-    const top = Math.max(0, window.screenY + (window.outerHeight - popupHeight) / 2);
-    const popup = window.open(
-      'https://dev.to/strykerinside',
-      'dev-follow-popup',
-      `popup=yes,width=${popupWidth},height=${popupHeight},left=${left},top=${top}`
-    );
-
-    if (!popup) {
-      window.open('https://dev.to/strykerinside', '_blank', 'noopener,noreferrer');
-      setNewsletterMsg({
-        text: 'Popup blocked. Opened in a new tab.',
-        type: 'error',
-      });
-      return;
-    }
-
-    popup.focus();
-    setNewsletterMsg({
-      text: 'Follow in the popup, then close it and continue here.',
-      type: 'success',
-    });
-
-    if (followPopupTimerRef.current) {
-      window.clearInterval(followPopupTimerRef.current);
-    }
-
-    followPopupTimerRef.current = window.setInterval(() => {
-      if (popup.closed) {
-        if (followPopupTimerRef.current) {
-          window.clearInterval(followPopupTimerRef.current);
-          followPopupTimerRef.current = null;
-        }
-        setNewsletterMsg({
-          text: 'Thanks for checking my DEV profile. You can continue here.',
-          type: 'success',
-        });
-      }
-    }, 450);
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onComplete();
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      if (followPopupTimerRef.current) {
-        window.clearInterval(followPopupTimerRef.current);
-        followPopupTimerRef.current = null;
-      }
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onComplete]);
 
   return (
@@ -284,32 +171,19 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
 
         {/* Top */}
         <div className="px-6 pt-8 pb-6 text-center flex flex-col items-center">
-          {!devLogoFailed ? (
-            <img
-              src="https://media2.dev.to/dynamic/image/quality=100/https://dev-to-uploads.s3.amazonaws.com/uploads/logos/resized_logo_UQww2soKuUsjaOGNB38o.png"
-              alt="DEV.to Logo"
-              className="w-12 h-12 mb-4 rounded-xl"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={() => setDevLogoFailed(true)}
-            />
-          ) : (
-            <div
-              aria-hidden
-              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl border text-[10px] font-black tracking-[0.18em] ${
-                isDark ? 'border-zinc-700 bg-zinc-900 text-zinc-100' : 'border-[#c7d1df] bg-[#f3f6fb] text-[#1c2a3d]'
-              }`}
-            >
-              DEV
-            </div>
-          )}
+          <img
+            src="/harvix_logo.png"
+            alt="Stryker"
+            className="mb-4 h-12 w-12 rounded-xl object-contain"
+            loading="lazy"
+          />
 
           <h2 className={`text-lg font-semibold ${T.title}`}>
-            Join the Community
+            Join the Stryker Newsletter
           </h2>
 
           <p className={`text-sm mt-1 mb-6 max-w-sm ${T.body}`}>
-            Follow on DEV or subscribe for updates and insights.
+            Subscribe for product updates, engineering notes, and new writing.
           </p>
 
           {/* Input + Button */}
@@ -347,15 +221,6 @@ export const EmailEntry = ({ onComplete }: EmailEntryProps) => {
                 {newsletterMsg.text}
               </p>
             )}
-
-            {/* DEV Button */}
-            <button
-              type="button"
-              onClick={handleDevFollowClick}
-              className={`block w-full py-2 text-sm font-medium transition rounded-md ${T.followBtn}`}
-            >
-              Follow @strykerinside on DEV
-            </button>
           </div>
         </div>
 

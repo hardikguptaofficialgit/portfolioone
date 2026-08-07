@@ -26,6 +26,44 @@ export type Project = {
   archived?: boolean;
 };
 
+export type PhotoEvent = {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  pinned?: boolean;
+  images: string[];
+  sortOrder?: number;
+};
+
+export type BlogPost = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  coverImage?: string | null;
+  tags: string[];
+  publishedAt: string;
+  readingTimeMinutes?: number;
+  featured?: boolean;
+  archived?: boolean;
+  sortOrder?: number;
+  sourceUrl?: string;
+};
+
+export type NewsletterSettings = {
+  title: string;
+  description: string;
+  welcomeSubject: string;
+  welcomeText: string;
+  fromName?: string;
+  campaignSubject?: string;
+  campaignPreviewText?: string;
+  campaignHtml?: string;
+  campaignText?: string;
+};
+
 export type Experience = {
   id: string;
   role: string;
@@ -72,7 +110,6 @@ export type Profile = {
   website: string;
   resumePdfUrl?: string;
   githubUsername?: string;
-  devtoUsername?: string;
   summary?: string;
 };
 
@@ -90,6 +127,11 @@ export type PortfolioSections = {
   portfolioIntro?: { title: string; subtitle: string };
   vscodeProjectsIntro?: { title: string; subtitle: string };
   aboutIntro?: { title: string; subtitle: string };
+  simplifiedProjectsIntro?: { title: string; subtitle: string };
+  simplifiedGithubIntro?: { title: string; subtitle: string };
+  simplifiedPhotosIntro?: { title: string; subtitle: string };
+  simplifiedBlogIntro?: { title: string; subtitle: string };
+  simplifiedSummaryHighlight?: string;
 };
 
 export type PortfolioDocument = {
@@ -99,6 +141,9 @@ export type PortfolioDocument = {
   skillCategories: SkillCategory[];
   skillsFlat: string[];
   projects: Project[];
+  photoEvents: PhotoEvent[];
+  blogPosts: BlogPost[];
+  newsletterSettings?: NewsletterSettings;
   experience: Experience[];
   simplifiedExperience?: SimplifiedExperienceCard[];
   education: Education[];

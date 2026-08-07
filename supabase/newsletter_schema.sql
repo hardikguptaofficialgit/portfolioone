@@ -9,14 +9,38 @@ create table if not exists public.newsletter_subscribers (
 create index if not exists newsletter_subscribers_is_active_idx
   on public.newsletter_subscribers (is_active);
 
+alter table public.newsletter_subscribers enable row level security;
+
+drop policy if exists "newsletter_subscribers_service_role_all" on public.newsletter_subscribers;
+create policy "newsletter_subscribers_service_role_all"
+on public.newsletter_subscribers
+for all
+to service_role
+using (true)
+with check (true);
+
+grant insert, select, update, delete on public.newsletter_subscribers to service_role;
+grant usage, select on sequence public.newsletter_subscribers_id_seq to service_role;
+
 create table if not exists public.newsletter_dispatch_state (
   id smallint primary key,
-  last_sent_devto_article_id bigint,
+  last_sent_blog_slug text,
   last_sent_at timestamptz,
   updated_at timestamptz not null default now()
 );
 
+alter table public.newsletter_dispatch_state enable row level security;
+
+drop policy if exists "newsletter_dispatch_state_service_role_all" on public.newsletter_dispatch_state;
+create policy "newsletter_dispatch_state_service_role_all"
+on public.newsletter_dispatch_state
+for all
+to service_role
+using (true)
+with check (true);
+
+grant select, insert, update, delete on public.newsletter_dispatch_state to service_role;
+
 insert into public.newsletter_dispatch_state (id)
 values (1)
 on conflict (id) do nothing;
-
