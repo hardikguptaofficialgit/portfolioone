@@ -119,28 +119,7 @@ export const LaunchWelcomeModal = ({ open, onDismiss }: LaunchWelcomeModalProps)
 
   return (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm p-4 ${T.overlay}`}>
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <motion.div
-          className={`absolute -top-20 -left-20 h-72 w-72 rounded-full blur-3xl ${isDark ? 'bg-cyan-400/14' : 'bg-sky-400/20'}`}
-          animate={{ x: [0, 28, -10, 0], y: [0, 22, -12, 0], scale: [1, 1.08, 0.97, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className={`absolute -bottom-24 -right-20 h-80 w-80 rounded-full blur-3xl ${isDark ? 'bg-fuchsia-400/10' : 'bg-indigo-400/14'}`}
-          animate={{ x: [0, -30, 12, 0], y: [0, -20, 10, 0], scale: [1, 0.95, 1.05, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute inset-0 opacity-70"
-          style={{
-            backgroundImage: isDark
-              ? 'repeating-linear-gradient(120deg, rgba(208,255,254,0.08) 0px, rgba(208,255,254,0.08) 1px, transparent 1px, transparent 14px)'
-              : 'repeating-linear-gradient(120deg, rgba(48,95,157,0.13) 0px, rgba(48,95,157,0.13) 1px, transparent 1px, transparent 16px)',
-          }}
-          animate={{ backgroundPositionX: ['0px', '220px'] }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
-        />
-      </div>
+     
 
       <div
         role="dialog"
