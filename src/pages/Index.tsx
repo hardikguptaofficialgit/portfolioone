@@ -11,7 +11,6 @@ import { WeatherWidget } from '@/components/widgets/WeatherWidget';
 import { BlogWidget } from '@/components/widgets/BlogWidget';
 import { AskMeWidget } from '@/components/widgets/AskMeWidget';
 import { LockScreen } from '@/components/auth/LockScreen';
-import { EmailEntry } from '@/components/auth/EmailEntry';
 import { ContextMenu, ContextMenuItem } from '@/components/ui/ContextMenu';
 import { ShaderAnimation } from '@/components/ui/shader-lines';
 import { DesktopRope } from '@/components/desktop/DesktopRope';
@@ -20,8 +19,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { getIconComponent } from '@/utils/apps';
 import { useNavigate } from 'react-router-dom';
+import { DESKTOP_DIRECT_KEY } from '@/lib/desktop-entry';
 
-type AuthStep = 'boot' | 'lock' | 'email' | 'desktop';
+type AuthStep = 'boot' | 'lock' | 'desktop';
 type IconSize = 'small' | 'medium' | 'large';
 type SortBy = 'name' | 'size' | 'date';
 const BOOT_ANIMATION_SEEN_KEY = 'portfolio_boot_animation_seen_v1';
@@ -32,6 +32,10 @@ const Index = () => {
   const navigate = useNavigate();
   const [authStep, setAuthStep] = useState<AuthStep>(() => {
     if (typeof window === 'undefined') return 'boot';
+    if (sessionStorage.getItem(DESKTOP_DIRECT_KEY) === '1') {
+      sessionStorage.removeItem(DESKTOP_DIRECT_KEY);
+      return 'desktop';
+    }
     return localStorage.getItem(BOOT_ANIMATION_SEEN_KEY) === '1' ? 'lock' : 'boot';
   });
   const { contextMenu, handleContextMenu, closeContextMenu } = useContextMenu();
@@ -40,7 +44,7 @@ const Index = () => {
 
   useEffect(() => {
     if (isMobile) {
-      navigate('/simplified', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [isMobile, navigate]);
 
@@ -103,12 +107,7 @@ const Index = () => {
     setSelectedIcon(null);
   };
 
-  const handleUnlock = () => setAuthStep('email');
-
-  const handleEmailComplete = (email?: string) => {
-    console.log('User email:', email);
-    setAuthStep('desktop');
-  };
+  const handleUnlock = () => setAuthStep('desktop');
 
   // Desktop context menu items
   const desktopContextMenuItems: ContextMenuItem[] = [
@@ -248,10 +247,6 @@ const Index = () => {
 
         {authStep === 'lock' && (
           <LockScreen key="lock-screen" onUnlock={handleUnlock} />
-        )}
-
-        {authStep === 'email' && (
-          <EmailEntry key="email-entry" onComplete={handleEmailComplete} />
         )}
       </AnimatePresence>
 

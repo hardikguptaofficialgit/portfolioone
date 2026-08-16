@@ -1,4 +1,4 @@
-import { getPortfolio } from './_lib/portfolio-store.js';
+import { getPortfolio } from '../_lib/portfolio-store.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') {

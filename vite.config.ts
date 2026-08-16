@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { existsSync } from "fs";
 import { loadEnv } from "vite";
 import type { IncomingMessage, ServerResponse } from "http";
 
@@ -22,32 +21,6 @@ const readBody = async (req: IncomingMessage) =>
       }
     });
   });
-
-const resolveApiRoute = (pathname: string) => {
-  const relative = pathname.replace(/^\/api\/?/, "");
-  const direct = path.resolve(__dirname, "api", `${relative}.ts`);
-  const index = path.resolve(__dirname, "api", relative, "index.ts");
-  if (existsSync(direct)) return { file: direct, query: {} };
-  if (existsSync(index)) return { file: index, query: {} };
-
-  const segments = relative.split("/").filter(Boolean);
-  for (let i = segments.length - 1; i >= 0; i -= 1) {
-    const dynamic = path.resolve(
-      __dirname,
-      "api",
-      ...segments.slice(0, i),
-      `[${segments[i]}].ts`
-    );
-    if (existsSync(dynamic)) return { file: dynamic, query: { [segments[i]]: segments[i + 1] } };
-  }
-
-  if (segments[0] === "blogs" && segments[1]) {
-    const blogSlug = path.resolve(__dirname, "api", "blogs", "[slug].ts");
-    if (existsSync(blogSlug)) return { file: blogSlug, query: { slug: segments[1] } };
-  }
-
-  return null;
-};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -73,22 +46,14 @@ export default defineConfig(({ mode }) => {
 
             try {
               const url = new URL(req.url, "http://localhost");
-              const route = resolveApiRoute(url.pathname);
-              if (!route) {
-                res.statusCode = 404;
-                res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify({ error: "API route not found." }));
-                return;
-              }
-
-              const mod = await server.ssrLoadModule(route.file);
-              const handler = mod.default;
+              const mod = await server.ssrLoadModule(path.resolve(__dirname, "server/router.ts"));
+              const handler = mod.default || mod.handleApiRequest;
               if (typeof handler !== "function") throw new Error(`Missing default handler for ${url.pathname}`);
 
               const body = req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req);
               const query = {
                 ...Object.fromEntries(url.searchParams.entries()),
-                ...route.query,
+                path: url.pathname.replace(/^\/api\/?/, ""),
               };
               const apiReq = {
                 method: req.method,

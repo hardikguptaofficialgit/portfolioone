@@ -1,5 +1,5 @@
-import { requireAdmin } from '../../_lib/admin-auth.js';
-import { deleteProject, updateProject } from '../../_lib/portfolio-store.js';
+import { requireAdmin } from '../../../_lib/admin-auth.js';
+import { deleteProject, updateProject } from '../../../_lib/portfolio-store.js';
 
 const parseBody = (req: any) => {
   if (!req.body) return {};

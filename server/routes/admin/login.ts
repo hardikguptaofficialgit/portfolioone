@@ -1,4 +1,4 @@
-import { createAdminToken, validateAdminCredentials } from '../_lib/admin-auth.js';
+import { createAdminToken, validateAdminCredentials } from '../../_lib/admin-auth.js';
 
 const parseBody = (req: any) => {
   if (!req.body) return {};

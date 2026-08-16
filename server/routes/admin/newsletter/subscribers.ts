@@ -1,9 +1,9 @@
-import { requireAdmin } from '../../_lib/admin-auth.js';
+import { requireAdmin } from '../../../_lib/admin-auth.js';
 import {
   deleteNewsletterSubscriber,
   listNewsletterSubscribers,
   updateNewsletterSubscriber,
-} from '../../_lib/newsletter-store.js';
+} from '../../../_lib/newsletter-store.js';
 
 const parseBody = (req: any) => {
   if (!req.body) return {};

@@ -1,5 +1,5 @@
-import { requireAdmin } from '../_lib/admin-auth.js';
-import { uploadToCloudinary } from '../_lib/cloudinary.js';
+import { requireAdmin } from '../../_lib/admin-auth.js';
+import { uploadToCloudinary } from '../../_lib/cloudinary.js';
 
 const parseBody = (req: any) => {
   if (!req.body) return {};

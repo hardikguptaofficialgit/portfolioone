@@ -1,8 +1,8 @@
-import { requireAdmin } from '../../_lib/admin-auth.js';
-import { uploadToCloudinary } from '../../_lib/cloudinary.js';
-import { getPortfolio, savePortfolio } from '../../_lib/portfolio-store.js';
-import { blogPostSchema, slugify } from '../../../lib/portfolio/schema.js';
-import type { BlogPost } from '../../../lib/portfolio/types.js';
+import { requireAdmin } from '../../../_lib/admin-auth.js';
+import { uploadToCloudinary } from '../../../_lib/cloudinary.js';
+import { getPortfolio, savePortfolio } from '../../../_lib/portfolio-store.js';
+import { blogPostSchema, slugify } from '../../../../lib/portfolio/schema.js';
+import type { BlogPost } from '../../../../lib/portfolio/types.js';
 
 const parseBody = (req: any) => {
   if (!req.body) return {};
@@ -110,7 +110,7 @@ export default async function handler(req: any, res: any) {
     const listUrl = apiKey
       ? `https://dev.to/api/articles/me/published?per_page=${limit}`
       : `https://dev.to/api/articles?username=${encodeURIComponent(username)}&per_page=${limit}`;
-    const articles = await fetchDevToJson(listUrl, apiKey);
+    const articles = await fetchDevToJson(listUrl, apiKey) as any[];
     if (!Array.isArray(articles)) throw new Error('DEV import returned an unexpected article list.');
 
     const imported: BlogPost[] = [];

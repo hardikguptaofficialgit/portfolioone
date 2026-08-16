@@ -855,7 +855,7 @@ const DocumentsContent = () => {
   };
 
   const handleResumeClick = () => {
-    window.location.href = '/simplified';
+    window.location.href = '/';
   };
 
   return (

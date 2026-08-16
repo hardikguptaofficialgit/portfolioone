@@ -11,6 +11,8 @@ import {
 import { format } from 'date-fns';
 import { useDesktopStore } from '@/store/desktopStore';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import { LaunchWelcomeModal } from '@/components/auth/LaunchWelcomeModal';
+import { markDesktopDirectEntry } from '@/lib/desktop-entry';
 import type { BlogPost, PhotoEvent, Project } from '@/content/types';
 
 /* ─── Theme Context ──────────────────────────────────────────── */
@@ -164,6 +166,8 @@ const navItems = [
     { id: 'contact', label: 'Contact', isAction: true },
 ];
 
+const LAUNCH_MODAL_DISMISSED_KEY = 'portfolio_launch_modal_dismissed_v1';
+
 /* ═══════════════════════════════════════════════════════════ */
 /*  MAIN COMPONENT                                             */
 /* ═══════════════════════════════════════════════════════════ */
@@ -193,6 +197,9 @@ const SimplifiedResume = () => {
     const [isNavCompact, setIsNavCompact] = useState(false);
     const [isDesktopView, setIsDesktopView] = useState(
         () => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+    );
+    const [showLaunchModal, setShowLaunchModal] = useState(
+        () => typeof window !== 'undefined' ? sessionStorage.getItem(LAUNCH_MODAL_DISMISSED_KEY) !== '1' : true,
     );
     const dragOffsetRef = useRef({ x: 0, y: 0 });
     const themeTransitionTimerRef = useRef<number | null>(null);
@@ -257,6 +264,11 @@ const SimplifiedResume = () => {
         setIsMobileNavOpen(false);
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     };
+
+    const dismissLaunchModal = useCallback(() => {
+        sessionStorage.setItem(LAUNCH_MODAL_DISMISSED_KEY, '1');
+        setShowLaunchModal(false);
+    }, []);
 
     const openGallery = (ev: PhotoEvent) => { setSelectedEvent(ev); setCurrentImageIndex(0); };
     const nextImg = (e?: React.MouseEvent) => {
@@ -518,16 +530,17 @@ const SimplifiedResume = () => {
             </button>
 
             {!shouldUseCompactNav && (
-                <a
-                    href="/"
+                <RouterLink
+                    to="/desktop"
+                    onClick={markDesktopDirectEntry}
                     className={`hidden md:flex items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors ${
                         isDark
                             ? 'text-zinc-500 hover:text-zinc-300'
                             : 'text-zinc-500 hover:text-zinc-700'
                     }`}
                 >
-                    <span>Return to OS</span>
-                </a>
+                    <span>Switch to Interactive</span>
+                </RouterLink>
             )}
         </motion.div>
     </motion.div>
@@ -616,6 +629,17 @@ const SimplifiedResume = () => {
 
                 {/* ══════════ BODY ══════════ */}
                 <div className="relative z-10 w-full px-4 md:px-10 lg:px-16 pt-28 pb-12">
+                    <div className="max-w-4xl mx-auto mb-4 flex justify-end">
+                        <RouterLink
+                            to="/desktop"
+                            onClick={markDesktopDirectEntry}
+                            className={`text-xs font-medium uppercase tracking-wider transition-colors md:hidden ${
+                                isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700'
+                            }`}
+                        >
+                            Switch to Interactive →
+                        </RouterLink>
+                    </div>
                     <motion.div
                         variants={containerVariants}
                         initial="hidden"
@@ -628,7 +652,6 @@ const SimplifiedResume = () => {
 
                             {/* Header */}
                             <header className={`space-y-6 pb-10 border-b ${divider}`}>
-                               
                                 <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
                                     <div className="space-y-3">
                                         <motion.p
@@ -1043,16 +1066,17 @@ Hardik Gupta                                        </motion.h1>
                         transition={{ duration: 0.8 }}
                         className={`max-w-4xl mx-auto mt-24 pt-10 pb-8  border-t ${divider} flex flex-col md:flex-row items-center justify-between gap-4`}
                     >
-                    <motion.a
-  href="/"
-  className={`${subtleText} ${
-    isDark
-      ? "px-4 py-2.5 bg-black text-white"
-      : "text-black px-4 py-2.5 bg-white"
-  } transition-colors text-xs md:text-sm uppercase tracking-widest`}
->
-  ← Return to OS
-</motion.a>
+                        <RouterLink
+                            to="/desktop"
+                            onClick={markDesktopDirectEntry}
+                            className={`${subtleText} ${
+                                isDark
+                                    ? 'px-4 py-2.5 bg-black text-white'
+                                    : 'text-black px-4 py-2.5 bg-white'
+                            } transition-colors text-xs md:text-sm uppercase tracking-widest`}
+                        >
+                            ← Switch to Interactive
+                        </RouterLink>
                         <div className={`flex gap-5 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
                             {[
                                 { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={16} /> },
@@ -1246,6 +1270,11 @@ Hardik Gupta                                        </motion.h1>
   </motion.div>
 )}
                 </AnimatePresence>
+
+                <LaunchWelcomeModal
+                    open={showLaunchModal}
+                    onDismiss={dismissLaunchModal}
+                />
             </div>
     );
 };

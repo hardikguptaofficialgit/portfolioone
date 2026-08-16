@@ -1,3 +1,5 @@
+import { getPortfolio } from '../../_lib/portfolio-store.js';
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type JsonObject = Record<string, unknown>;
@@ -167,4 +169,3 @@ export default async function handler(req: any, res: any) {
     res.status(500).json({ error: message });
   }
 }
-import { getPortfolio } from '../_lib/portfolio-store.js';
