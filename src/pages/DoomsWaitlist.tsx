@@ -130,25 +130,26 @@ export default function DoomsWaitlist() {
 
                   <AnimatePresence mode="wait">
                     {joined ? (
-                      <motion.div
-                        key="success"
-                        initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.45, ease: EASE }}
-                        className="mt-8 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-5 text-center"
-                      >
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.05 }}
-                          className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300"
-                        >
-                          <Check className="h-6 w-6" />
-                        </motion.div>
-                        <p className="text-base font-medium text-emerald-100">{message}</p>
-                        <p className="mt-2 text-sm text-emerald-200/80">We will email you when your spot opens.</p>
-                      </motion.div>
+                    <motion.div
+                    key="success"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.45, ease: EASE }}
+                    className="mt-8 rounded-2xl border border-white bg-black px-5 py-6 text-center"
+                  >
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black">
+                      <Check className="h-6 w-6" strokeWidth={2.8} />
+                    </div>
+                  
+                    <p className="text-[16px] font-semibold tracking-[-0.02em] text-white">
+                      {message}
+                    </p>
+                  
+                    <p className="mt-2 text-[13px] leading-5 text-white/50">
+                      We will email you when your spot opens.
+                    </p>
+                  </motion.div>
                     ) : (
                       <motion.form
                         key="form"
