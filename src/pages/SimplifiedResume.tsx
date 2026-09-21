@@ -14,6 +14,7 @@ import { usePortfolio } from '@/hooks/usePortfolio';
 import { LaunchWelcomeModal } from '@/components/auth/LaunchWelcomeModal';
 import { markDesktopDirectEntry } from '@/lib/desktop-entry';
 import type { BlogPost, PhotoEvent, Project } from '@/content/types';
+import BlogCover from '@/components/blog/BlogCover';
 
 /* ─── Theme Context ──────────────────────────────────────────── */
 type Theme = 'dark' | 'light';
@@ -702,7 +703,7 @@ Hardik Gupta                                        </motion.h1>
                                                 { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={18} /> },
                                                 { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={18} /> },
                                                 { href: 'https://www.instagram.com/stryker.inside/', icon: <Instagram size={18} /> },
-                                                { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={18} /> },
+                                                { href: 'https://x.com/strykerin', icon: <XBrandIcon size={18} /> },
                                                 { href: 'https://linkitapp.in/stryker', icon: <LinkIcon size={18} /> },
                                             ].map(({ href, icon }, i) => (
                                                 <motion.a
@@ -1024,16 +1025,16 @@ Hardik Gupta                                        </motion.h1>
                                                     to={`/blogs/${article.slug}`}
                                                     className={`block border ${cardBg} rounded-xl p-4 transition-colors`}
                                                 >
-                                                    {article.coverImage && (
-                                                        <div className={`mb-3 h-40 overflow-hidden rounded-lg border ${divider}`}>
-                                                            <img
-                                                                src={article.coverImage}
-                                                                alt={article.title}
-                                                                className="h-full w-full object-cover"
-                                                                loading="lazy"
-                                                            />
-                                                        </div>
-                                                    )}
+                                                    <div className={`mb-3 h-40 overflow-hidden rounded-lg border ${divider}`}>
+                                                        <BlogCover
+                                                            title={article.title}
+                                                            coverImage={article.coverImage}
+                                                            theme={theme}
+                                                            tags={article.tags}
+                                                            variant="card"
+                                                            loading="lazy"
+                                                        />
+                                                    </div>
                                                     <h3 className="text-base font-bold leading-snug line-clamp-2">{article.title}</h3>
                                                     <p className={`mt-2 text-sm ${mutedText} line-clamp-2`}>
                                                         {article.excerpt || 'No description.'}
@@ -1081,7 +1082,7 @@ Hardik Gupta                                        </motion.h1>
                             {[
                                 { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={16} /> },
                                 { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={16} /> },
-                                { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={16} /> },
+                                { href: 'https://x.com/strykerin', icon: <XBrandIcon size={16} /> },
                             ].map(({ href, icon }) => (
                                 <motion.a key={href} href={href} target="_blank" rel="noopener noreferrer"
                                     className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors`}>{icon}</motion.a>

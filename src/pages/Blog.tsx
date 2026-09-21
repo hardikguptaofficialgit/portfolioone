@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
-  ArrowUpRight,
   Calendar,
   Check,
   Clock,
@@ -18,8 +17,8 @@ import {
   Tag,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Copilot from '@lobehub/icons/es/Copilot';
-import { ModelIcon } from '@lobehub/icons/es/features';
+import { buildBlogPostPrompt } from '../../lib/ai/providers';
+import AskAIPanel from '@/components/ai/AskAIPanel';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -29,6 +28,7 @@ import rehypeRaw from 'rehype-raw';
 import { Input } from '@/components/ui/input';
 import { useDesktopStore } from '@/store/desktopStore';
 import type { BlogPost } from '@/content/types';
+import BlogCover from '@/components/blog/BlogCover';
 
 type BlogTheme = 'dark' | 'light';
 
@@ -40,80 +40,6 @@ const buildPostUrl = (slug: string) => {
 
 const readingTime = (text: string) =>
   Math.max(1, Math.round((text || '').split(/\s+/).filter(Boolean).length / 220));
-
-type AIToolOption = {
-  label: string;
-  shortLabel: string;
-  model: string;
-  urlBase: string;
-};
-
-const AI_TOOL_OPTIONS: AIToolOption[] = [
-  { label: 'Chat with ChatGPT', shortLabel: 'Ask ChatGPT', model: 'gpt-5', urlBase: 'https://chatgpt.com/?q=' },
-  { label: 'Extend conversation with Claude', shortLabel: 'Ask Claude', model: 'claude', urlBase: 'https://claude.ai/new?q=' },
-  { label: 'Chat with Gemini', shortLabel: 'Ask Gemini', model: 'gemini', urlBase: 'https://gemini.google.com/app?prompt=' },
-  { label: 'Ask Perplexity', shortLabel: 'Ask Perplexity', model: 'pplx', urlBase: 'https://www.perplexity.ai/search/new?q=' },
-  { label: 'Open Microsoft Copilot', shortLabel: 'Ask Copilot', model: 'copilot', urlBase: 'https://copilot.microsoft.com/?q=' },
-  { label: 'Try Hugging Face Chat', shortLabel: 'Ask HuggingFace', model: 'openrouter', urlBase: 'https://huggingface.co/chat/?q=' },
-];
-
-const PRIMARY_AI_TOOLS = AI_TOOL_OPTIONS.slice(0, 3);
-const EXTRA_AI_TOOLS = AI_TOOL_OPTIONS.slice(3);
-
-const buildAIConversationPrompt = (post: BlogPost) =>
-  [
-    `Let's discuss this article in detail.`,
-    `Title: ${post.title}`,
-    `Summary: ${post.excerpt || 'No summary provided.'}`,
-    `URL: ${post.sourceUrl || buildPostUrl(post.slug)}`,
-    `I want key takeaways, critique, practical next steps, and production-grade implementation ideas.`,
-  ].join('\n');
-
-const AIQuickActions = ({ post, buttonClass }: { post: BlogPost; buttonClass: string }) => {
-  const [visibleSet, setVisibleSet] = useState<'primary' | 'extra'>('primary');
-  const prompt = useMemo(() => buildAIConversationPrompt(post), [post]);
-  const tools = visibleSet === 'primary' ? PRIMARY_AI_TOOLS : EXTRA_AI_TOOLS;
-
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {tools.map((tool) => (
-        <a
-          key={tool.label}
-          href={`${tool.urlBase}${encodeURIComponent(prompt)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`inline-flex h-5 items-center gap-1 rounded-[4px] px-1.5 text-[9px] font-medium transition-colors ${buttonClass}`}
-          title={tool.label}
-        >
-          {tool.model === 'copilot' ? (
-            <Copilot.Color size={10} />
-          ) : (
-            <ModelIcon model={tool.model} size={10} type="color" />
-          )}
-          <span>{tool.shortLabel}</span>
-        </a>
-      ))}
-
-      {EXTRA_AI_TOOLS.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setVisibleSet((value) => (value === 'primary' ? 'extra' : 'primary'))}
-          className={`inline-flex h-5 items-center gap-1 rounded-[4px] px-1.5 text-[9px] font-medium transition-colors ${buttonClass}`}
-          aria-pressed={visibleSet === 'extra'}
-        >
-          {visibleSet === 'primary' ? 'More...' : 'Back'}
-          <motion.span
-            animate={{ rotate: visibleSet === 'primary' ? 0 : 180 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-            className="inline-flex"
-          >
-            <ArrowUpRight className="h-2.5 w-2.5 rotate-45" />
-          </motion.span>
-        </button>
-      )}
-    </div>
-  );
-};
 
 const T = {
   dark: {
@@ -376,14 +302,16 @@ export const BlogListPage = () => {
                       </div>
                     </div>
                     
-                    <div className="h-40 lg:h-full w-full bg-black shrink-0 relative">
-                      {featuredPost.coverImage ? (
-                        <img src={featuredPost.coverImage} alt={featuredPost.title} className="absolute inset-0 h-full w-full object-cover" loading="eager" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center px-4 text-center text-sm font-bold text-white/20">
-                          {featuredPost.title}
-                        </div>
-                      )}
+                    <div className="relative h-40 w-full shrink-0 overflow-hidden lg:h-full">
+                      <BlogCover
+                        title={featuredPost.title}
+                        coverImage={featuredPost.coverImage}
+                        theme={theme}
+                        tags={featuredPost.tags}
+                        variant="featured"
+                        className="absolute inset-0"
+                        loading="eager"
+                      />
                     </div>
                   </Link>
                 </motion.article>
@@ -392,12 +320,16 @@ export const BlogListPage = () => {
                   {remainingPosts.map((post, index) => (
                     <motion.article key={post.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }}>
                       <Link to={`/blogs/${post.slug}`} className={`flex flex-col h-full overflow-hidden rounded-lg border ${C.border} ${C.card}`}>
-                        <div className="h-24 sm:h-28 bg-black shrink-0 relative">
-                          {post.coverImage ? (
-                            <img src={post.coverImage} alt={post.title} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-                          ) : (
-                            <div className="flex h-full items-center justify-center p-4 text-center text-xs font-bold text-white/20">{post.title}</div>
-                          )}
+                        <div className="relative h-24 shrink-0 overflow-hidden sm:h-28">
+                          <BlogCover
+                            title={post.title}
+                            coverImage={post.coverImage}
+                            theme={theme}
+                            tags={post.tags}
+                            variant="card"
+                            className="absolute inset-0"
+                            loading="lazy"
+                          />
                         </div>
                         <div className="flex flex-col grow p-3">
                           <h2 className="line-clamp-2 text-[11px] font-bold leading-tight">{post.title}</h2>
@@ -429,6 +361,10 @@ export const BlogPostPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const aiPrompt = useMemo(
+    () => (post ? buildBlogPostPrompt(post, buildPostUrl(post.slug)) : ''),
+    [post]
+  );
 
   useEffect(() => {
     if (!slug) {
@@ -545,11 +481,16 @@ export const BlogPostPage = () => {
         
         {!loading && post && (
           <article>
-            {post.coverImage && (
-              <div className={`mb-5 w-full overflow-hidden rounded-xl border aspect-[16/6] md:aspect-[21/8] ${C.border} ${theme === 'dark' ? 'bg-black' : 'bg-white'}`}>
-                <img src={post.coverImage} alt={post.title} className="h-full w-full object-cover" loading="eager" />
-              </div>
-            )}
+            <div className={`mb-5 aspect-[16/6] w-full overflow-hidden rounded-xl border md:aspect-[21/8] ${C.border}`}>
+              <BlogCover
+                title={post.title}
+                coverImage={post.coverImage}
+                theme={theme}
+                tags={post.tags}
+                variant="hero"
+                loading="eager"
+              />
+            </div>
             <header className="mx-auto mb-5 max-w-2xl space-y-2">
               <h1 className="text-xl font-bold leading-tight tracking-tight md:text-2xl">{post.title}</h1>
               {post.excerpt && <p className={`text-[10px] leading-5 md:text-xs md:leading-6 ${C.muted}`}>{post.excerpt}</p>}
@@ -596,9 +537,15 @@ export const BlogPostPage = () => {
               </Link>
             </div>
 
-            <section className={`mx-auto mt-5 max-w-2xl rounded-xl p-4 border ${C.border} ${C.surface}`}>
-              <p className={`mb-3 font-mono text-[9px] uppercase tracking-[0.1em] ${C.subtle}`}>Discuss with AI</p>
-              <AIQuickActions post={post} buttonClass={C.btn} />
+            <section className={`mx-auto mt-5 max-w-2xl rounded-xl border p-4 ${C.border} ${C.surface}`}>
+              <AskAIPanel
+                prompt={aiPrompt}
+                darkMode={theme === 'dark'}
+                variant="blog"
+                title="Discuss with AI"
+                subtitle="Open an assistant with this article already in context."
+                showExtraProviders
+              />
             </section>
           </article>
         )}

@@ -14,7 +14,7 @@
     { "id": "github", "name": "GitHub", "icon": "Github", "url": "https://github.com/hardikguptaofficialgit", "description": "Check out my code" },
     { "id": "linkedin", "name": "LinkedIn", "icon": "Linkedin", "url": "https://www.linkedin.com/in/hardik-gupta-b528072b3/", "description": "Connect professionally" },
     { "id": "instagram", "name": "Instagram", "icon": "Instagram", "url": "https://www.instagram.com/stryker.inside/", "description": "Personal updates" },
-    { "id": "twitter", "name": "Twitter", "icon": "Twitter", "url": "https://x.com/stryker_inside", "description": "Thoughts & threads" },
+    { "id": "twitter", "name": "Twitter", "icon": "Twitter", "url": "https://x.com/strykerin", "description": "Thoughts & threads" },
     { "id": "linkit", "name": "Linkit", "icon": "Link", "url": "https://linkitapp.in/stryker", "description": "All my links" }
   ],
   "skillCategories": [
