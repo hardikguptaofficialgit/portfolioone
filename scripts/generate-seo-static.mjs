@@ -4,6 +4,11 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'public');
+const siteMetricsSrc = path.join(root, 'content/site-metrics.json');
+const siteMetricsDest = path.join(publicDir, 'site-metrics.json');
+if (fs.existsSync(siteMetricsSrc)) {
+  fs.copyFileSync(siteMetricsSrc, siteMetricsDest);
+}
 const site = JSON.parse(fs.readFileSync(path.join(root, 'content/site.json'), 'utf8'));
 const blogs = JSON.parse(fs.readFileSync(path.join(root, 'content/blogs.json'), 'utf8'));
 

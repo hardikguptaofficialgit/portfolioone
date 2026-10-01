@@ -239,21 +239,40 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
         useEffect(() => {
             let cancelled = false;
+            const applyCount = (count: number, markSeen: boolean) => {
+                if (cancelled || !Number.isFinite(count)) return;
+                setPortfolioViews(count);
+                if (markSeen) sessionStorage.setItem(PORTFOLIO_VIEW_SESSION_KEY, '1');
+            };
+            const loadStaticFallback = async () => {
+                try {
+                    const res = await fetch('/site-metrics.json', { cache: 'no-store' });
+                    if (!res.ok) return;
+                    const payload = (await res.json()) as { portfolioViews?: number };
+                    if (typeof payload.portfolioViews === 'number') {
+                        applyCount(payload.portfolioViews, false);
+                    }
+                } catch {
+                    // ignore
+                }
+            };
             const loadViews = async () => {
                 try {
                     const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
-                    const res = await fetch(seen ? '/api/portfolio/views' : '/api/portfolio/views', {
+                    const res = await fetch('/api/portfolio/views', {
                         method: seen ? 'GET' : 'POST',
                     });
-                    if (!res.ok) return;
-                    const payload = (await res.json()) as { count?: number };
-                    if (!cancelled && typeof payload.count === 'number') {
-                        setPortfolioViews(payload.count);
-                        if (!seen) sessionStorage.setItem(PORTFOLIO_VIEW_SESSION_KEY, '1');
+                    if (res.ok) {
+                        const payload = (await res.json()) as { count?: number };
+                        if (typeof payload.count === 'number') {
+                            applyCount(payload.count, !seen);
+                            return;
+                        }
                     }
                 } catch {
-                    // ignore analytics failures
+                    // try fallback
                 }
+                await loadStaticFallback();
             };
             loadViews();
             return () => {
