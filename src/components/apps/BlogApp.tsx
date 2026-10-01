@@ -7,8 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Interfaces, Files } from 'doodle-icons';
 import { format } from 'date-fns';
 import type { BlogPost as PortfolioBlogPost } from '@/content/types';
-import BlogCover from '@/components/blog/BlogCover';
-
 interface BlogPost {
   id: string;
   title: string;
@@ -124,17 +122,6 @@ export const BlogApp = () => {
                 onClick={() => openBlogPost(post.slug)}
               >
                 <CardContent className="p-3 space-y-2.5">
-                  <div className="aspect-video overflow-hidden rounded-md">
-                    <BlogCover
-                      title={post.title}
-                      coverImage={post.featured_image}
-                      theme="dark"
-                      tags={post.tags}
-                      variant="card"
-                      className="h-full w-full transition-transform duration-300 hover:scale-105"
-                    />
-                  </div>
-
                   <div>
                     <h3 className="font-bold text-sm mb-1.5 line-clamp-2">
                       {post.title}

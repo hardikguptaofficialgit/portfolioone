@@ -4,7 +4,6 @@ import portfolio from './routes/portfolio.js';
 import portfolioViews from './routes/portfolio-views.js';
 import blogs from './routes/blogs/index.js';
 import blogBySlug from './routes/blogs/[slug].js';
-import subscribeNewsletter from './routes/newsletter/subscribe.js';
 import doomsWaitlist from './routes/dooms/waitlist.js';
 
 type Handler = (req: any, res: any) => unknown | Promise<unknown>;
@@ -20,7 +19,6 @@ const exactRoutes = new Map<string, Handler>([
   ['portfolio', portfolio],
   ['portfolio/views', portfolioViews],
   ['blogs', blogs],
-  ['newsletter/subscribe', subscribeNewsletter],
   ['dooms/waitlist', doomsWaitlist],
 ]);
 

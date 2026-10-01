@@ -67,8 +67,7 @@ export const DesktopIcon = ({
 
   return (
     <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ opacity: 0.85 }}
       onClick={(e) => {
         e.stopPropagation();
         onClick?.();

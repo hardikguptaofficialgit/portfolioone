@@ -52,18 +52,6 @@ export type BlogPost = {
   sourceUrl?: string;
 };
 
-export type NewsletterSettings = {
-  title: string;
-  description: string;
-  welcomeSubject: string;
-  welcomeText: string;
-  fromName?: string;
-  campaignSubject?: string;
-  campaignPreviewText?: string;
-  campaignHtml?: string;
-  campaignText?: string;
-};
-
 export type Experience = {
   id: string;
   role: string;
@@ -146,7 +134,6 @@ export type PortfolioDocument = {
   projects: Project[];
   photoEvents: PhotoEvent[];
   blogPosts: BlogPost[];
-  newsletterSettings?: NewsletterSettings;
   experience: Experience[];
   simplifiedExperience?: SimplifiedExperienceCard[];
   education: Education[];

@@ -268,14 +268,6 @@ All colors MUST be HSL.
     font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
   }
 
-  .portfolio-dot-grid {
-    background-image:
-      radial-gradient(circle, hsl(var(--foreground) / 0.14) 1px, transparent 1px),
-      linear-gradient(to right, hsl(var(--foreground) / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
-    background-size: 16px 16px, 48px 48px, 48px 48px;
-  }
-
   .theme-toggle {
     --theme-toggle-inset: 3px;
     border-radius: 999px;

@@ -117,12 +117,5 @@
       "iconKey": "residency"
     }
   ],
-  "certifications": [],
-  "newsletterSettings": {
-    "title": "Stryker Newsletter",
-    "fromName": "Stryker",
-    "description": "Updates on products, engineering, AI, and things I am building.",
-    "welcomeText": "You will now receive updates about AI, engineering, and new posts.",
-    "welcomeSubject": "Thanks for subscribing - you are all set"
-  }
+  "certifications": []
 }

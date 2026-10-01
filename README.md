@@ -1,6 +1,6 @@
 # StrykerOS Portfolio
 
-Windows-inspired portfolio site with JSON-backed content, local blog publishing, and optional Resend newsletter emails.
+Windows-inspired portfolio site with JSON-backed content and local blog publishing.
 
 ## Quick start
 
@@ -27,25 +27,19 @@ npm run dev
 | `content/blogs.json` | Blog posts |
 | `content/photos.json` | Photo gallery events |
 | `content/site-metrics.json` | Portfolio view counter (API writes locally) |
-| `content/newsletter-subscribers.json` | Newsletter signups (API writes locally) |
 | `content/dooms-waitlist.json` | Dooms waitlist entries (API writes locally) |
 
-Static images live under `public/images/`. To pull the latest from Supabase (one-time or refresh) and localize images:
+Static images live under `public/images/`.
 
-```bash
-node scripts/sync-from-supabase.mjs
-```
+## Blog posts
 
-Requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env`.
+Edit `content/blogs.json` → `blogPosts` array. Each post’s **`body` is Markdown** (GFM) inside a JSON string. See **[content/BLOGS.md](content/BLOGS.md)** and copy **`content/blog-post.template.json`** for a starter object.
 
 ## Environment
 
-AI chat (optional):
+Only needed for **Ask AI / chat**:
 
-- `GITHUB_TOKEN` with GitHub Models `models` scope
-- `GITHUB_MODELS_MODEL` optional, defaults to `openai/gpt-4o`
+- `GITHUB_TOKEN` — GitHub token with [Models API](https://docs.github.com/en/rest/models) access
+- `GITHUB_MODELS_MODEL` — optional, default `openai/gpt-4o`
 
-Newsletter welcome emails (optional):
-
-- `RESEND_API_KEY`
-- `NEWSLETTER_FROM_EMAIL`
+Portfolio, blogs, waitlist, and views use **`content/*.json`** only — no database env vars.

@@ -10,7 +10,6 @@ export type PortfolioContentParts = {
     education: PortfolioDocument['education'];
     achievements: PortfolioDocument['achievements'];
     certifications: PortfolioDocument['certifications'];
-    newsletterSettings?: PortfolioDocument['newsletterSettings'];
   };
   skills: {
     skillCategories: PortfolioDocument['skillCategories'];
@@ -41,7 +40,6 @@ export const mergePortfolioContent = (parts: PortfolioContentParts): PortfolioDo
     simplifiedExperience: parts.experience.simplifiedExperience ?? [],
     blogPosts: parts.blogs.blogPosts ?? [],
     photoEvents: parts.photos.photoEvents ?? [],
-    ...(parts.site.newsletterSettings ? { newsletterSettings: parts.site.newsletterSettings } : {}),
   };
   return portfolioDocumentSchema.parse(doc) as PortfolioDocument;
 };
