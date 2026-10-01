@@ -1,1425 +1,1589 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
-import {
-    ChevronRight, X, ChevronLeft,
-    Maximize2, Pin, Github, Linkedin, Instagram,
-    Link as LinkIcon, Star, GitFork, Download, ArrowUpRight, Clock,
-    Menu,
-    MapPin, Calendar, Sun, Moon
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { useDesktopStore } from '@/store/desktopStore';
-import { usePortfolio } from '@/hooks/usePortfolio';
-import { LaunchWelcomeModal } from '@/components/auth/LaunchWelcomeModal';
-import { markDesktopDirectEntry } from '@/lib/desktop-entry';
-import type { BlogPost, PhotoEvent, Project } from '@/content/types';
-import BlogCover from '@/components/blog/BlogCover';
+    import { Link as RouterLink } from 'react-router-dom';
+    import { motion, AnimatePresence, useInView } from 'framer-motion';
+    import {
+        ChevronRight, X, ChevronLeft,
+        Maximize2, Pin, Github, Linkedin, Instagram,
+        Link as LinkIcon, Star, GitFork, Download, ArrowUpRight, Clock,
+        Menu,
+        MapPin, Calendar, Eye
+    } from 'lucide-react';
+    import { GitHubActivityChart } from '@/components/portfolio/GitHubActivityChart';
+    import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
+    import { MonkeytypeStats } from '@/components/portfolio/MonkeytypeStats';
+    import { SkillIcon } from '@/components/portfolio/SkillIcon';
+    import { transitionPortfolioTheme } from '@/lib/theme-transition';
+    import { format } from 'date-fns';
+    import { useDesktopStore } from '@/store/desktopStore';
+    import { usePortfolio } from '@/hooks/usePortfolio';
+    import { LaunchWelcomeModal } from '@/components/auth/LaunchWelcomeModal';
+    import { markDesktopDirectEntry } from '@/lib/desktop-entry';
+    import type { BlogPost, PhotoEvent, Project } from '@/content/types';
 
-/* ─── Theme Context ──────────────────────────────────────────── */
-type Theme = 'dark' | 'light';
+    /* ─── Theme Context ──────────────────────────────────────────── */
+    type Theme = 'dark' | 'light';
 
-const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
-const NAV_SPRING = { type: 'spring', stiffness: 140, damping: 20 } as const;
-
-/* ─── Noise SVG overlay (CSS) ─────────────────────────────── */
-const NoiseOverlay = () => (
-    <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-[5] opacity-[0.035]"
-        style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '128px 128px',
-            mixBlendMode: 'overlay',
-        }}
-    />
-);
-
-
-
-
-/* ─── Section reveal wrapper ──────────────────────────────── */
-const RevealSection = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
-    const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, margin: '-80px' });
-    return (
-        <motion.div
-            ref={ref}
-            initial={{ opacity: 0, y: 40, rotateX: 4 }}
-            animate={isInView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
-            transition={{ duration: 0.7, delay, ease: EASE_SMOOTH }}
-            style={{ transformPerspective: 1200 }}
-        >
-            {children}
-        </motion.div>
+    const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
+    const NAV_SPRING = { type: 'spring', stiffness: 140, damping: 20 } as const;
+    /* ─── Noise SVG overlay (CSS) ─────────────────────────────── */
+    const NoiseOverlay = () => (
+        <div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-[5] opacity-[0.035]"
+            style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'repeat',
+                backgroundSize: '128px 128px',
+                mixBlendMode: 'overlay',
+            }}
+        />
     );
-};
 
-/* ─── Stagger list item ───────────────────────────────────── */
-const StaggerItem = ({ children, index }: { children: React.ReactNode; index: number }) => {
-    const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, margin: '-40px' });
-    return (
-        <motion.div
-            ref={ref}
-            initial={{ opacity: 0, x: -20 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.5, delay: index * 0.08, ease: EASE_SMOOTH }}
-        >
-            {children}
-        </motion.div>
-    );
-};
 
-/* ─── X Brand Icon ────────────────────────────────────────── */
-const XBrandIcon = ({ size = 18, className = '' }: { size?: number; className?: string }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="currentColor" aria-hidden="true">
-        <path d="M18.901 2H21.98l-6.723 7.684L23.3 22h-6.297l-4.93-7.476L5.53 22H2.45l7.192-8.226L1.7 2h6.457l4.456 6.765L18.901 2Zm-1.104 18.1h1.706L7.23 3.805H5.4L17.797 20.1Z" />
-    </svg>
-);
 
-/* ─── Tech Icons ──────────────────────────────────────────── */
-const TechIcon = ({ name }: { name: string }) => {
-    const icons: Record<string, JSX.Element> = {
-        TypeScript: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#3178c6"><path d="M1.125 0C.502 0 0 .502 0 1.125v21.75C0 23.498.502 24 1.125 24h21.75c.623 0 1.125-.502 1.125-1.125V1.125C24 .502 23.498 0 22.875 0zm17.363 9.75c.612 0 1.154.037 1.627.111a6.38 6.38 0 0 1 1.306.34v2.458a3.95 3.95 0 0 0-.643-.361 5.093 5.093 0 0 0-.717-.26 5.453 5.453 0 0 0-1.426-.2c-.3 0-.573.028-.819.086a2.1 2.1 0 0 0-.623.242c-.17.104-.3.229-.393.374a.888.888 0 0 0-.14.49c0 .196.053.373.156.529.104.156.252.304.443.444s.423.276.696.41c.273.135.582.274.926.416.47.197.892.407 1.266.628.374.222.695.473.963.753.268.279.472.598.614.957.142.359.214.776.214 1.253 0 .657-.125 1.21-.373 1.656a3.033 3.033 0 0 1-1.012 1.085 4.38 4.38 0 0 1-1.487.596c-.566.12-1.163.18-1.79.18a9.916 9.916 0 0 1-1.84-.164 5.544 5.544 0 0 1-1.512-.493v-2.63a5.033 5.033 0 0 0 3.237 1.2c.333 0 .624-.03.872-.09.249-.06.456-.144.623-.25.166-.108.29-.234.373-.38a1.023 1.023 0 0 0-.074-1.089 2.12 2.12 0 0 0-.537-.5 5.597 5.597 0 0 0-.807-.444 27.72 27.72 0 0 0-1.007-.436c-.918-.383-1.602-.852-2.053-1.405-.45-.553-.676-1.222-.676-2.005 0-.614.123-1.141.369-1.582.246-.441.58-.804 1.004-1.089a4.494 4.494 0 0 1 1.47-.629 7.536 7.536 0 0 1 1.77-.201zm-15.113.188h9.563v2.166H9.506v9.646H6.789v-9.646H3.375z"/></svg>),
-        JavaScript: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#f7df1e"><path d="M0 0h24v24H0V0zm22.034 18.276c-.175-1.095-.888-2.015-3.003-2.873-.736-.345-1.554-.585-1.797-1.14-.091-.33-.105-.51-.046-.705.15-.646.915-.84 1.515-.66.39.12.75.42.976.9 1.034-.676 1.034-.676 1.755-1.125-.27-.42-.404-.601-.586-.78-.63-.705-1.469-1.065-2.834-1.034l-.705.089c-.676.165-1.32.525-1.71 1.005-1.14 1.291-.811 3.541.569 4.471 1.365 1.02 3.361 1.244 3.616 2.205.24 1.17-.87 1.545-1.966 1.41-.811-.18-1.26-.586-1.755-1.336l-1.83 1.051c.21.48.45.689.81 1.109 1.74 1.756 6.09 1.666 6.871-1.004.029-.09.24-.705.074-1.65l.046.067zm-8.983-7.245h-2.248c0 1.938-.009 3.864-.009 5.805 0 1.232.063 2.363-.138 2.711-.33.689-1.18.601-1.566.48-.396-.196-.597-.466-.83-.855-.063-.105-.11-.196-.127-.196l-1.825 1.125c.305.63.75 1.172 1.324 1.517.855.51 2.004.675 3.207.405.783-.226 1.458-.691 1.811-1.411.51-.93.402-2.07.397-3.346.012-2.054 0-4.109 0-6.179l.004-.056z"/></svg>),
-        Python: (<svg viewBox="0 0 24 24" width="14" height="14"><path fill="#3572A5" d="M11.914 0C5.82 0 6.2 2.656 6.2 2.656l.007 2.752h5.814v.826H3.882S0 5.789 0 11.969c0 6.18 3.403 5.963 3.403 5.963h2.034v-2.867s-.109-3.403 3.35-3.403h5.766s3.24.052 3.24-3.131V3.183S18.316 0 11.914 0zm-3.21 1.851a1.046 1.046 0 1 1-.001 2.093 1.046 1.046 0 0 1 .001-2.093z"/><path fill="#ffd43b" d="M12.086 24c6.094 0 5.714-2.656 5.714-2.656l-.007-2.752h-5.814v-.826h8.139S24 18.211 24 12.031c0-6.18-3.403-5.963-3.403-5.963h-2.034v2.867s.109 3.403-3.35 3.403H9.447s-3.24-.052-3.24 3.131v5.268S5.684 24 12.086 24zm3.21-1.851a1.046 1.046 0 1 1 .001-2.093 1.046 1.046 0 0 1-.001 2.093z"/></svg>),
-        'React.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#61DAFB"><path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.41 0-.783.093-1.106.278-1.375.793-1.683 3.264-.973 6.365C1.98 8.917 0 10.42 0 12.004c0 1.59 1.99 3.097 5.043 4.03-.704 3.113-.39 5.588.988 6.38.32.187.69.275 1.102.275 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.41 0 .783-.09 1.106-.275 1.374-.792 1.683-3.263.973-6.365C22.02 15.096 24 13.59 24 12.004c0-1.59-1.99-3.097-5.043-4.032.704-3.11.39-5.587-.988-6.38-.318-.184-.688-.277-1.092-.278zm-.005 1.09c.725 0 1.173 1.06 1.173 2.81 0 .51-.041 1.078-.122 1.686a49.887 49.887 0 0 0-3.328-.831 49.716 49.716 0 0 0-2.297-3.018c1.048-.87 2.046-1.328 2.855-1.328zm-9.56.001c.808 0 1.805.457 2.853 1.324a49.785 49.785 0 0 0-2.294 3.02 49.887 49.887 0 0 0-3.33.833c-.295-1.96-.241-3.8.387-4.792.288-.467.723-.694 1.184-.694zm6.174 3.083a47.66 47.66 0 0 1 1.332 1.985 47.68 47.68 0 0 1-2.666 0c.213-.34.44-.678.677-1.012l.657-.973zm-2.696 1.985a47.67 47.67 0 0 1-1.332-1.985l.657.973c.237.334.464.672.675 1.012zm-3.924-.27a47.684 47.684 0 0 1 2.63-.832 47.804 47.804 0 0 1-.916 2.28 47.654 47.654 0 0 1-1.714-1.448zm10.498 1.447a47.649 47.649 0 0 1-1.714 1.45 47.818 47.818 0 0 1-.916-2.28 47.672 47.672 0 0 1 2.63.83zM12 13.396a47.697 47.697 0 0 1-1.602-.086 48.3 48.3 0 0 1-.987-1.843 47.745 47.745 0 0 1 .985-1.846 47.72 47.72 0 0 1 1.604-.086 47.72 47.72 0 0 1 1.604.086 47.765 47.765 0 0 1 .985 1.846 47.798 47.798 0 0 1-.985 1.843A47.742 47.742 0 0 1 12 13.396zm-2.354 1.5c.278.44.576.876.89 1.307l-.89 1.32c-.898-.98-1.636-1.974-2.187-2.914a47.742 47.742 0 0 1 2.187.287zm4.708 0c.74-.09 1.46-.187 2.187-.287-.55.94-1.288 1.933-2.187 2.914l-.89-1.32c.314-.43.612-.867.89-1.307zm-5.698 3.39c-.808 0-1.805-.457-2.853-1.325a49.827 49.827 0 0 0 2.294-3.02 49.884 49.884 0 0 0 3.33-.833c.295 1.96.241 3.8-.387 4.793-.288.467-.723.694-1.184.694zm9.56-.001c-.461 0-.896-.227-1.184-.694-.628-.993-.682-2.832-.387-4.792a49.887 49.887 0 0 0 3.328.83 49.716 49.716 0 0 0-2.294 3.018c-1.048.87-2.046 1.328-2.855 1.328z"/></svg>),
-        'Next.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M11.572 0c-.176 0-.31.001-.358.007a19.76 19.76 0 0 1-.364.033C7.443.346 4.25 2.185 2.228 5.012a11.875 11.875 0 0 0-2.119 5.243c-.096.659-.108.854-.108 1.747s.012 1.089.108 1.748c.652 4.506 3.86 8.292 8.209 9.695.779.25 1.6.422 2.534.525.363.04 1.935.04 2.299 0 1.611-.178 2.977-.577 4.323-1.264.207-.106.247-.134.219-.158-.02-.013-.9-1.193-1.955-2.62l-1.919-2.592-2.404-3.558a338.739 338.739 0 0 0-2.422-3.556c-.009-.002-.018 1.579-.023 3.51-.007 3.38-.01 3.515-.052 3.595a.426.426 0 0 1-.206.214c-.075.037-.14.044-.495.044H7.81l-.108-.068a.438.438 0 0 1-.157-.171l-.05-.106.006-4.703.007-4.705.072-.092a.645.645 0 0 1 .174-.143c.096-.047.134-.051.54-.051.478 0 .558.018.682.154.035.038 1.337 1.999 2.895 4.361a10760.433 10760.433 0 0 0 4.735 7.17l1.9 2.879.096-.063a12.317 12.317 0 0 0 2.466-2.163 11.944 11.944 0 0 0 2.824-6.134c.096-.66.108-.854.108-1.748 0-.893-.012-1.088-.108-1.747-.652-4.506-3.859-8.292-8.208-9.695a12.597 12.597 0 0 0-2.499-.523A33.119 33.119 0 0 0 11.573 0zm4.069 7.217c.347 0 .408.005.486.047a.473.473 0 0 1 .237.277c.018.06.023 1.365.018 4.304l-.006 4.218-.744-1.14-.746-1.14v-3.066c0-1.982.01-3.097.023-3.15a.478.478 0 0 1 .233-.296c.096-.05.13-.054.5-.054z"/></svg>),
-        'Node.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#339933"><path d="M11.998,24c-0.321,0-0.641-0.084-0.922-0.247l-2.936-1.737c-0.438-0.245-0.224-0.332-0.08-0.383c0.585-0.203,0.703-0.25,1.328-0.604c0.065-0.037,0.151-0.023,0.218,0.017l2.256,1.339c0.082,0.045,0.197,0.045,0.272,0l8.795-5.076c0.082-0.047,0.134-0.141,0.134-0.238V6.921c0-0.099-0.053-0.192-0.137-0.242l-8.791-5.072c-0.081-0.047-0.189-0.047-0.271,0L3.075,6.68C2.99,6.729,2.936,6.825,2.936,6.921v10.15c0,0.097,0.054,0.189,0.139,0.235l2.409,1.392c1.307,0.654,2.108-0.116,2.108-0.89V7.787c0-0.142,0.114-0.253,0.256-0.253h1.115c0.139,0,0.255,0.112,0.255,0.253v10.021c0,1.745-0.95,2.745-2.604,2.745c-0.508,0-0.909,0-2.026-0.551L2.28,18.675c-0.57-0.329-0.922-0.945-0.922-1.604V6.921c0-0.659,0.353-1.275,0.922-1.603l8.795-5.082c0.557-0.315,1.296-0.315,1.848,0l8.794,5.082c0.57,0.329,0.924,0.944,0.924,1.603v10.15c0,0.659-0.354,1.273-0.924,1.604l-8.794,5.078C12.643,23.916,12.324,24,11.998,24z"/></svg>),
-        Flutter: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#02569B"><path d="M14.314 0L2.3 12 6 15.7 21.684.013h-7.37zm.159 11.871l-5.77 5.767 5.77 5.767h7.348l-5.77-5.767 5.77-5.767h-7.348z"/></svg>),
-        Firebase: (<svg viewBox="0 0 24 24" width="14" height="14"><path fill="#FFCA28" d="M3.89 15.672L6.255.461A.542.542 0 0 1 7.27.288l2.543 4.771zm16.794 3.39l-2.287-14.2a.54.54 0 0 0-.91-.281L3.89 15.672l7.812 4.406a1.623 1.623 0 0 0 1.586 0zM14.3 7.147l-1.82-3.482a.542.542 0 0 0-.96 0L3.89 15.672z"/></svg>),
-        Docker: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#2496ED"><path d="M13.983 11.078h2.119a.186.186 0 0 0 .186-.185V9.006a.186.186 0 0 0-.186-.186h-2.119a.185.185 0 0 0-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 0 0 .186-.186V3.574a.186.186 0 0 0-.186-.185h-2.118a.185.185 0 0 0-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 0 0 .186-.186V6.29a.186.186 0 0 0-.186-.185h-2.118a.185.185 0 0 0-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 0 0 .184-.186V6.29a.185.185 0 0 0-.185-.185H8.1a.185.185 0 0 0-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 0 0 .185-.186V6.29a.185.185 0 0 0-.185-.185H5.136a.186.186 0 0 0-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 0 0 .186-.185V9.006a.186.186 0 0 0-.186-.186h-2.118a.185.185 0 0 0-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 0 0 .184-.185V9.006a.185.185 0 0 0-.184-.186h-2.12a.185.185 0 0 0-.185.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 0 0 .185-.185V9.006a.185.185 0 0 0-.184-.186h-2.12a.186.186 0 0 0-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 0 0 .184-.185V9.006a.185.185 0 0 0-.184-.186h-2.12a.185.185 0 0 0-.185.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 0 0-.75.748 11.376 11.376 0 0 0 .692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 0 0 3.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z"/></svg>),
-        'Tailwind CSS': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#06B6D4"><path d="M12.001,4.8c-3.2,0-5.2,1.6-6,4.8c1.2-1.6,2.6-2.2,4.2-1.8c0.913,0.228,1.565,0.89,2.288,1.624C13.666,10.618,15.027,12,18.001,12c3.2,0,5.2-1.6,6-4.8c-1.2,1.6-2.6,2.2-4.2,1.8c-0.913-0.228-1.565-0.89-2.288-1.624C16.337,6.182,14.976,4.8,12.001,4.8z M6.001,12c-3.2,0-5.2,1.6-6,4.8c1.2-1.6,2.6-2.2,4.2-1.8c0.913,0.228,1.565,0.89,2.288,1.624c1.177,1.194,2.538,2.576,5.512,2.576c3.2,0,5.2-1.6,6-4.8c-1.2,1.6-2.6,2.2-4.2,1.8c-0.913-0.228-1.565-0.89-2.288-1.624C10.337,13.382,8.976,12,6.001,12z"/></svg>),
-        PostgreSQL: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#4169E1"><path d="M23.5594 14.7228a.518.518 0 0 0-.0794-.063c-.198-.1193-1.3908-.5367-1.5812-.4489-.1094.0507-.2218.2226-.3299.3895-.1503.2285-.3061.4648-.5117.4976-.0239.0039-.0484.0056-.0739.0056-.2677 0-.5863-.1541-.8963-.3039-.3782-.183-.7692-.3722-1.132-.3017-.0097.0019-.0199.0041-.0302.0067-.0025-.027-.0052-.0561-.0079-.0884-.0363-.4336-.0999-1.1942.3659-1.8667l.0025-.0038c.0342-.0503.2196-.3225.5455-.3225.1049 0 .2085.0356.3132.0714.1261.0436.2564.0886.4147.0886.1104 0 .2172-.0239.3295-.0749.1626-.0737.2498-.1993.2498-.3572 0-.1501-.1077-.2866-.3208-.4057-.3038-.1672-.5694-.2087-.8078-.2087-.2753 0-.5143.0567-.7299.1059-.1616.0372-.3139.0723-.4378.0723-.1045 0-.1649-.0226-.2153-.0767-.1113-.1208-.0935-.3553-.0662-.6784.0189-.2251.0422-.505.0177-.8211-.0519-.6734-.3843-1.1117-.8726-1.1117-.3064 0-.5955.1695-.8139.4782-.2215.3133-.3637.7699-.4106 1.3232-.0149.1758-.0258.6035.0022.9286-.0513.0058-.1044.0116-.1588.0173-.2862.0303-.5768.061-.7996.1416-.1948.0703-.3024.1639-.3199.2783-.0183.1183.0623.229.1553.3003.1551.1186.4016.1854.7109.1938-.0097.0228-.0194.0452-.0291.0669-.1245.2841-.2523.5756-.2523 1.0006 0 .7444.4338 1.3082 1.0527 1.386.0378.0049.0754.0073.1126.0073.5029 0 .9989-.3491 1.3773-.9814l.0047-.0079c.0484-.082.2139-.3625.3697-.3625.0259 0 .0471.0077.0699.0265.4122.3393.5955.5015.7117.7099.0603.1082.0888.2315.0888.376 0 .2609-.0936.5462-.1836.8225-.0829.2567-.1613.499-.1613.7192 0 .2696.1141.4939.3301.6504.1739.1254.3988.1893.6694.1893.2745 0 .5553-.0657.8146-.1296.2463-.0614.5012-.1249.7357-.1249.2064 0 .3705.0485.5205.1527l.0064.0045c.0921.0635.1974.0956.3128.0956.3455 0 .6783-.3066.6783-.6301a.5584.5584 0 0 0-.1147-.3382z"/></svg>),
-        Redis: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#DC382D"><path d="M10.5 11.249l-3.938 1.612L10.5 14.47l3.937-1.609L10.5 11.249zm7.674 3.854l-7.673 3.137-7.673-3.137 7.673-3.137 7.673 3.137zM10.5 6.532L2.826 9.669 10.5 12.806l7.674-3.137-7.674-3.137zM10.5.005L0 4.385v15.23L10.5 24l10.5-4.385V4.385L10.5.005z"/></svg>),
-        OpenAI: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#10A37F"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.843-3.372L15.115 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.403-.668zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>),
-        Vercel: (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 22.525H0l12-21.05 12 21.05z"/></svg>),
-        'Socket.IO': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#010101"><path d="M11.9-.001C5.35-.001.003 5.347.003 11.901c0 6.553 5.345 11.899 11.9 11.899 6.552 0 11.898-5.345 11.898-11.9C23.8 5.349 18.455 0 11.9 0zm6.165 6.139l-5.707 11.443-.246-7.528-5.421 2.573 5.707-11.443.246 7.528 5.421-2.573z"/></svg>),
-        'GitHub API': (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>),
-        'Express.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 18.588a1.529 1.529 0 0 1-1.895-.72l-3.45-4.771-.5-.667-4.003 5.444a1.466 1.466 0 0 1-1.802.708l5.158-6.92-4.798-6.251a1.595 1.595 0 0 1 1.9.666l3.576 4.83 3.596-4.81a1.435 1.435 0 0 1 1.788-.668L21.708 7.9l-2.522 3.283a.666.666 0 0 0 0 .994l4.804 6.412zM.002 11.576l.42-2.075c1.154-4.103 5.858-5.81 9.094-3.27 1.895 1.489 2.368 3.597 2.275 5.973H1.116C.943 16.447 4.005 19.009 7.92 17.7a4.078 4.078 0 0 0 2.582-2.876c.207-.666.548-.78 1.174-.588a5.417 5.417 0 0 1-2.589 3.957 6.272 6.272 0 0 1-7.306-.933 6.575 6.575 0 0 1-1.64-3.858c0-.235-.08-.455-.134-.666A88.33 88.33 0 0 1 0 11.577zm1.127-.286h9.654c-.06-3.076-2.001-5.258-4.59-5.278-2.882-.04-4.944 2.094-5.071 5.264z"/></svg>),
-        Dart: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#0175C2"><path d="M4.105 4.105S9.158 1.58 11.684.316a3.079 3.079 0 0 1 1.481-.316 3.08 3.08 0 0 1 2.1.811l.003.002 7.467 7.467.002.003a3.081 3.081 0 0 1 .499 3.581c-1.263 2.527-3.788 7.579-3.788 7.579s-.001 0-.001.001c-.31.621-.944.999-1.641.999-.308 0-.615-.076-.892-.231C16.914 19.212 4.105 4.105 4.105 4.105z"/></svg>),
-        Gemini: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#8E75B2"><path d="M12 1.5c-.8 5.7-4.8 9.8-10.5 10.5C7.2 12.8 11.2 16.8 12 22.5c.8-5.7 4.8-9.7 10.5-10.5-5.7-.7-9.7-4.8-10.5-10.5z"/></svg>),
-        Anthropic: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#D4763B"><path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-6.994 0H10.436L17 20h-3.603l-6.564-16.48z"/></svg>),
-        Llama: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#0467DF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>),
-        RAG: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#9B59B6"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>),
-        'Prompt Engineering': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#E67E22"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-2h11v2zm5-4H4v-2h16v2zm0-4H4V8h16v2z"/></svg>),
-        TensorFlow: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#FF6F00"><path d="M22.374 9.704L12 3.97 1.626 9.704V21.17L12 15.436l10.374 5.735zM12 .03L24 6.97v10.06L12 23.97 0 17.03V6.97z"/></svg>),
-        'C++': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#00599C"><path d="M22.394 6c-.167-.29-.398-.543-.652-.69L12.926.22c-.509-.294-1.34-.294-1.848 0L2.26 5.31c-.508.293-.923 1.013-.923 1.6v10.18c0 .294.104.62.271.91.167.29.398.543.652.69l8.816 5.09c.508.293 1.34.293 1.848 0l8.816-5.09c.254-.147.485-.4.652-.69.167-.29.27-.616.27-.91V6.91c.003-.294-.1-.62-.268-.91zM12 19.11c-3.92 0-7.109-3.19-7.109-7.11 0-3.92 3.19-7.11 7.109-7.11a7.133 7.133 0 0 1 6.156 3.553l-3.076 1.78a3.567 3.567 0 0 0-3.08-1.78A3.555 3.555 0 0 0 8.444 12 3.555 3.555 0 0 0 12 15.555a3.57 3.57 0 0 0 3.08-1.778l3.078 1.78A7.135 7.135 0 0 1 12 19.11z"/></svg>),
-        C: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#A8B9CC"><path d="M16.5 9.4l-1.8-1.05A5.25 5.25 0 0 0 12 7.5a5.25 5.25 0 0 0-5.25 5.25A5.25 5.25 0 0 0 12 18a5.25 5.25 0 0 0 2.7-.75l1.8-1.05V19.5A7.5 7.5 0 0 1 12 21a7.5 7.5 0 0 1-7.5-7.5A7.5 7.5 0 0 1 12 6a7.5 7.5 0 0 1 4.5 1.5v1.9z"/></svg>),
-        PHP: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#777BB4"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/></svg>),
-        PostHog: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#F54E00"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>),
-        'API Design': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#D4763B"><path d="M4 7h16v2H4V7zm0 4h10v2H4v-2zm0 4h16v2H4v-2z"/></svg>),
-        'HTML5': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#E34F26"><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.565-2.438L1.5 0zm7.031 9.75l-.232-2.718 10.059.003.23-2.622L5.412 4.41l.698 8.01h9.126l-.326 3.426-2.91.804-2.955-.81-.188-2.11H6.248l.33 4.171L12 19.351l5.379-1.443.744-8.157H8.531z"/></svg>),
-        'CSS3': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#1572B6"><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.564-2.438L1.5 0zm17.09 4.413L5.41 4.41l.213 2.622 10.125.002-.255 2.716h-6.64l.24 2.573h6.182l-.366 3.523-2.91.804-2.956-.81-.188-2.11h-2.61l.29 3.855L12 19.288l5.373-1.53L18.59 4.414v-.001z"/></svg>),
-        PWA: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#5A0FC8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>),
-        'Google Maps': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#4285F4"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>),
-        Render: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#46E3B7"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/></svg>),
-        'REST APIs': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#FF5733"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>),
-        WebSockets: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#007ACC"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>),
-    };
-    return icons[name] || <span className="w-3.5 h-3.5 rounded-full bg-zinc-500 inline-block" />;
-};
 
-/* ─── helpers ──────────────────────────────────────────────── */
-const langColor: Record<string, string> = {
-    TypeScript: '#3178c6', JavaScript: '#f7df1e', Python: '#3572A5',
-    CSS: '#563d7c', HTML: '#e44b23', Rust: '#dea584', Go: '#00ADD8',
-    C: '#A8B9CC', 'C++': '#00599C', Shell: '#89e051', Dart: '#0175C2',
-};
-
-const calcDuration = (start: string, end?: string) => {
-    const s = new Date(start);
-    const e = end ? new Date(end) : new Date();
-    let yrs = e.getFullYear() - s.getFullYear();
-    let mos = e.getMonth() - s.getMonth();
-    if (mos < 0) { yrs--; mos += 12; }
-    if (yrs === 0 && mos === 0) return '1 mo';
-    if (yrs === 0) return `${mos} mo${mos > 1 ? 's' : ''}`;
-    if (mos === 0) return `${yrs} yr${yrs > 1 ? 's' : ''}`;
-    return `${yrs} yr${yrs > 1 ? 's' : ''} ${mos} mo${mos > 1 ? 's' : ''}`;
-};
-
-/* ─── achievement icons (static assets) ───────────────────── */
-const achievementIconSrc = {
-    yc: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHZEuWg1DSjG7W9DQ1Yl4ti8wj4I2DlGjZvg&s',
-    gdg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx1ifvMfrD9VzaphHBYLhM6wUV-YHR0g28Ow&s',
-    residency: 'https://cdn.prod.website-files.com/62f41dee5606d80f65b7dcbb/6676ffc8dcc184ba44858820_the_residency_logo.svg',
-} as const;
-
-const achievementIconBg: Record<keyof typeof achievementIconSrc, string> = {
-    yc: '#FB651E', gdg: '#FFFFFF', residency: '#FFFFFF',
-};
-
-const getAchievementIconKey = (title: string): keyof typeof achievementIconSrc => {
-    if (title.includes('YC')) return 'yc';
-    if (title.includes('GDG')) return 'gdg';
-    return 'residency';
-};
-
-const navItems = [
-    { id: 'resume', label: 'Resume' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'github', label: 'GitHub' },
-    { id: 'photos', label: 'Photos' },
-    { id: 'blog', label: 'Blog' },
-    { id: 'contact', label: 'Contact', isAction: true },
-];
-
-const LAUNCH_MODAL_DISMISSED_KEY = 'portfolio_launch_modal_dismissed_v1';
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  MAIN COMPONENT                                             */
-/* ═══════════════════════════════════════════════════════════ */
-type ResumeProject = Project & { img?: string | null };
-
-const SimplifiedResume = () => {
-    const { settings, updateSettings } = useDesktopStore();
-    const { profile, projects, skillCategories, achievements, simplifiedExperience, photoEvents, blogPosts, sections, isLoading } = usePortfolio();
-    const resumeProjects: ResumeProject[] = projects.map((p) => ({
-        ...p,
-        img: p.imageUrl ?? null,
-    }));
-    const [activeSection, setActiveSection] = useState('resume');
-    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-    const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
-    const [repos, setRepos] = useState<any[]>([]);
-    const [filteredRepos, setFilteredRepos] = useState<any[]>([]);
-    const [filterMode, setFilterMode] = useState<'top' | 'latest' | 'pushed' | 'all'>('top');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [previewErrors, setPreviewErrors] = useState<Record<string, boolean>>({});
-    const [selectedProject, setSelectedProject] = useState<ResumeProject | null>(null);
-    const [selectedEvent, setSelectedEvent] = useState<PhotoEvent | null>(null);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [projectControlsCollapsed, setProjectControlsCollapsed] = useState(false);
-    const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
-    const [isDraggingProjectControls, setIsDraggingProjectControls] = useState(false);
-    const [isNavCompact, setIsNavCompact] = useState(false);
-    const [isDesktopView, setIsDesktopView] = useState(
-        () => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
-    );
-    const [showLaunchModal, setShowLaunchModal] = useState(
-        () => typeof window !== 'undefined' ? sessionStorage.getItem(LAUNCH_MODAL_DISMISSED_KEY) !== '1' : true,
-    );
-    const dragOffsetRef = useRef({ x: 0, y: 0 });
-    const themeTransitionTimerRef = useRef<number | null>(null);
-
-    const theme: Theme = settings.darkMode ? 'dark' : 'light';
-    const isDark = theme === 'dark';
-    const shouldUseCompactNav = isDesktopView && isNavCompact;
-
-    useEffect(() => {
-        const onScroll = () => setIsNavCompact(window.scrollY > 56);
-        onScroll();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setIsDesktopView(window.innerWidth >= 1024);
-        onResize();
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    const popularArticles = blogPosts.filter((post) => post.featured !== false).slice(0, 6);
-
-    useEffect(() => {
-        fetch(`https://api.github.com/users/${profile.githubUsername || 'hardikguptaofficialgit'}/repos?per_page=100`)
-            .then(r => r.json())
-            .then(d => Array.isArray(d) && setRepos(d))
-            .catch(() => {});
-    }, []);
-
-    useEffect(() => {
-        let list = [...repos];
-        if (filterMode === 'top') list.sort((a, b) => b.stargazers_count - a.stargazers_count);
-        else if (filterMode === 'latest') list.sort((a, b) => +new Date(b.updated_at) - +new Date(a.updated_at));
-        else if (filterMode === 'pushed') list.sort((a, b) => +new Date(b.pushed_at) - +new Date(a.pushed_at));
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase();
-            list = list.filter(r => r.name?.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q));
-        }
-        if (filterMode === 'top') list = list.slice(0, 10);
-        setFilteredRepos(list);
-    }, [repos, filterMode, searchQuery]);
-
-    useEffect(() => {
-        const ids = ['resume', 'projects', 'github', 'photos', 'blog'];
-        const sections = ids.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-        if (!sections.length) return;
-        const vis = new Map<string, number>();
-        const obs = new IntersectionObserver(entries => {
-            entries.forEach(e => vis.set(e.target.id, e.intersectionRatio));
-            let best = activeSection, bestR = -1;
-            vis.forEach((r, id) => { if (r > bestR) { bestR = r; best = id; } });
-            if (best && best !== activeSection) setActiveSection(best);
-        }, { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] });
-        sections.forEach(s => obs.observe(s));
-        return () => obs.disconnect();
-    }, [activeSection]);
-
-    const scrollTo = (id: string) => {
-        setActiveSection(id);
-        setIsMobileNavOpen(false);
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    /* ─── Section reveal wrapper ──────────────────────────────── */
+    const RevealSection = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
+        const ref = useRef(null);
+        const isInView = useInView(ref, { once: true, margin: '-80px' });
+        return (
+            <motion.div
+                ref={ref}
+                initial={{ opacity: 0, y: 40, rotateX: 4 }}
+                animate={isInView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
+                transition={{ duration: 0.7, delay, ease: EASE_SMOOTH }}
+                style={{ transformPerspective: 1200 }}
+            >
+                {children}
+            </motion.div>
+        );
     };
 
-    const dismissLaunchModal = useCallback(() => {
-        sessionStorage.setItem(LAUNCH_MODAL_DISMISSED_KEY, '1');
-        setShowLaunchModal(false);
-    }, []);
-
-    const openGallery = (ev: PhotoEvent) => { setSelectedEvent(ev); setCurrentImageIndex(0); };
-    const nextImg = (e?: React.MouseEvent) => {
-        e?.stopPropagation();
-        setCurrentImageIndex(p => selectedEvent ? (p + 1) % selectedEvent.images.length : 0);
+    /* ─── Stagger list item ───────────────────────────────────── */
+    const StaggerItem = ({ children, index }: { children: React.ReactNode; index: number }) => {
+        const ref = useRef(null);
+        const isInView = useInView(ref, { once: true, margin: '-40px' });
+        return (
+            <motion.div
+                ref={ref}
+                initial={{ opacity: 0, x: -20 }}
+                animate={isInView ? { opacity: 1, x: 0 } : {}}
+                transition={{ duration: 0.5, delay: index * 0.08, ease: EASE_SMOOTH }}
+            >
+                {children}
+            </motion.div>
+        );
     };
-    const prevImg = (e?: React.MouseEvent) => {
-        e?.stopPropagation();
-        setCurrentImageIndex(p => selectedEvent ? (p - 1 + selectedEvent.images.length) % selectedEvent.images.length : 0);
-    };
 
-    useEffect(() => {
-        if (!selectedEvent) return;
-        const handler = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') nextImg();
-            else if (e.key === 'ArrowLeft') prevImg();
-            else if (e.key === 'Escape') setSelectedEvent(null);
+    /* ─── X Brand Icon ────────────────────────────────────────── */
+    const XBrandIcon = ({ size = 18, className = '' }: { size?: number; className?: string }) => (
+        <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="currentColor" aria-hidden="true">
+            <path d="M18.901 2H21.98l-6.723 7.684L23.3 22h-6.297l-4.93-7.476L5.53 22H2.45l7.192-8.226L1.7 2h6.457l4.456 6.765L18.901 2Zm-1.104 18.1h1.706L7.23 3.805H5.4L17.797 20.1Z" />
+        </svg>
+    );
+
+    /* ─── Tech Icons ──────────────────────────────────────────── */
+    const TechIcon = ({ name }: { name: string }) => {
+        const icons: Record<string, JSX.Element> = {
+            TypeScript: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#3178c6"><path d="M1.125 0C.502 0 0 .502 0 1.125v21.75C0 23.498.502 24 1.125 24h21.75c.623 0 1.125-.502 1.125-1.125V1.125C24 .502 23.498 0 22.875 0zm17.363 9.75c.612 0 1.154.037 1.627.111a6.38 6.38 0 0 1 1.306.34v2.458a3.95 3.95 0 0 0-.643-.361 5.093 5.093 0 0 0-.717-.26 5.453 5.453 0 0 0-1.426-.2c-.3 0-.573.028-.819.086a2.1 2.1 0 0 0-.623.242c-.17.104-.3.229-.393.374a.888.888 0 0 0-.14.49c0 .196.053.373.156.529.104.156.252.304.443.444s.423.276.696.41c.273.135.582.274.926.416.47.197.892.407 1.266.628.374.222.695.473.963.753.268.279.472.598.614.957.142.359.214.776.214 1.253 0 .657-.125 1.21-.373 1.656a3.033 3.033 0 0 1-1.012 1.085 4.38 4.38 0 0 1-1.487.596c-.566.12-1.163.18-1.79.18a9.916 9.916 0 0 1-1.84-.164 5.544 5.544 0 0 1-1.512-.493v-2.63a5.033 5.033 0 0 0 3.237 1.2c.333 0 .624-.03.872-.09.249-.06.456-.144.623-.25.166-.108.29-.234.373-.38a1.023 1.023 0 0 0-.074-1.089 2.12 2.12 0 0 0-.537-.5 5.597 5.597 0 0 0-.807-.444 27.72 27.72 0 0 0-1.007-.436c-.918-.383-1.602-.852-2.053-1.405-.45-.553-.676-1.222-.676-2.005 0-.614.123-1.141.369-1.582.246-.441.58-.804 1.004-1.089a4.494 4.494 0 0 1 1.47-.629 7.536 7.536 0 0 1 1.77-.201zm-15.113.188h9.563v2.166H9.506v9.646H6.789v-9.646H3.375z"/></svg>),
+            JavaScript: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#f7df1e"><path d="M0 0h24v24H0V0zm22.034 18.276c-.175-1.095-.888-2.015-3.003-2.873-.736-.345-1.554-.585-1.797-1.14-.091-.33-.105-.51-.046-.705.15-.646.915-.84 1.515-.66.39.12.75.42.976.9 1.034-.676 1.034-.676 1.755-1.125-.27-.42-.404-.601-.586-.78-.63-.705-1.469-1.065-2.834-1.034l-.705.089c-.676.165-1.32.525-1.71 1.005-1.14 1.291-.811 3.541.569 4.471 1.365 1.02 3.361 1.244 3.616 2.205.24 1.17-.87 1.545-1.966 1.41-.811-.18-1.26-.586-1.755-1.336l-1.83 1.051c.21.48.45.689.81 1.109 1.74 1.756 6.09 1.666 6.871-1.004.029-.09.24-.705.074-1.65l.046.067zm-8.983-7.245h-2.248c0 1.938-.009 3.864-.009 5.805 0 1.232.063 2.363-.138 2.711-.33.689-1.18.601-1.566.48-.396-.196-.597-.466-.83-.855-.063-.105-.11-.196-.127-.196l-1.825 1.125c.305.63.75 1.172 1.324 1.517.855.51 2.004.675 3.207.405.783-.226 1.458-.691 1.811-1.411.51-.93.402-2.07.397-3.346.012-2.054 0-4.109 0-6.179l.004-.056z"/></svg>),
+            Python: (<svg viewBox="0 0 24 24" width="14" height="14"><path fill="#3572A5" d="M11.914 0C5.82 0 6.2 2.656 6.2 2.656l.007 2.752h5.814v.826H3.882S0 5.789 0 11.969c0 6.18 3.403 5.963 3.403 5.963h2.034v-2.867s-.109-3.403 3.35-3.403h5.766s3.24.052 3.24-3.131V3.183S18.316 0 11.914 0zm-3.21 1.851a1.046 1.046 0 1 1-.001 2.093 1.046 1.046 0 0 1 .001-2.093z"/><path fill="#ffd43b" d="M12.086 24c6.094 0 5.714-2.656 5.714-2.656l-.007-2.752h-5.814v-.826h8.139S24 18.211 24 12.031c0-6.18-3.403-5.963-3.403-5.963h-2.034v2.867s.109 3.403-3.35 3.403H9.447s-3.24-.052-3.24 3.131v5.268S5.684 24 12.086 24zm3.21-1.851a1.046 1.046 0 1 1 .001-2.093 1.046 1.046 0 0 1-.001 2.093z"/></svg>),
+            'React.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#61DAFB"><path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.41 0-.783.093-1.106.278-1.375.793-1.683 3.264-.973 6.365C1.98 8.917 0 10.42 0 12.004c0 1.59 1.99 3.097 5.043 4.03-.704 3.113-.39 5.588.988 6.38.32.187.69.275 1.102.275 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.41 0 .783-.09 1.106-.275 1.374-.792 1.683-3.263.973-6.365C22.02 15.096 24 13.59 24 12.004c0-1.59-1.99-3.097-5.043-4.032.704-3.11.39-5.587-.988-6.38-.318-.184-.688-.277-1.092-.278zm-.005 1.09c.725 0 1.173 1.06 1.173 2.81 0 .51-.041 1.078-.122 1.686a49.887 49.887 0 0 0-3.328-.831 49.716 49.716 0 0 0-2.297-3.018c1.048-.87 2.046-1.328 2.855-1.328zm-9.56.001c.808 0 1.805.457 2.853 1.324a49.785 49.785 0 0 0-2.294 3.02 49.887 49.887 0 0 0-3.33.833c-.295-1.96-.241-3.8.387-4.792.288-.467.723-.694 1.184-.694zm6.174 3.083a47.66 47.66 0 0 1 1.332 1.985 47.68 47.68 0 0 1-2.666 0c.213-.34.44-.678.677-1.012l.657-.973zm-2.696 1.985a47.67 47.67 0 0 1-1.332-1.985l.657.973c.237.334.464.672.675 1.012zm-3.924-.27a47.684 47.684 0 0 1 2.63-.832 47.804 47.804 0 0 1-.916 2.28 47.654 47.654 0 0 1-1.714-1.448zm10.498 1.447a47.649 47.649 0 0 1-1.714 1.45 47.818 47.818 0 0 1-.916-2.28 47.672 47.672 0 0 1 2.63.83zM12 13.396a47.697 47.697 0 0 1-1.602-.086 48.3 48.3 0 0 1-.987-1.843 47.745 47.745 0 0 1 .985-1.846 47.72 47.72 0 0 1 1.604-.086 47.72 47.72 0 0 1 1.604.086 47.765 47.765 0 0 1 .985 1.846 47.798 47.798 0 0 1-.985 1.843A47.742 47.742 0 0 1 12 13.396zm-2.354 1.5c.278.44.576.876.89 1.307l-.89 1.32c-.898-.98-1.636-1.974-2.187-2.914a47.742 47.742 0 0 1 2.187.287zm4.708 0c.74-.09 1.46-.187 2.187-.287-.55.94-1.288 1.933-2.187 2.914l-.89-1.32c.314-.43.612-.867.89-1.307zm-5.698 3.39c-.808 0-1.805-.457-2.853-1.325a49.827 49.827 0 0 0 2.294-3.02 49.884 49.884 0 0 0 3.33-.833c.295 1.96.241 3.8-.387 4.793-.288.467-.723.694-1.184.694zm9.56-.001c-.461 0-.896-.227-1.184-.694-.628-.993-.682-2.832-.387-4.792a49.887 49.887 0 0 0 3.328.83 49.716 49.716 0 0 0-2.294 3.018c-1.048.87-2.046 1.328-2.855 1.328z"/></svg>),
+            'Next.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M11.572 0c-.176 0-.31.001-.358.007a19.76 19.76 0 0 1-.364.033C7.443.346 4.25 2.185 2.228 5.012a11.875 11.875 0 0 0-2.119 5.243c-.096.659-.108.854-.108 1.747s.012 1.089.108 1.748c.652 4.506 3.86 8.292 8.209 9.695.779.25 1.6.422 2.534.525.363.04 1.935.04 2.299 0 1.611-.178 2.977-.577 4.323-1.264.207-.106.247-.134.219-.158-.02-.013-.9-1.193-1.955-2.62l-1.919-2.592-2.404-3.558a338.739 338.739 0 0 0-2.422-3.556c-.009-.002-.018 1.579-.023 3.51-.007 3.38-.01 3.515-.052 3.595a.426.426 0 0 1-.206.214c-.075.037-.14.044-.495.044H7.81l-.108-.068a.438.438 0 0 1-.157-.171l-.05-.106.006-4.703.007-4.705.072-.092a.645.645 0 0 1 .174-.143c.096-.047.134-.051.54-.051.478 0 .558.018.682.154.035.038 1.337 1.999 2.895 4.361a10760.433 10760.433 0 0 0 4.735 7.17l1.9 2.879.096-.063a12.317 12.317 0 0 0 2.466-2.163 11.944 11.944 0 0 0 2.824-6.134c.096-.66.108-.854.108-1.748 0-.893-.012-1.088-.108-1.747-.652-4.506-3.859-8.292-8.208-9.695a12.597 12.597 0 0 0-2.499-.523A33.119 33.119 0 0 0 11.573 0zm4.069 7.217c.347 0 .408.005.486.047a.473.473 0 0 1 .237.277c.018.06.023 1.365.018 4.304l-.006 4.218-.744-1.14-.746-1.14v-3.066c0-1.982.01-3.097.023-3.15a.478.478 0 0 1 .233-.296c.096-.05.13-.054.5-.054z"/></svg>),
+            'Node.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#339933"><path d="M11.998,24c-0.321,0-0.641-0.084-0.922-0.247l-2.936-1.737c-0.438-0.245-0.224-0.332-0.08-0.383c0.585-0.203,0.703-0.25,1.328-0.604c0.065-0.037,0.151-0.023,0.218,0.017l2.256,1.339c0.082,0.045,0.197,0.045,0.272,0l8.795-5.076c0.082-0.047,0.134-0.141,0.134-0.238V6.921c0-0.099-0.053-0.192-0.137-0.242l-8.791-5.072c-0.081-0.047-0.189-0.047-0.271,0L3.075,6.68C2.99,6.729,2.936,6.825,2.936,6.921v10.15c0,0.097,0.054,0.189,0.139,0.235l2.409,1.392c1.307,0.654,2.108-0.116,2.108-0.89V7.787c0-0.142,0.114-0.253,0.256-0.253h1.115c0.139,0,0.255,0.112,0.255,0.253v10.021c0,1.745-0.95,2.745-2.604,2.745c-0.508,0-0.909,0-2.026-0.551L2.28,18.675c-0.57-0.329-0.922-0.945-0.922-1.604V6.921c0-0.659,0.353-1.275,0.922-1.603l8.795-5.082c0.557-0.315,1.296-0.315,1.848,0l8.794,5.082c0.57,0.329,0.924,0.944,0.924,1.603v10.15c0,0.659-0.354,1.273-0.924,1.604l-8.794,5.078C12.643,23.916,12.324,24,11.998,24z"/></svg>),
+            Flutter: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#02569B"><path d="M14.314 0L2.3 12 6 15.7 21.684.013h-7.37zm.159 11.871l-5.77 5.767 5.77 5.767h7.348l-5.77-5.767 5.77-5.767h-7.348z"/></svg>),
+            Firebase: (<svg viewBox="0 0 24 24" width="14" height="14"><path fill="#FFCA28" d="M3.89 15.672L6.255.461A.542.542 0 0 1 7.27.288l2.543 4.771zm16.794 3.39l-2.287-14.2a.54.54 0 0 0-.91-.281L3.89 15.672l7.812 4.406a1.623 1.623 0 0 0 1.586 0zM14.3 7.147l-1.82-3.482a.542.542 0 0 0-.96 0L3.89 15.672z"/></svg>),
+            Docker: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#2496ED"><path d="M13.983 11.078h2.119a.186.186 0 0 0 .186-.185V9.006a.186.186 0 0 0-.186-.186h-2.119a.185.185 0 0 0-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 0 0 .186-.186V3.574a.186.186 0 0 0-.186-.185h-2.118a.185.185 0 0 0-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 0 0 .186-.186V6.29a.186.186 0 0 0-.186-.185h-2.118a.185.185 0 0 0-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 0 0 .184-.186V6.29a.185.185 0 0 0-.185-.185H8.1a.185.185 0 0 0-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 0 0 .185-.186V6.29a.185.185 0 0 0-.185-.185H5.136a.186.186 0 0 0-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 0 0 .186-.185V9.006a.186.186 0 0 0-.186-.186h-2.118a.185.185 0 0 0-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 0 0 .184-.185V9.006a.185.185 0 0 0-.184-.186h-2.12a.185.185 0 0 0-.185.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 0 0 .185-.185V9.006a.185.185 0 0 0-.184-.186h-2.12a.186.186 0 0 0-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 0 0 .184-.185V9.006a.185.185 0 0 0-.184-.186h-2.12a.185.185 0 0 0-.185.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 0 0-.75.748 11.376 11.376 0 0 0 .692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 0 0 3.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z"/></svg>),
+            'Tailwind CSS': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#06B6D4"><path d="M12.001,4.8c-3.2,0-5.2,1.6-6,4.8c1.2-1.6,2.6-2.2,4.2-1.8c0.913,0.228,1.565,0.89,2.288,1.624C13.666,10.618,15.027,12,18.001,12c3.2,0,5.2-1.6,6-4.8c-1.2,1.6-2.6,2.2-4.2,1.8c-0.913-0.228-1.565-0.89-2.288-1.624C16.337,6.182,14.976,4.8,12.001,4.8z M6.001,12c-3.2,0-5.2,1.6-6,4.8c1.2-1.6,2.6-2.2,4.2-1.8c0.913,0.228,1.565,0.89,2.288,1.624c1.177,1.194,2.538,2.576,5.512,2.576c3.2,0,5.2-1.6,6-4.8c-1.2,1.6-2.6,2.2-4.2,1.8c-0.913-0.228-1.565-0.89-2.288-1.624C10.337,13.382,8.976,12,6.001,12z"/></svg>),
+            PostgreSQL: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#4169E1"><path d="M23.5594 14.7228a.518.518 0 0 0-.0794-.063c-.198-.1193-1.3908-.5367-1.5812-.4489-.1094.0507-.2218.2226-.3299.3895-.1503.2285-.3061.4648-.5117.4976-.0239.0039-.0484.0056-.0739.0056-.2677 0-.5863-.1541-.8963-.3039-.3782-.183-.7692-.3722-1.132-.3017-.0097.0019-.0199.0041-.0302.0067-.0025-.027-.0052-.0561-.0079-.0884-.0363-.4336-.0999-1.1942.3659-1.8667l.0025-.0038c.0342-.0503.2196-.3225.5455-.3225.1049 0 .2085.0356.3132.0714.1261.0436.2564.0886.4147.0886.1104 0 .2172-.0239.3295-.0749.1626-.0737.2498-.1993.2498-.3572 0-.1501-.1077-.2866-.3208-.4057-.3038-.1672-.5694-.2087-.8078-.2087-.2753 0-.5143.0567-.7299.1059-.1616.0372-.3139.0723-.4378.0723-.1045 0-.1649-.0226-.2153-.0767-.1113-.1208-.0935-.3553-.0662-.6784.0189-.2251.0422-.505.0177-.8211-.0519-.6734-.3843-1.1117-.8726-1.1117-.3064 0-.5955.1695-.8139.4782-.2215.3133-.3637.7699-.4106 1.3232-.0149.1758-.0258.6035.0022.9286-.0513.0058-.1044.0116-.1588.0173-.2862.0303-.5768.061-.7996.1416-.1948.0703-.3024.1639-.3199.2783-.0183.1183.0623.229.1553.3003.1551.1186.4016.1854.7109.1938-.0097.0228-.0194.0452-.0291.0669-.1245.2841-.2523.5756-.2523 1.0006 0 .7444.4338 1.3082 1.0527 1.386.0378.0049.0754.0073.1126.0073.5029 0 .9989-.3491 1.3773-.9814l.0047-.0079c.0484-.082.2139-.3625.3697-.3625.0259 0 .0471.0077.0699.0265.4122.3393.5955.5015.7117.7099.0603.1082.0888.2315.0888.376 0 .2609-.0936.5462-.1836.8225-.0829.2567-.1613.499-.1613.7192 0 .2696.1141.4939.3301.6504.1739.1254.3988.1893.6694.1893.2745 0 .5553-.0657.8146-.1296.2463-.0614.5012-.1249.7357-.1249.2064 0 .3705.0485.5205.1527l.0064.0045c.0921.0635.1974.0956.3128.0956.3455 0 .6783-.3066.6783-.6301a.5584.5584 0 0 0-.1147-.3382z"/></svg>),
+            Redis: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#DC382D"><path d="M10.5 11.249l-3.938 1.612L10.5 14.47l3.937-1.609L10.5 11.249zm7.674 3.854l-7.673 3.137-7.673-3.137 7.673-3.137 7.673 3.137zM10.5 6.532L2.826 9.669 10.5 12.806l7.674-3.137-7.674-3.137zM10.5.005L0 4.385v15.23L10.5 24l10.5-4.385V4.385L10.5.005z"/></svg>),
+            OpenAI: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#10A37F"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.843-3.372L15.115 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.403-.668zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>),
+            Vercel: (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 22.525H0l12-21.05 12 21.05z"/></svg>),
+            'Socket.IO': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#010101"><path d="M11.9-.001C5.35-.001.003 5.347.003 11.901c0 6.553 5.345 11.899 11.9 11.899 6.552 0 11.898-5.345 11.898-11.9C23.8 5.349 18.455 0 11.9 0zm6.165 6.139l-5.707 11.443-.246-7.528-5.421 2.573 5.707-11.443.246 7.528 5.421-2.573z"/></svg>),
+            'GitHub API': (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>),
+            'Express.js': (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 18.588a1.529 1.529 0 0 1-1.895-.72l-3.45-4.771-.5-.667-4.003 5.444a1.466 1.466 0 0 1-1.802.708l5.158-6.92-4.798-6.251a1.595 1.595 0 0 1 1.9.666l3.576 4.83 3.596-4.81a1.435 1.435 0 0 1 1.788-.668L21.708 7.9l-2.522 3.283a.666.666 0 0 0 0 .994l4.804 6.412zM.002 11.576l.42-2.075c1.154-4.103 5.858-5.81 9.094-3.27 1.895 1.489 2.368 3.597 2.275 5.973H1.116C.943 16.447 4.005 19.009 7.92 17.7a4.078 4.078 0 0 0 2.582-2.876c.207-.666.548-.78 1.174-.588a5.417 5.417 0 0 1-2.589 3.957 6.272 6.272 0 0 1-7.306-.933 6.575 6.575 0 0 1-1.64-3.858c0-.235-.08-.455-.134-.666A88.33 88.33 0 0 1 0 11.577zm1.127-.286h9.654c-.06-3.076-2.001-5.258-4.59-5.278-2.882-.04-4.944 2.094-5.071 5.264z"/></svg>),
+            Dart: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#0175C2"><path d="M4.105 4.105S9.158 1.58 11.684.316a3.079 3.079 0 0 1 1.481-.316 3.08 3.08 0 0 1 2.1.811l.003.002 7.467 7.467.002.003a3.081 3.081 0 0 1 .499 3.581c-1.263 2.527-3.788 7.579-3.788 7.579s-.001 0-.001.001c-.31.621-.944.999-1.641.999-.308 0-.615-.076-.892-.231C16.914 19.212 4.105 4.105 4.105 4.105z"/></svg>),
+            Gemini: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#8E75B2"><path d="M12 1.5c-.8 5.7-4.8 9.8-10.5 10.5C7.2 12.8 11.2 16.8 12 22.5c.8-5.7 4.8-9.7 10.5-10.5-5.7-.7-9.7-4.8-10.5-10.5z"/></svg>),
+            Anthropic: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#D4763B"><path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-6.994 0H10.436L17 20h-3.603l-6.564-16.48z"/></svg>),
+            Llama: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#0467DF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>),
+            RAG: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#9B59B6"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>),
+            'Prompt Engineering': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#E67E22"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-2h11v2zm5-4H4v-2h16v2zm0-4H4V8h16v2z"/></svg>),
+            TensorFlow: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#FF6F00"><path d="M22.374 9.704L12 3.97 1.626 9.704V21.17L12 15.436l10.374 5.735zM12 .03L24 6.97v10.06L12 23.97 0 17.03V6.97z"/></svg>),
+            'C++': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#00599C"><path d="M22.394 6c-.167-.29-.398-.543-.652-.69L12.926.22c-.509-.294-1.34-.294-1.848 0L2.26 5.31c-.508.293-.923 1.013-.923 1.6v10.18c0 .294.104.62.271.91.167.29.398.543.652.69l8.816 5.09c.508.293 1.34.293 1.848 0l8.816-5.09c.254-.147.485-.4.652-.69.167-.29.27-.616.27-.91V6.91c.003-.294-.1-.62-.268-.91zM12 19.11c-3.92 0-7.109-3.19-7.109-7.11 0-3.92 3.19-7.11 7.109-7.11a7.133 7.133 0 0 1 6.156 3.553l-3.076 1.78a3.567 3.567 0 0 0-3.08-1.78A3.555 3.555 0 0 0 8.444 12 3.555 3.555 0 0 0 12 15.555a3.57 3.57 0 0 0 3.08-1.778l3.078 1.78A7.135 7.135 0 0 1 12 19.11z"/></svg>),
+            C: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#A8B9CC"><path d="M16.5 9.4l-1.8-1.05A5.25 5.25 0 0 0 12 7.5a5.25 5.25 0 0 0-5.25 5.25A5.25 5.25 0 0 0 12 18a5.25 5.25 0 0 0 2.7-.75l1.8-1.05V19.5A7.5 7.5 0 0 1 12 21a7.5 7.5 0 0 1-7.5-7.5A7.5 7.5 0 0 1 12 6a7.5 7.5 0 0 1 4.5 1.5v1.9z"/></svg>),
+            PHP: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#777BB4"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/></svg>),
+            PostHog: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#F54E00"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>),
+            'API Design': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#D4763B"><path d="M4 7h16v2H4V7zm0 4h10v2H4v-2zm0 4h16v2H4v-2z"/></svg>),
+            'HTML5': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#E34F26"><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.565-2.438L1.5 0zm7.031 9.75l-.232-2.718 10.059.003.23-2.622L5.412 4.41l.698 8.01h9.126l-.326 3.426-2.91.804-2.955-.81-.188-2.11H6.248l.33 4.171L12 19.351l5.379-1.443.744-8.157H8.531z"/></svg>),
+            'CSS3': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#1572B6"><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.564-2.438L1.5 0zm17.09 4.413L5.41 4.41l.213 2.622 10.125.002-.255 2.716h-6.64l.24 2.573h6.182l-.366 3.523-2.91.804-2.956-.81-.188-2.11h-2.61l.29 3.855L12 19.288l5.373-1.53L18.59 4.414v-.001z"/></svg>),
+            PWA: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#5A0FC8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>),
+            'Google Maps': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#4285F4"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>),
+            Render: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#46E3B7"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/></svg>),
+            'REST APIs': (<svg viewBox="0 0 24 24" width="14" height="14" fill="#FF5733"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>),
+            WebSockets: (<svg viewBox="0 0 24 24" width="14" height="14" fill="#007ACC"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>),
         };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, [selectedEvent, currentImageIndex]);
-
-    useEffect(() => {
-        if (!selectedProject) return;
-        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedProject(null); };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, [selectedProject]);
-
-    useEffect(() => {
-        if (!selectedProject) return;
-        setProjectControlsCollapsed(false);
-        setProjectControlsPos({ x: 16, y: 16 });
-        setIsDraggingProjectControls(false);
-    }, [selectedProject]);
-
-    const handleProjectControlsPointerDown = (e: React.PointerEvent<HTMLElement>) => {
-        setIsDraggingProjectControls(true);
-        dragOffsetRef.current = { x: e.clientX - projectControlsPos.x, y: e.clientY - projectControlsPos.y };
-        e.currentTarget.setPointerCapture(e.pointerId);
-    };
-    const handleProjectControlsPointerMove = (e: React.PointerEvent<HTMLElement>) => {
-        if (!isDraggingProjectControls) return;
-        const panelWidth = projectControlsCollapsed ? 52 : 320;
-        const panelHeight = projectControlsCollapsed ? 52 : 56;
-        const nextX = Math.max(8, Math.min(window.innerWidth - panelWidth - 8, e.clientX - dragOffsetRef.current.x));
-        const nextY = Math.max(8, Math.min(window.innerHeight - panelHeight - 8, e.clientY - dragOffsetRef.current.y));
-        setProjectControlsPos({ x: nextX, y: nextY });
-    };
-    const handleProjectControlsPointerUp = (e: React.PointerEvent<HTMLElement>) => {
-        if (!isDraggingProjectControls) return;
-        setIsDraggingProjectControls(false);
-        e.currentTarget.releasePointerCapture(e.pointerId);
+        return icons[name] || <span className="w-3.5 h-3.5 rounded-full bg-zinc-500 inline-block" />;
     };
 
-    useEffect(() => {
-        document.body.style.overflow = 'auto';
-        document.documentElement.style.overflow = 'auto';
-    }, []);
-
-    useEffect(() => () => { if (themeTransitionTimerRef.current) window.clearTimeout(themeTransitionTimerRef.current); }, []);
-
-    const toggleTheme = useCallback(() => {
-        setIsThemeTransitioning(true);
-        updateSettings({ darkMode: !settings.darkMode });
-        if (themeTransitionTimerRef.current) window.clearTimeout(themeTransitionTimerRef.current);
-        themeTransitionTimerRef.current = window.setTimeout(() => {
-            setIsThemeTransitioning(false);
-        }, 260);
-    }, [settings.darkMode, updateSettings]);
-
-    // ── theme-aware classes
-    const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
-    const bgImage = isDark ? '/bgdarkimage.png' : '/bgimage.png';
-    const text = isDark ? 'text-zinc-100' : 'text-[#1f1a17]';
-    const navBg = isDark ? 'bg-black border-zinc-800' : 'bg-[#fffef9] border-[#e6d8cb]';
-    const mutedText = isDark ? 'text-zinc-400' : 'text-[#5f5248]';
-    const subtleText = isDark ? 'text-zinc-500' : 'text-[#7d6b5c]';
-    const cardBg = isDark
-        ? 'bg-zinc-950 border-zinc-800 shadow-[0_18px_44px_rgba(0,0,0,0.22)]'
-        : 'bg-[#fffef9] border-[#d8c8b9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
-    const accent = isDark ? 'text-[#d0fffe]' : 'text-[#7b3e77]';
-    const accentBorder = isDark ? 'border-[#d0fffe]/40 text-[#d0fffe]' : 'border-[#d39ad0] text-[#7b3e77]';
-    const accentHover = isDark ? 'hover:bg-[#d0fffe] hover:text-black' : 'hover:bg-[#ffd3fd] hover:text-[#3f2a3d]';
-    const divider = isDark ? 'border-zinc-800' : 'border-[#e7dacb]';
-    const tagBg = isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-[#fffddb] border-[#e9ddba] text-[#6b5c4f]';
-    const inputBg = isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-600' : 'bg-[#fffef9] border-[#d9cabd] text-[#1f1a17] placeholder:text-[#9a8a7d]';
-    const filterActive = isDark ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'bg-[#ffd3fd] text-[#4f2d4c] border-[#dba5d7]';
-    const filterInactive = isDark ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700' : 'text-[#7b6b5e] border-[#d9cabd] hover:text-[#3a312b] hover:border-[#bfaea0]';
-    const labelText = isDark ? 'text-zinc-500' : 'text-[#6f5b4e]';
-    const shellBase = isDark
-        ? 'rounded-2xl border border-zinc-800 bg-black p-6 md:p-8'
-        : 'rounded-2xl border-2 border-[#d8c8b9] p-6 md:p-8 shadow-[6px_6px_0_0_rgba(80,58,41,0.16)]';
-
-    /* ─ page entrance stagger ─ */
-    const containerVariants = {
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.12 } },
-    };
-    const childVariants = {
-        hidden: { opacity: 0, y: 32 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE_SMOOTH } },
+    /* ─── helpers ──────────────────────────────────────────────── */
+    const langColor: Record<string, string> = {
+        TypeScript: '#3178c6', JavaScript: '#f7df1e', Python: '#3572A5',
+        CSS: '#563d7c', HTML: '#e44b23', Rust: '#dea584', Go: '#00ADD8',
+        C: '#A8B9CC', 'C++': '#00599C', Shell: '#89e051', Dart: '#0175C2',
     };
 
-    return (
-            <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color,filter] duration-500`}
-                style={{ backgroundImage: bgImage ? `url('${bgImage}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+    const calcDuration = (start: string, end?: string) => {
+        const s = new Date(start);
+        const e = end ? new Date(end) : new Date();
+        let yrs = e.getFullYear() - s.getFullYear();
+        let mos = e.getMonth() - s.getMonth();
+        if (mos < 0) { yrs--; mos += 12; }
+        if (yrs === 0 && mos === 0) return '1 mo';
+        if (yrs === 0) return `${mos} mo${mos > 1 ? 's' : ''}`;
+        if (mos === 0) return `${yrs} yr${yrs > 1 ? 's' : ''}`;
+        return `${yrs} yr${yrs > 1 ? 's' : ''} ${mos} mo${mos > 1 ? 's' : ''}`;
+    };
 
-                {/* ── Noise & dim overlays ── */}
-                <NoiseOverlay />
-                <div aria-hidden className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/64' : 'bg-white/55'} transition-colors duration-500`} />
+    /* ─── achievement icons (static assets) ───────────────────── */
+    const achievementIconSrc = {
+        yc: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHZEuWg1DSjG7W9DQ1Yl4ti8wj4I2DlGjZvg&s',
+        gdg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx1ifvMfrD9VzaphHBYLhM6wUV-YHR0g28Ow&s',
+        residency: 'https://cdn.prod.website-files.com/62f41dee5606d80f65b7dcbb/6676ffc8dcc184ba44858820_the_residency_logo.svg',
+    } as const;
+
+    const achievementIconBg: Record<keyof typeof achievementIconSrc, string> = {
+        yc: '#FB651E', gdg: '#FFFFFF', residency: '#FFFFFF',
+    };
+
+    const getAchievementIconKey = (title: string): keyof typeof achievementIconSrc => {
+        if (title.includes('YC')) return 'yc';
+        if (title.includes('GDG')) return 'gdg';
+        return 'residency';
+    };
+
+    const navItems = [
+        { id: 'resume', label: 'Resume' },
+        { id: 'projects', label: 'Projects' },
+        { id: 'github', label: 'GitHub' },
+        { id: 'photos', label: 'Photos' },
+        { id: 'blog', label: 'Blog' },
+        { id: 'contact', label: 'Contact', isAction: true },
+    ];
+
+    const LAUNCH_MODAL_DISMISSED_KEY = 'portfolio_launch_modal_dismissed_v1';
+    const PORTFOLIO_VIEW_SESSION_KEY = 'portfolio_view_session_v1';
+    const PROJECTS_PAGE_SIZE = 4;
+    const REPOS_PAGE_SIZE = 8;
+    const BLOG_PAGE_SIZE = 4;
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /*  MAIN COMPONENT                                             */
+    /* ═══════════════════════════════════════════════════════════ */
+    type ResumeProject = Project & { img?: string | null };
+
+    const SimplifiedResume = () => {
+        const { settings, updateSettings } = useDesktopStore();
+        const { profile, projects, skillCategories, achievements, simplifiedExperience, education, photoEvents, blogPosts, sections, socialLinks, isLoading } = usePortfolio();
+        const githubUsername = profile.githubUsername || 'hardikguptaofficialgit';
+        const resumeDownloadUrl =
+            profile.resumePdfUrl && !/drive\.google|docs\.google/i.test(profile.resumePdfUrl)
+                ? profile.resumePdfUrl
+                : '/files/hardikresume.pdf';
+        const resumeProjects: ResumeProject[] = projects.map((p) => ({
+            ...p,
+            img: p.imageUrl ?? null,
+        }));
+        const [activeSection, setActiveSection] = useState('resume');
+        const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+        const [isNavCompact, setIsNavCompact] = useState(false);
+        const [isDesktopView, setIsDesktopView] = useState(
+            () => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true),
+        );
+        const [projectsVisibleCount, setProjectsVisibleCount] = useState(PROJECTS_PAGE_SIZE);
+        const [reposVisibleCount, setReposVisibleCount] = useState(REPOS_PAGE_SIZE);
+        const [blogsVisibleCount, setBlogsVisibleCount] = useState(BLOG_PAGE_SIZE);
+        const [repos, setRepos] = useState<any[]>([]);
+        const [filteredRepos, setFilteredRepos] = useState<any[]>([]);
+        const [filterMode, setFilterMode] = useState<'top' | 'latest' | 'pushed' | 'all'>('all');
+        const [searchQuery, setSearchQuery] = useState('');
+        const [previewErrors, setPreviewErrors] = useState<Record<string, boolean>>({});
+        const [selectedProject, setSelectedProject] = useState<ResumeProject | null>(null);
+        const [selectedEvent, setSelectedEvent] = useState<PhotoEvent | null>(null);
+        const [currentImageIndex, setCurrentImageIndex] = useState(0);
+        const [projectControlsCollapsed, setProjectControlsCollapsed] = useState(false);
+        const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
+        const [isDraggingProjectControls, setIsDraggingProjectControls] = useState(false);
+        const [portfolioViews, setPortfolioViews] = useState<number | null>(null);
+        const [showLaunchModal, setShowLaunchModal] = useState(
+            () => typeof window !== 'undefined' ? sessionStorage.getItem(LAUNCH_MODAL_DISMISSED_KEY) !== '1' : true,
+        );
+        const dragOffsetRef = useRef({ x: 0, y: 0 });
+
+        const theme: Theme = settings.darkMode ? 'dark' : 'light';
+        const isDark = theme === 'dark';
+        const shouldUseCompactNav = isDesktopView && isNavCompact;
+
+        useEffect(() => {
+            const onScroll = () => setIsNavCompact(window.scrollY > 56);
+            onScroll();
+            window.addEventListener('scroll', onScroll, { passive: true });
+            return () => window.removeEventListener('scroll', onScroll);
+        }, []);
+
+        useEffect(() => {
+            const onResize = () => setIsDesktopView(window.innerWidth >= 1024);
+            onResize();
+            window.addEventListener('resize', onResize);
+            return () => window.removeEventListener('resize', onResize);
+        }, []);
+
+        useEffect(() => {
+            let cancelled = false;
+            const loadViews = async () => {
+                try {
+                    const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
+                    const res = await fetch(seen ? '/api/portfolio/views' : '/api/portfolio/views', {
+                        method: seen ? 'GET' : 'POST',
+                    });
+                    if (!res.ok) return;
+                    const payload = (await res.json()) as { count?: number };
+                    if (!cancelled && typeof payload.count === 'number') {
+                        setPortfolioViews(payload.count);
+                        if (!seen) sessionStorage.setItem(PORTFOLIO_VIEW_SESSION_KEY, '1');
+                    }
+                } catch {
+                    // ignore analytics failures
+                }
+            };
+            loadViews();
+            return () => {
+                cancelled = true;
+            };
+        }, []);
+
+        const popularArticles = blogPosts.filter((post) => post.featured !== false).slice(0, 6);
+
+        useEffect(() => {
+            let cancelled = false;
+            const loadRepos = async () => {
+                const collected: any[] = [];
+                try {
+                    for (let page = 1; page <= 5; page += 1) {
+                        const res = await fetch(
+                            `https://api.github.com/users/${githubUsername}/repos?per_page=100&page=${page}&sort=updated`,
+                        );
+                        if (!res.ok) break;
+                        const data = await res.json();
+                        if (!Array.isArray(data) || data.length === 0) break;
+                        collected.push(...data);
+                        if (data.length < 100) break;
+                    }
+                    if (!cancelled) setRepos(collected);
+                } catch {
+                    if (!cancelled) setRepos([]);
+                }
+            };
+            loadRepos();
+            return () => {
+                cancelled = true;
+            };
+        }, [githubUsername]);
+
+        useEffect(() => {
+            let list = [...repos];
+            if (filterMode === 'top') list.sort((a, b) => b.stargazers_count - a.stargazers_count);
+            else if (filterMode === 'latest') list.sort((a, b) => +new Date(b.updated_at) - +new Date(a.updated_at));
+            else if (filterMode === 'pushed') list.sort((a, b) => +new Date(b.pushed_at) - +new Date(a.pushed_at));
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                list = list.filter(r => r.name?.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q));
+            }
+            if (filterMode === 'top') list = list.slice(0, 10);
+            setFilteredRepos(list);
+        }, [repos, filterMode, searchQuery]);
+
+        useEffect(() => {
+            setReposVisibleCount(REPOS_PAGE_SIZE);
+        }, [filterMode, searchQuery]);
+
+        useEffect(() => {
+            const ids = ['resume', 'projects', 'github', 'photos', 'blog'];
+            const sections = ids.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+            if (!sections.length) return;
+            const vis = new Map<string, number>();
+            const obs = new IntersectionObserver(entries => {
+                entries.forEach(e => vis.set(e.target.id, e.intersectionRatio));
+                let best = activeSection, bestR = -1;
+                vis.forEach((r, id) => { if (r > bestR) { bestR = r; best = id; } });
+                if (best && best !== activeSection) setActiveSection(best);
+            }, { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] });
+            sections.forEach(s => obs.observe(s));
+            return () => obs.disconnect();
+        }, [activeSection]);
+
+        const scrollTo = (id: string) => {
+            setActiveSection(id);
+            setIsMobileNavOpen(false);
+            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        const dismissLaunchModal = useCallback(() => {
+            sessionStorage.setItem(LAUNCH_MODAL_DISMISSED_KEY, '1');
+            setShowLaunchModal(false);
+        }, []);
+
+        const openGallery = (ev: PhotoEvent) => { setSelectedEvent(ev); setCurrentImageIndex(0); };
+        const nextImg = (e?: React.MouseEvent) => {
+            e?.stopPropagation();
+            setCurrentImageIndex(p => selectedEvent ? (p + 1) % selectedEvent.images.length : 0);
+        };
+        const prevImg = (e?: React.MouseEvent) => {
+            e?.stopPropagation();
+            setCurrentImageIndex(p => selectedEvent ? (p - 1 + selectedEvent.images.length) % selectedEvent.images.length : 0);
+        };
+
+        useEffect(() => {
+            if (!selectedEvent) return;
+            const handler = (e: KeyboardEvent) => {
+                if (e.key === 'ArrowRight') nextImg();
+                else if (e.key === 'ArrowLeft') prevImg();
+                else if (e.key === 'Escape') setSelectedEvent(null);
+            };
+            window.addEventListener('keydown', handler);
+            return () => window.removeEventListener('keydown', handler);
+        }, [selectedEvent, currentImageIndex]);
+
+        useEffect(() => {
+            if (!selectedProject) return;
+            const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedProject(null); };
+            window.addEventListener('keydown', handler);
+            return () => window.removeEventListener('keydown', handler);
+        }, [selectedProject]);
+
+        useEffect(() => {
+            if (!selectedProject) return;
+            setProjectControlsCollapsed(false);
+            setProjectControlsPos({ x: 16, y: 16 });
+            setIsDraggingProjectControls(false);
+        }, [selectedProject]);
+
+        const handleProjectControlsPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+            setIsDraggingProjectControls(true);
+            dragOffsetRef.current = { x: e.clientX - projectControlsPos.x, y: e.clientY - projectControlsPos.y };
+            e.currentTarget.setPointerCapture(e.pointerId);
+        };
+        const handleProjectControlsPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+            if (!isDraggingProjectControls) return;
+            const panelWidth = projectControlsCollapsed ? 52 : 320;
+            const panelHeight = projectControlsCollapsed ? 52 : 56;
+            const nextX = Math.max(8, Math.min(window.innerWidth - panelWidth - 8, e.clientX - dragOffsetRef.current.x));
+            const nextY = Math.max(8, Math.min(window.innerHeight - panelHeight - 8, e.clientY - dragOffsetRef.current.y));
+            setProjectControlsPos({ x: nextX, y: nextY });
+        };
+        const handleProjectControlsPointerUp = (e: React.PointerEvent<HTMLElement>) => {
+            if (!isDraggingProjectControls) return;
+            setIsDraggingProjectControls(false);
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        };
+
+        useEffect(() => {
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
+        }, []);
+
+        const toggleTheme = useCallback((origin?: { x: number; y: number }) => {
+            const nextDark = !settings.darkMode;
+            void transitionPortfolioTheme(
+                nextDark,
+                () => updateSettings({ darkMode: nextDark }),
+                origin,
+            );
+        }, [settings.darkMode, updateSettings]);
+
+        const visibleProjects = resumeProjects.slice(0, projectsVisibleCount);
+        const visibleRepos = filteredRepos.slice(0, reposVisibleCount);
+        const visibleBlogs = popularArticles.slice(0, blogsVisibleCount);
+        const githubTotalStars = useMemo(
+            () => repos.reduce((sum, repo) => sum + (repo.stargazers_count ?? 0), 0),
+            [repos],
+        );
+
+        // ── theme-aware classes
+        const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
+        const bgImage = isDark ? '/bgdarkimage.png' : '/bgimage.png';
+        const text = isDark ? 'text-zinc-100' : 'text-[#1f1a17]';
+        const navBg = isDark ? 'bg-black border-zinc-800' : 'bg-[#fffef9] border-[#e6d8cb]';
+        const mutedText = isDark ? 'text-zinc-400' : 'text-[#5f5248]';
+        const subtleText = isDark ? 'text-zinc-500' : 'text-[#7d6b5c]';
+        const cardBg = isDark
+            ? 'bg-zinc-950 border-zinc-800'
+            : 'bg-[#fffef9] border-[#d8c8b9]';
+        const accent = isDark ? 'text-[#d0fffe]' : 'text-[#7b3e77]';
+        const accentBorder = isDark ? 'border-[#d0fffe]/40 text-[#d0fffe]' : 'border-[#d39ad0] text-[#7b3e77]';
+        const accentHover = isDark ? 'hover:bg-[#d0fffe] hover:text-black' : 'hover:bg-[#ffd3fd] hover:text-[#3f2a3d]';
+        const divider = isDark ? 'border-zinc-800' : 'border-[#e7dacb]';
+        const tagBg = isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-[#fffddb] border-[#e9ddba] text-[#6b5c4f]';
+        const inputBg = isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-600' : 'bg-[#fffef9] border-[#d9cabd] text-[#1f1a17] placeholder:text-[#9a8a7d]';
+        const filterActive = isDark ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'bg-[#ffd3fd] text-[#4f2d4c] border-[#dba5d7]';
+        const filterInactive = isDark ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700' : 'text-[#7b6b5e] border-[#d9cabd] hover:text-[#3a312b] hover:border-[#bfaea0]';
+        const labelText = isDark ? 'text-zinc-500' : 'text-[#6f5b4e]';
+        const shellBase = isDark
+            ? 'rounded-2xl border border-white/[0.08] bg-black/80 p-6 md:p-9 shadow-[0_24px_80px_-48px_rgba(255,255,255,0.22)] backdrop-blur-xl'
+            : 'rounded-2xl border border-[#ded4ca] p-6 md:p-9 bg-white/90 shadow-[0_24px_80px_-48px_rgba(67,47,31,0.22)] backdrop-blur-xl';
+        const gridColumnShell = isDark ? 'border-zinc-800' : 'border-[#d8c8b9]';
+        const aboutBullets =
+            sections.simplifiedAboutBullets?.length
+                ? sections.simplifiedAboutBullets
+                : [
+                    'I am a software engineer focused on building reliable, production-ready systems.',
+                    '2nd-year B.Tech CSE (AI/ML) student at KIIT University, Bhubaneswar.',
+                ];
+
+        /* ─ page entrance stagger ─ */
+        const containerVariants = {
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.12 } },
+        };
+        const childVariants = {
+            hidden: { opacity: 0, y: 32 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE_SMOOTH } },
+        };
+
+        return (
+            <>
+                    <motion.nav
+                        layout={isDesktopView && !shouldUseCompactNav}
+                        transition={NAV_SPRING}
+                        className={`fixed z-50 ${
+                            shouldUseCompactNav
+                                ? 'top-5 left-[max(1rem,env(safe-area-inset-left,0px))] md:left-5 lg:left-6'
+                                : 'top-3 left-0 right-0 px-3 md:px-6'
+                        }`}
+                    >
+                        <motion.div
+                            layout
+                            transition={NAV_SPRING}
+                            className={`hidden lg:flex border backdrop-blur-xl shadow-lg ${navBg} ${
+                                shouldUseCompactNav
+                                    ? 'w-[11.5rem] flex-col rounded-2xl p-2.5 items-stretch'
+                                    : 'mx-auto max-w-4xl items-center justify-between gap-3 rounded-2xl px-4 md:px-5 py-2.5 md:py-3'
+                            }`}
+                        >
+                            <motion.button
+                                type="button"
+                                layout
+                                layoutId="nav-logo"
+                                transition={NAV_SPRING}
+                                onClick={() => scrollTo('resume')}
+                                className={`flex items-center gap-2.5 shrink-0 rounded-xl px-1 py-1 transition-colors ${
+                                    isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.035]'
+                                }`}
+                            >
+                                <img
+                                    src="/logoimage.png"
+                                    alt="Hardik Gupta"
+                                    className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
+                                />
+                                <span className={`font-serif-display leading-none tracking-tight ${shouldUseCompactNav ? 'text-[15px]' : 'text-[17px]'}`}>
+                                    stryker.inside
+                                </span>
+                            </motion.button>
+
+                            <motion.div
+                                layout
+                                transition={NAV_SPRING}
+                                className={`flex ${
+                                    shouldUseCompactNav ? 'w-full flex-col gap-1.5 mt-3' : 'items-center gap-0.5 ml-auto'
+                                }`}
+                            >
+                                {navItems.map((item) => (
+                                    <motion.button
+                                        key={item.id}
+                                        type="button"
+                                        layout
+                                        transition={NAV_SPRING}
+                                        onClick={() => {
+                                            if (item.id === 'contact') {
+                                                window.location.href = 'mailto:hardikgupta8792@gmail.com';
+                                            } else {
+                                                scrollTo(item.id);
+                                            }
+                                        }}
+                                        className={`relative rounded-lg font-semibold transition-colors ${
+                                            shouldUseCompactNav
+                                                ? `w-full text-left px-3 py-2 text-[11px] uppercase tracking-[0.12em] ${
+                                                      activeSection === item.id && !item.isAction
+                                                          ? isDark ? 'text-zinc-100' : 'text-zinc-900'
+                                                          : isDark
+                                                            ? 'text-zinc-500 hover:text-zinc-200'
+                                                            : 'text-zinc-600 hover:text-zinc-900'
+                                                  }`
+                                                : `px-3.5 py-2 text-[12px] uppercase tracking-[0.14em] ${
+                                                      activeSection === item.id && !item.isAction
+                                                          ? isDark ? 'text-zinc-100' : 'text-zinc-900'
+                                                          : isDark
+                                                            ? 'text-zinc-500 hover:text-zinc-300'
+                                                            : 'text-zinc-600 hover:text-zinc-800'
+                                                  }`
+                                        }`}
+                                    >
+                                        {activeSection === item.id && !item.isAction && (
+                                            <motion.span
+                                                layoutId={shouldUseCompactNav ? 'compact-nav-item-active' : 'nav-item-active'}
+                                                transition={NAV_SPRING}
+                                                className={`absolute inset-0 rounded-lg ${
+                                                    isDark ? 'bg-white/[0.08]' : 'bg-black/[0.06]'
+                                                }`}
+                                            />
+                                        )}
+                                        <span className="relative z-10">{item.label}</span>
+                                    </motion.button>
+                                ))}
+                            </motion.div>
+
+                            <motion.div
+                                layout
+                                transition={NAV_SPRING}
+                                className={`flex items-center ${
+                                    shouldUseCompactNav
+                                        ? `w-full mt-2.5 pt-2.5 border-t ${divider} justify-between gap-2`
+                                        : 'gap-2 shrink-0'
+                                }`}
+                            >
+                                <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
+                                {!shouldUseCompactNav && (
+                                    <RouterLink
+                                        to="/desktop"
+                                        onClick={markDesktopDirectEntry}
+                                        className={`hidden xl:inline-flex text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${subtleText} ${
+                                            isDark ? 'hover:text-zinc-200' : 'hover:text-zinc-900'
+                                        }`}
+                                    >
+                                        Interactive
+                                    </RouterLink>
+                                )}
+                            </motion.div>
+                        </motion.div>
+
+                        <div className="lg:hidden px-0">
+                            <div className={`border backdrop-blur-xl shadow-lg rounded-2xl px-4 py-3 ${navBg}`}>
+                                <div className="flex items-center justify-between gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => scrollTo('resume')}
+                                        className="flex items-center gap-2.5 shrink-0"
+                                    >
+                                        <img
+                                            src="/logoimage.png"
+                                            alt="Hardik Gupta"
+                                            className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
+                                        />
+                                        <span className="font-serif-display text-[17px] leading-none tracking-tight">stryker.inside</span>
+                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsMobileNavOpen((v) => !v)}
+                                            className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+                                                isDark
+                                                    ? 'border-zinc-700 bg-zinc-900/80 text-zinc-200 hover:bg-zinc-800'
+                                                    : 'border-[#d8c8b9] bg-white/80 text-zinc-700 hover:bg-[#f7f2ec]'
+                                            }`}
+                                            aria-label="Open menu"
+                                        >
+                                            <Menu size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <AnimatePresence initial={false}>
+                            {isMobileNavOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    transition={{ duration: 0.18, ease: EASE_SMOOTH }}
+                                    className={`lg:hidden overflow-hidden border backdrop-blur-xl mt-2 rounded-xl shadow-lg ${
+                                        isDark ? 'border-zinc-800 bg-black/90' : 'border-[#e6d8cb] bg-[#fffef9]/95'
+                                    } px-3 pb-3 pt-2`}
+                                >
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {navItems.map((item) => (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (item.id === 'contact') {
+                                                        window.location.href = 'mailto:hardikgupta8792@gmail.com';
+                                                    } else {
+                                                        scrollTo(item.id);
+                                                    }
+                                                    setIsMobileNavOpen(false);
+                                                }}
+                                                className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] rounded-lg border transition-colors ${
+                                                    activeSection === item.id && !item.isAction
+                                                        ? isDark
+                                                            ? 'text-zinc-100 bg-white/[0.08] border-zinc-700'
+                                                            : 'text-zinc-900 bg-black/[0.06] border-zinc-400'
+                                                        : isDark
+                                                          ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900/80'
+                                                          : 'text-zinc-600 border-[#e3d2c4] hover:text-zinc-900 hover:bg-black/[0.03]'
+                                                }`}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.nav>
 
                 <div
-                    aria-hidden
-                    className={`pointer-events-none fixed inset-0 z-[49] transition-opacity duration-300 ${
-                        isThemeTransitioning ? 'opacity-100' : 'opacity-0'
-                    } ${isDark ? 'bg-black/10' : 'bg-white/25'}`}
-                />
-
-             {/* ══════════ NAV ══════════ */}
-<motion.nav
-    layout={isDesktopView}
-    transition={NAV_SPRING}
-    className={`fixed z-50 ${
-        shouldUseCompactNav ? 'top-6 left-2' : 'top-3 left-0 right-0 px-3 md:px-6'
-    }`}
->
-    <motion.div
-        layout
-        transition={NAV_SPRING}
-        className={`hidden lg:flex border shadow-sm ${navBg} ${
-            shouldUseCompactNav
-                ? 'w-[164px] flex-col rounded-2xl p-2 items-start'
-                : 'mx-auto max-w-6xl items-center justify-between rounded-[1.5rem] px-4 md:px-6 py-3 md:py-4'
-        }`}
-        animate={{ scale: shouldUseCompactNav ? 1 : 0.98 }}
-    >
-        {/* LOGO */}
-        <motion.button
-            layout
-            layoutId="nav-logo"
-            transition={NAV_SPRING}
-            onClick={() => scrollTo('resume')}
-            className={`flex items-center gap-2.5 text-sm font-bold tracking-wider uppercase ${
-                isDark ? 'text-zinc-100' : 'text-zinc-900'
-            }`}
-        >
-            <img
-                src="/harvix_logo.png"
-                alt="Harvix logo"
-                className="h-8 w-8 rounded-md object-cover"
-            />
-            <span className={shouldUseCompactNav ? 'text-xs' : 'text-xs sm:text-sm'}>
-                stryker.inside
-            </span>
-        </motion.button>
-
-        {/* NAV ITEMS */}
-        <motion.div
-            layout
-            transition={NAV_SPRING}
-            className={`flex ${
-                shouldUseCompactNav
-                    ? 'w-full flex-col gap-2 mt-4'
-                    : 'items-center gap-1 ml-auto mr-3'
-            }`}
-        >
-            {navItems.map((item) => (
-                <motion.button
-                    key={item.id}
-                    layout
-                    transition={NAV_SPRING}
-                    whileHover={{ y: -1 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                        if (item.id === 'contact') {
-                            window.location.href =
-                                'mailto:hardikgupta8792@gmail.com';
-                        } else {
-                            scrollTo(item.id);
-                        }
+                    className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color] duration-500`}
+                    style={{
+                        backgroundImage: bgImage ? `url('${bgImage}')` : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundAttachment: 'fixed',
                     }}
-                    className={`relative rounded-lg uppercase transition-colors ${
-                        shouldUseCompactNav
-                            ? `w-full overflow-hidden text-left px-3 py-2 text-xs font-semibold tracking-wide border ${
-                                  activeSection === item.id && !item.isAction
-                                      ? isDark
-                                          ? 'text-zinc-100 border-zinc-700'
-                                          : 'text-zinc-900 border-zinc-300'
-                                      : isDark
-                                      ? 'text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-900'
-                                      : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
-                              }`
-                            : `overflow-hidden px-4 py-2 text-xs font-medium tracking-wide ${
-                                  activeSection === item.id && !item.isAction
-                                      ? isDark
-                                          ? 'text-zinc-100'
-                                          : 'text-zinc-900'
-                                      : isDark
-                                      ? 'text-zinc-500 hover:text-zinc-300'
-                                      : 'text-zinc-500 hover:text-zinc-700'
-                              }`
-                    }`}
                 >
-                    {activeSection === item.id && !item.isAction && (
-                        <motion.span
-                            layoutId={shouldUseCompactNav ? 'compact-nav-item-active' : 'nav-item-active'}
-                            transition={NAV_SPRING}
-                            className={`absolute inset-0 rounded-lg ${
-                                isDark ? 'bg-zinc-800' : 'bg-zinc-200'
-                            }`}
-                        />
-                    )}
-                    <span className="relative z-10">{item.label}</span>
-                </motion.button>
-            ))}
-        </motion.div>
-
-        {/* RIGHT CONTROLS */}
-        <motion.div
-            layout
-            transition={NAV_SPRING}
-            className={`flex ${
-                shouldUseCompactNav
-                    ? `w-full mt-2 pt-2 border-t ${divider} items-center justify-between`
-                    : 'items-center gap-2 md:gap-3'
-            }`}
-        >
-            {/* THEME TOGGLE */}
-            <button
-                onClick={toggleTheme}
-                className={`relative h-8 w-14 rounded-full p-1 border overflow-hidden transition-colors ${
-                    isDark
-                        ? 'bg-zinc-900 border-zinc-700'
-                        : 'bg-zinc-100 border-zinc-300'
-                }`}
-                aria-label="Toggle theme"
-            >
-                <span
-                    className={`absolute inset-0 ${
-                        isDark
-                            ? 'bg-[radial-gradient(circle_at_20%_20%,#2f3a58_0%,#0b0d16_55%)]'
-                            : 'bg-[radial-gradient(circle_at_80%_20%,#ffe89a_0%,#ffd3fd_55%,#f4f4f5_100%)]'
-                    }`}
-                />
-                <span
-                    className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border shadow transition-transform duration-300 ${
-                        isDark
-                            ? 'translate-x-6 bg-zinc-950 border-zinc-700'
-                            : 'translate-x-0 bg-white border-zinc-300'
-                    }`}
-                >
-                    {isDark ? (
-                        <Moon size={14} className="text-[#d0fffe]" />
-                    ) : (
-                        <Sun size={14} className="text-[#7b3e77]" />
-                    )}
-                </span>
-            </button>
-
-            {!shouldUseCompactNav && (
-                <RouterLink
-                    to="/desktop"
-                    onClick={markDesktopDirectEntry}
-                    className={`hidden md:flex items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors ${
-                        isDark
-                            ? 'text-zinc-500 hover:text-zinc-300'
-                            : 'text-zinc-500 hover:text-zinc-700'
-                    }`}
-                >
-                    <span>Switch to Interactive</span>
-                </RouterLink>
-            )}
-        </motion.div>
-    </motion.div>
-
-    {/* MOBILE NAV */}
-    <div className="lg:hidden px-3 md:px-6">
-        <div
-            className={`mx-auto border shadow-sm rounded-[1.2rem] px-4 py-3 ${navBg}`}
-        >
-            <div className="flex items-center justify-between gap-3">
-                <button
-                    onClick={() => scrollTo('resume')}
-                    className={`flex items-center gap-2.5 text-sm font-bold tracking-wider uppercase ${
-                        isDark ? 'text-zinc-100' : 'text-zinc-900'
-                    }`}
-                >
-                    <img
-                        src="/harvix_logo.png"
-                        alt="Harvix logo"
-                        className="h-8 w-8 rounded-md object-cover border border-white/20"
+                    <NoiseOverlay />
+                    <div
+                        aria-hidden
+                        className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`}
                     />
-                    <span className="text-xs sm:text-sm">
-                        stryker.inside
-                    </span>
-                </button>
+                    <div
+                        aria-hidden
+                        className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'} transition-colors duration-500`}
+                    />
 
-                <button
-                    onClick={() => setIsMobileNavOpen((v) => !v)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
-                        isDark
-                            ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
-                            : 'border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                    }`}
-                >
-                    <Menu size={16} />
-                </button>
-            </div>
-        </div>
-    </div>
+                    <div className="relative z-10 w-full px-3 md:px-6 pt-[5.5rem] lg:pt-28 pb-16">
+                        <div className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${isDark ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.25)]' : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'} backdrop-blur-xl`}>
+                            <div className={`relative border-b ${divider} p-2 md:p-3`}>
+                                <div className={`relative overflow-hidden rounded-2xl border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+                                    <img
+                                        src="/banner.jpg"
+                                        alt=""
+                                        className="h-40 md:h-52 w-full object-cover object-center block"
+                                    />
+                                    <div className={`pointer-events-none absolute inset-0 ${isDark ? 'bg-gradient-to-t from-black/35 via-transparent to-transparent' : 'bg-gradient-to-t from-white/20 via-transparent to-transparent'}`} />
+                                </div>
+                            </div>
 
-    {/* MOBILE DROPDOWN */}
-    <AnimatePresence initial={false}>
-        {isMobileNavOpen && (
-            <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.985 }}
-                transition={{ duration: 0.18, ease: EASE_SMOOTH }}
-                className={`lg:hidden overflow-hidden border mt-2 mx-3 rounded-xl ${
-                    isDark
-                        ? 'border-zinc-800 bg-black'
-                        : 'border-[#e6d8cb] bg-[#fffef9]'
-                } px-4 pb-4 pt-3`}
-            >
-                <div className="grid grid-cols-2 gap-2">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => {
-                                if (item.id === 'contact') {
-                                    window.location.href =
-                                        'mailto:hardikgupta8792@gmail.com';
-                                } else {
-                                    scrollTo(item.id);
-                                }
-                                setIsMobileNavOpen(false);
-                            }}
-                            className={`px-3 py-2.5 text-xs font-semibold tracking-wide uppercase rounded-lg border transition-colors ${
-                                activeSection === item.id && !item.isAction
-                                    ? isDark
-                                        ? 'text-zinc-100 bg-zinc-800 border-zinc-700'
-                                        : 'text-zinc-900 bg-zinc-200 border-zinc-300'
-                                    : isDark
-                                    ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900'
-                                    : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
-                            }`}
+                        <motion.div
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="space-y-0"
                         >
-                            {item.label}
-                        </button>
-                    ))}
-                </div>
-            </motion.div>
-        )}
-    </AnimatePresence>
-</motion.nav>
 
-                {/* ══════════ BODY ══════════ */}
-                <div className="relative z-10 w-full px-4 md:px-10 lg:px-16 pt-28 pb-12">
-                    <div className="max-w-4xl mx-auto mb-4 flex justify-end">
-                        <RouterLink
-                            to="/desktop"
-                            onClick={markDesktopDirectEntry}
-                            className={`text-xs font-medium uppercase tracking-wider transition-colors md:hidden ${
-                                isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700'
-                            }`}
-                        >
-                            Switch to Interactive →
-                        </RouterLink>
-                    </div>
-                    <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="max-w-4xl mx-auto space-y-24"
-                    >
+                            {/* ══ RESUME ══ */}
+                            <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-24 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/80' : 'bg-white/90'}`}>
 
-                        {/* ══ RESUME ══ */}
-                        <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-32 ${shellBase} ${isDark ? 'bg-black' : 'bg-[#fffddb]'}`}>
+                                {/* Header */}
+                                <header className={`space-y-6 pb-8 border-b ${divider}`}>
+                                    <div className={`flex items-center justify-end gap-1.5 text-xs ${subtleText}`}>
+                                        <Eye size={14} aria-hidden />
+                                        <span>{portfolioViews === null ? '-' : portfolioViews.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                                        <div className="flex gap-4">
+                                            <img
+                                                src="/logoimage.png"
+                                                alt={profile.name}
+                                                className={`h-24 w-24 shrink-0 rounded-sm border object-cover ${divider}`}
+                                            />
+                                        <div className="space-y-3 min-w-0">
+                                            <motion.h1
+                                                className="font-serif-display text-5xl md:text-6xl leading-none"
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.55, duration: 0.7, ease: EASE_SMOOTH }}
+                                            >
+                                                {profile.name}
+                                            </motion.h1>
+                                            <motion.div
+                                                className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${subtleText}`}
+                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.72 }}
+                                            >
+                                                <span className="flex items-center gap-1.5"><MapPin size={12} /> {profile.location}</span>
+                                                <span>·</span>
+                                                <a href="https://strykerinside.vercel.app" target="_blank" rel="noopener noreferrer"
+                                                    className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">Portfolio</a>
+                                                <span>·</span>
+                                                <a href="mailto:hardikgupta8792@gmail.com"
+                                                    className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">hardikgupta8792@gmail.com</a>
+                                            </motion.div>
+                                        </div>
+                                        </div>
 
-                            {/* Header */}
-                            <header className={`space-y-6 pb-10 border-b ${divider}`}>
-                                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-                                    <div className="space-y-3">
-                                        <motion.p
-                                            className={`text-xs uppercase tracking-[0.3em] ${subtleText}`}
-                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                                        >Software Engineer</motion.p>
-                                        <motion.h1
-                                            className="font-display text-5xl md:text-6xl font-bold tracking-tight leading-none"
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.55, duration: 0.7, ease: EASE_SMOOTH }}
-                                        >
-Hardik Gupta                                        </motion.h1>
-                                      <motion.p
-    className={`${mutedText} text-base max-w-lg leading-relaxed`}
-    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
->
-    Software developer focused on building scalable products, solving complex problems, and turning ideas into reliable, production-ready systems.
-</motion.p>
                                         <motion.div
-                                            className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${subtleText}`}
-                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.72 }}
+                                            className="flex flex-col gap-4 items-start lg:items-end shrink-0"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.7, duration: 0.6 }}
                                         >
-                                            <span className="flex items-center gap-1.5"><MapPin size={12} /> Jaipur, India</span>
-                                            <span>·</span>
-                                            <a href="https://strykerinside.vercel.app" target="_blank" rel="noopener noreferrer"
-                                                className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">Portfolio</a>
-                                            <span>·</span>
-                                            <a href="mailto:hardikgupta8792@gmail.com"
-                                                className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">hardikgupta8792@gmail.com</a>
+                                            <motion.a
+                                                href={resumeDownloadUrl}
+                                                download="Hardik-Gupta-Resume.pdf"
+                                                className={`inline-flex items-center gap-2 px-5 py-2.5 border ${accentBorder} text-sm tracking-wider uppercase rounded-sm ${accentHover} transition-all duration-300`}
+                                            >
+                                                <Download size={14} /> Download CV
+                                            </motion.a>
+                                            <div className="flex gap-4">
+                                                {[
+                                                    { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={18} /> },
+                                                    { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={18} /> },
+                                                    { href: 'https://www.instagram.com/stryker.inside/', icon: <Instagram size={18} /> },
+                                                    { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={18} /> },
+                                                    { href: 'https://linkitapp.in/stryker', icon: <LinkIcon size={18} /> },
+                                                ].map(({ href, icon }, i) => (
+                                                    <motion.a
+                                                        key={href} href={href} target="_blank" rel="noopener noreferrer"
+                                                        className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors duration-300`}
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: 0.8 + i * 0.06 }}
+                                                    >{icon}</motion.a>
+                                                ))}
+                                            </div>
                                         </motion.div>
                                     </div>
+                                </header>
 
-                                    <motion.div
-                                        className="flex flex-col gap-4 items-start lg:items-end shrink-0"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: 0.7, duration: 0.6 }}
-                                    >
-                                        <motion.a
-                                            href="/files/resume.pdf" download
-                                            className={`inline-flex items-center gap-2 px-5 py-2.5 border ${accentBorder} text-sm tracking-wider uppercase rounded-lg ${accentHover} transition-all duration-300`}
-                                        >
-                                            <Download size={14} /> Download CV
-                                        </motion.a>
-                                        <div className="flex gap-4">
-                                            {[
-                                                { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={18} /> },
-                                                { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={18} /> },
-                                                { href: 'https://www.instagram.com/stryker.inside/', icon: <Instagram size={18} /> },
-                                                { href: 'https://x.com/strykerin', icon: <XBrandIcon size={18} /> },
-                                                { href: 'https://linkitapp.in/stryker', icon: <LinkIcon size={18} /> },
-                                            ].map(({ href, icon }, i) => (
-                                                <motion.a
-                                                    key={href} href={href} target="_blank" rel="noopener noreferrer"
-                                                    className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors duration-300`}
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: 0.8 + i * 0.06 }}
-                                                >{icon}</motion.a>
+                                <RevealSection>
+                                    <div className="space-y-4">
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>About</SectionLabel>
+                                        <ul className={`space-y-2.5 text-sm ${mutedText} leading-relaxed max-w-3xl`}>
+                                            {aboutBullets.map((line) => (
+                                                <li key={line} className="flex gap-2.5 items-start">
+                                                    <span className={`${subtleText} mt-0.5 shrink-0`}>–</span>
+                                                    <span>{line}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </RevealSection>
+
+                                {/* Experience */}
+                                <RevealSection delay={0.05}>
+                                    <div className="space-y-5">
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Professional Experience</SectionLabel>
+                                        <div className="space-y-4">
+                                            {simplifiedExperience.map((exp, i) => (
+                                                <StaggerItem key={exp.id} index={i}>
+                                                    <ExpCard
+                                                        isDark={isDark}
+                                                        cardBg={cardBg}
+                                                        divider={divider}
+                                                        mutedText={mutedText}
+                                                        subtleText={subtleText}
+                                                        roleTitle={exp.roleTitle}
+                                                        org={exp.org}
+                                                        logoUrl={exp.logoUrl}
+                                                        url={exp.url}
+                                                        totalDuration={exp.totalDuration}
+                                                        badge={exp.badge}
+                                                        bullets={exp.bullets}
+                                                        roles={
+                                                            exp.roles?.map((r) =>
+                                                                r.duration === 'ongoing'
+                                                                    ? { ...r, duration: calcDuration('2026-01-01') }
+                                                                    : r
+                                                            )
+                                                        }
+                                                    />
+                                                </StaggerItem>
                                             ))}
                                         </div>
-                                    </motion.div>
-                                </div>
-                            </header>
+                                    </div>
+                                </RevealSection>
 
-                            {/* Summary */}
+                                {education.length > 0 && (
+                                    <RevealSection delay={0.05}>
+                                        <div className="space-y-5">
+                                            <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Education</SectionLabel>
+                                            <div className="space-y-3">
+                                                {education.map((edu, i) => (
+                                                    <StaggerItem key={edu.id} index={i}>
+                                                        <div className={`border ${cardBg} rounded-sm p-5`}>
+                                                            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+                                                                <div>
+                                                                    <h3 className="text-base font-bold">{edu.institution}</h3>
+                                                                    <p className={`text-sm ${mutedText}`}>{edu.degree}</p>
+                                                                </div>
+                                                                <p className={`text-xs ${subtleText} font-mono shrink-0`}>
+                                                                    {edu.startYear} – {edu.endYear ?? 'Present'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </StaggerItem>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </RevealSection>
+                                )}
+
+                            {/* Tech Stack */}
+    <RevealSection delay={0.05}>
+    <div className="space-y-8">
+
+        <SectionLabel
+        isDark={isDark}
+        divider={divider}
+        labelText={labelText}
+        >
+        Skills
+        </SectionLabel>
+
+        <div className="space-y-5">
+        {skillCategories.map((cat, ci) => (
+            <motion.div
+            key={cat.label}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: ci * 0.05 }}
+            className="space-y-2.5"
+            >
+            <p className={`text-sm font-semibold ${isDark ? 'text-zinc-200' : 'text-[#1f1a17]'}`}>{cat.label}</p>
+            <ul className="flex flex-wrap gap-2">
+                {cat.items.map((skill) => (
+                    <li
+                        key={skill}
+                        className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium ${
+                            isDark
+                                ? 'border-zinc-800 bg-zinc-950/50 text-zinc-300'
+                                : 'border-[#e6d8cb] bg-white/70 text-zinc-700'
+                        }`}
+                    >
+                        <SkillIcon skill={skill} isDark={isDark} className="h-4 w-4" />
+                        <span>{skill}</span>
+                    </li>
+                ))}
+            </ul>
+            </motion.div>
+        ))}
+        </div>
+    </div>
+    </RevealSection>
+                                {/* Achievements */}
+                                <RevealSection delay={0.05}>
+                                    <div className="space-y-5">
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Achievements &amp; Leadership</SectionLabel>
+                                        <div className="space-y-3">
+                                            {achievements.map((a, i) => {
+                                                const iconKey = getAchievementIconKey(a.title);
+                                                return (
+                                                    <StaggerItem key={a.title} index={i}>
+                                                        <motion.div
+                                                            className={`flex items-start gap-4 border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+                                                        >
+                                                            <div className={`w-10 h-10 rounded-lg border ${divider} flex items-center justify-center shrink-0 overflow-hidden`}
+                                                                style={{ backgroundColor: achievementIconBg[iconKey] }}>
+                                                                <img src={achievementIconSrc[iconKey]} alt={a.title} className="h-5 w-5 object-contain" loading="lazy" referrerPolicy="no-referrer" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
+                                                                    <h3 className="text-base font-bold">{a.title}</h3>
+                                                                    <span className={`text-xs uppercase tracking-widest border ${isDark ? 'border-[#d0fffe]/30 text-[#d0fffe]/80' : 'border-[#d39ad0] text-[#7b3e77]'} px-2 py-0.5 rounded`}>{a.badge}</span>
+                                                                </div>
+                                                                <p className={`text-sm ${subtleText} leading-relaxed`}>{a.detail}</p>
+                                                            </div>
+                                                        </motion.div>
+                                                    </StaggerItem>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </RevealSection>
+                            </motion.section>
+
+                            {/* ══ PROJECTS ══ */}
                             <RevealSection>
-                                <div className="space-y-4">
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Summary</SectionLabel>
-                                    <p className={`text-base ${mutedText} leading-relaxed max-w-3xl`}>
-                                        {profile.summary || profile.title}{' '}
-                                        {sections.simplifiedSummaryHighlight && (
-                                            <span className={isDark ? 'text-zinc-200' : 'text-zinc-800'}>
-                                                {sections.simplifiedSummaryHighlight}
-                                            </span>
-                                        )}
-                                    </p>
-                                </div>
-                            </RevealSection>
-
-                            {/* Experience */}
-                            <RevealSection delay={0.05}>
-                                <div className="space-y-5">
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Experience</SectionLabel>
-                                    <div className="space-y-4">
-                                        {simplifiedExperience.map((exp, i) => (
-                                            <StaggerItem key={exp.id} index={i}>
-                                                <ExpCard
-                                                    isDark={isDark}
-                                                    cardBg={cardBg}
-                                                    divider={divider}
-                                                    mutedText={mutedText}
-                                                    subtleText={subtleText}
-                                                    org={exp.org}
-                                                    url={exp.url}
-                                                    totalDuration={
-                                                        exp.id === 'gfg-kiit-chapter'
-                                                            ? `${exp.totalDuration} · ${calcDuration('2025-02-01')}`
-                                                            : exp.id === 'fed-kiit-org'
-                                                              ? `${exp.totalDuration} · ${calcDuration('2024-11-01')}`
-                                                              : exp.totalDuration
-                                                    }
-                                                    badge={exp.badge}
-                                                    bullets={exp.bullets}
-                                                    roles={
-                                                        exp.roles?.map((r) =>
-                                                            r.duration === 'ongoing'
-                                                                ? { ...r, duration: calcDuration('2026-01-01') }
-                                                                : r
-                                                        )
-                                                    }
+                                <section id="projects" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#f9fffe]/90'}`}>
+                                    <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                            {sections.simplifiedProjectsIntro?.title || 'Projects'}
+                                        </SectionLabel>
+                                        <span className={`text-xs ${subtleText} uppercase tracking-widest`}>
+                                            {sections.simplifiedProjectsIntro?.subtitle || 'Selected Works'}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {visibleProjects.map((p, i) => (
+                                            <StaggerItem key={p.id} index={i}>
+                                                <ProjectCard
+                                                    project={p} isDark={isDark} cardBg={cardBg} divider={divider}
+                                                    mutedText={mutedText} subtleText={subtleText} tagBg={tagBg}
+                                                    onPreview={setSelectedProject}
+                                                    onImgError={(id) => setPreviewErrors(prev => ({ ...prev, [id]: true }))}
+                                                    imgError={!!previewErrors[p.id]}
                                                 />
                                             </StaggerItem>
                                         ))}
                                     </div>
-                                </div>
+                                    {projectsVisibleCount < resumeProjects.length && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setProjectsVisibleCount((n) => n + PROJECTS_PAGE_SIZE)}
+                                            className={`w-full border rounded-sm px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${filterInactive}`}
+                                        >
+                                            Load more projects ({resumeProjects.length - projectsVisibleCount} left)
+                                        </button>
+                                    )}
+                                </section>
                             </RevealSection>
 
-                        {/* Tech Stack */}
-<RevealSection delay={0.05}>
-  <div className="space-y-8">
-
-    <SectionLabel
-      isDark={isDark}
-      divider={divider}
-      labelText={labelText}
-    >
-      Technical Skills
-    </SectionLabel>
-
-    <div className="space-y-6">
-
-      {skillCategories.map((cat, ci) => (
-        <motion.div
-          key={cat.label}
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: ci * 0.08 }}
-          className="space-y-3"
-        >
-          {/* Category Label */}
-          <div
-            className={`text-[11px] uppercase tracking-[0.25em] ${
-              isDark ? "text-zinc-500" : "text-[#6b5c4f]"
-            }`}
-          >
-            {cat.label}
-          </div>
-
-          {/* Skills Grid */}
-          <div className="flex flex-wrap gap-2.5">
-            {cat.items.map((s, si) => (
-              <motion.div
-                key={s}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: ci * 0.08 + si * 0.02 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs ${
-                  isDark
-                    ? "bg-zinc-900 text-zinc-300"
-                    : "bg-[#fffddb] text-[#3f3a34]"
-                }`}
-              >
-                <TechIcon name={s} />
-                <span>{s}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      ))}
-
-    </div>
-  </div>
-</RevealSection>
-                            {/* Achievements */}
-                            <RevealSection delay={0.05}>
-                                <div className="space-y-5">
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Achievements &amp; Leadership</SectionLabel>
-                                    <div className="space-y-3">
-                                        {achievements.map((a, i) => {
-                                            const iconKey = getAchievementIconKey(a.title);
-                                            return (
-                                                <StaggerItem key={a.title} index={i}>
-                                                    <motion.div
-                                                        className={`flex items-start gap-4 border ${cardBg} rounded-xl p-5 transition-all duration-300`}
-                                                    >
-                                                        <div className={`w-10 h-10 rounded-lg border ${divider} flex items-center justify-center shrink-0 overflow-hidden`}
-                                                            style={{ backgroundColor: achievementIconBg[iconKey] }}>
-                                                            <img src={achievementIconSrc[iconKey]} alt={a.title} className="h-5 w-5 object-contain" loading="lazy" referrerPolicy="no-referrer" />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
-                                                                <h3 className="text-base font-bold">{a.title}</h3>
-                                                                <span className={`text-xs uppercase tracking-widest border ${isDark ? 'border-[#d0fffe]/30 text-[#d0fffe]/80' : 'border-[#d39ad0] text-[#7b3e77]'} px-2 py-0.5 rounded`}>{a.badge}</span>
-                                                            </div>
-                                                            <p className={`text-sm ${subtleText} leading-relaxed`}>{a.detail}</p>
-                                                        </div>
-                                                    </motion.div>
-                                                </StaggerItem>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </RevealSection>
-                        </motion.section>
-
-                        {/* ══ PROJECTS ══ */}
-                        <RevealSection>
-                            <section id="projects" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#d0fffe]'}`}>
-                                <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
-                                        {sections.simplifiedProjectsIntro?.title || 'Projects'}
-                                    </SectionLabel>
-                                    <span className={`text-xs ${subtleText} uppercase tracking-widest`}>
-                                        {sections.simplifiedProjectsIntro?.subtitle || 'Selected Works'}
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {resumeProjects.map((p, i) => (
-                                        <StaggerItem key={p.id} index={i}>
-                                            <ProjectCard
-                                                project={p} isDark={isDark} cardBg={cardBg} divider={divider}
-                                                mutedText={mutedText} subtleText={subtleText} tagBg={tagBg}
-                                                onPreview={setSelectedProject}
-                                                onImgError={(id) => setPreviewErrors(prev => ({ ...prev, [id]: true }))}
-                                                imgError={!!previewErrors[p.id]}
-                                            />
-                                        </StaggerItem>
-                                    ))}
-                                </div>
-                            </section>
-                        </RevealSection>
-
-                        {/* ══ GITHUB ══ */}
-                        <RevealSection>
-                            <section id="github" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#e4ffde]'}`}>
-                                <div className={`flex flex-col gap-5 border-b ${divider} pb-5`}>
-                                    <div className="flex items-end justify-between">
+                            {/* ══ GITHUB ══ */}
+                            <RevealSection>
+                                <section id="github" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fbfff8]/90'}`}>
+                                    <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
-                                            {sections.simplifiedGithubIntro?.title || 'My GitHub'}
+                                            {sections.simplifiedGithubIntro?.title || 'GitHub'}
                                         </SectionLabel>
-                                        <a href={`https://github.com/${profile.githubUsername || 'hardikguptaofficialgit'}`} target="_blank" rel="noopener noreferrer"
+                                        <a href={`https://github.com/${githubUsername}`} target="_blank" rel="noopener noreferrer"
                                             className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors`}>
                                             View Profile <ArrowUpRight size={12} />
                                         </a>
                                     </div>
-                                    <div className="flex flex-col md:flex-row gap-3 justify-between">
-                                        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                                            {([['top', 'Top Rated'], ['latest', 'Latest'], ['pushed', 'Recently Pushed'], ['all', 'All']] as const).map(([id, label]) => (
-                                                <motion.button key={id} onClick={() => setFilterMode(id as any)}
-                                                    className={`px-3 py-2 text-xs font-medium border rounded-lg transition-all duration-300 ${filterMode === id ? filterActive : filterInactive}`}>
-                                                    {label}
-                                                </motion.button>
-                                            ))}
+
+                                    <GitHubActivityChart
+                                        username={githubUsername}
+                                        isDark={isDark}
+                                        repoCount={repos.length}
+                                        totalStars={githubTotalStars}
+                                    />
+
+                                    <div className={`flex flex-col gap-3 border-b ${divider} pb-5`}>
+                                        <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+                                            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                                {([['all', 'All'], ['top', 'Top Rated'], ['latest', 'Latest'], ['pushed', 'Recently Pushed']] as const).map(([id, label]) => (
+                                                    <motion.button key={id} onClick={() => setFilterMode(id as typeof filterMode)}
+                                                        className={`px-3 py-2 text-xs font-medium border rounded-sm transition-all duration-300 ${filterMode === id ? filterActive : filterInactive}`}>
+                                                        {label}
+                                                    </motion.button>
+                                                ))}
+                                            </div>
+                                            <input type="text" placeholder="Search repositories…" value={searchQuery}
+                                                onChange={e => setSearchQuery(e.target.value)}
+                                                className={`border rounded-sm px-4 py-2 text-sm w-full md:w-64 focus:outline-none transition-all duration-300 ${inputBg} focus:border-zinc-500`} />
                                         </div>
-                                        <input type="text" placeholder="Search…" value={searchQuery}
-                                            onChange={e => setSearchQuery(e.target.value)}
-                                            className={`border rounded-lg px-4 py-2 text-sm w-full md:w-60 focus:outline-none transition-all duration-300 ${inputBg} focus:border-zinc-500`} />
+                                        <p className={`text-xs ${subtleText}`}>
+                                            Showing {filteredRepos.length} of {repos.length} repositories
+                                        </p>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {filteredRepos.map((repo, i) => (
-                                        <StaggerItem key={repo.id} index={i}>
-                                            <motion.a
-                                                href={repo.html_url} target="_blank" rel="noopener noreferrer"
-                                                className={`group block border ${cardBg} rounded-xl p-5 transition-all duration-300`}
-                                            >
-                                                <div className="flex items-start justify-between gap-2 mb-3">
-                                                    <h3 className="text-sm font-bold group-hover:underline underline-offset-4 truncate">{repo.name}</h3>
-                                                    {repo.language && (
-                                                        <span className="flex items-center gap-1.5 shrink-0">
-                                                            <span className="w-2.5 h-2.5 rounded-full" style={{ background: langColor[repo.language] ?? '#888' }} />
-                                                            <span className={`text-xs ${subtleText}`}>{repo.language}</span>
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className={`${subtleText} text-sm leading-relaxed line-clamp-2 mb-4`}>{repo.description || 'No description.'}</p>
-                                                <div className={`flex items-center gap-5 text-xs ${subtleText}`}>
-                                                    <span className="flex items-center gap-1.5"><Star size={12} /> {repo.stargazers_count}</span>
-                                                    <span className="flex items-center gap-1.5"><GitFork size={12} /> {repo.forks_count}</span>
-                                                    <span>{new Date(repo.updated_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
-                                                </div>
-                                            </motion.a>
-                                        </StaggerItem>
-                                    ))}
-                                </div>
-                            </section>
-                        </RevealSection>
-
-                        {/* ══ PHOTOS ══ */}
-                        <RevealSection>
-                            <section id="photos" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#ffe7d3]'}`}>
-                                <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
-                                        {sections.simplifiedPhotosIntro?.title || 'Photos'}
-                                    </SectionLabel>
-                                    <span className={`text-xs ${subtleText} uppercase tracking-widest`}>
-                                        {sections.simplifiedPhotosIntro?.subtitle || 'Recent Highlights'}
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-                                    {photoEvents.map((ev, i) => (
-                                        <StaggerItem key={ev.id} index={i}>
-                                            <motion.div
-                                                onClick={() => openGallery(ev)}
-                                                className="group cursor-pointer space-y-3"
-                                            >
-                                                <div className={`relative aspect-video ${isDark ? 'bg-zinc-900' : 'bg-white'} p-2 rounded-xl overflow-hidden border ${divider}`}>
-                                                    <div className="relative w-full h-full rounded-lg overflow-hidden bg-zinc-900">
-                                                        <img src={ev.images[0]} alt={ev.title}
-                                                            className="absolute inset-0 h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
-                                                        <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end z-10 pointer-events-none">
-                                                            {ev.pinned && (
-                                                                <div className="bg-white text-black px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1">
-                                                                    <Pin size={10} className="fill-current" /> Pinned
-                                                                </div>
-                                                            )}
-                                                            {ev.images.length > 1 && (
-                                                                <div className="bg-black px-2 py-0.5 rounded text-xs text-white flex items-center gap-1 border border-white/10">
-                                                                    <Maximize2 size={10} /> +{ev.images.length - 1}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-start justify-between">
-                                                        <h3 className="text-base font-bold group-hover:underline underline-offset-4">{ev.title}</h3>
-                                                        <span className={`text-xs ${subtleText} font-mono shrink-0 ml-2 mt-0.5`}>{ev.date}</span>
-                                                    </div>
-                                                    <p className={`text-sm ${mutedText} leading-snug mt-1`}>{ev.description}</p>
-                                                </div>
-                                            </motion.div>
-                                        </StaggerItem>
-                                    ))}
-                                </div>
-                            </section>
-                        </RevealSection>
-
-                        {/* ══ BLOG ══ */}
-                        <RevealSection>
-                            <section id="blog" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#efe7ff]'}`}>
-                                <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
-                                        {sections.simplifiedBlogIntro?.title || 'Blog'}
-                                    </SectionLabel>
-                                    <RouterLink
-                                        to="/blogs"
-                                        className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors uppercase tracking-widest`}
-                                    >
-                                        All Posts <ArrowUpRight size={12} />
-                                    </RouterLink>
-                                </div>
-
-                                {isLoading && <p className={`text-sm ${mutedText}`}>Loading articles...</p>}
-
-                                {!isLoading && popularArticles.length === 0 && (
-                                    <p className={`text-sm ${mutedText}`}>No blog posts found right now.</p>
-                                )}
-
-                                {!isLoading && popularArticles.length > 0 && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {popularArticles.map((article, index) => (
-                                            <StaggerItem key={article.id} index={index}>
-                                                <RouterLink
-                                                    to={`/blogs/${article.slug}`}
-                                                    className={`block border ${cardBg} rounded-xl p-4 transition-colors`}
+                                        {filteredRepos.length === 0 && (
+                                            <p className={`text-sm ${mutedText} md:col-span-2`}>No repositories match this filter.</p>
+                                        )}
+                                        {visibleRepos.map((repo, i) => (
+                                            <StaggerItem key={repo.id} index={i}>
+                                                <motion.a
+                                                    href={repo.html_url} target="_blank" rel="noopener noreferrer"
+                                                    className={`group block border ${cardBg} rounded-sm p-5 transition-all duration-300`}
                                                 >
-                                                    <div className={`mb-3 h-40 overflow-hidden rounded-lg border ${divider}`}>
-                                                        <BlogCover
-                                                            title={article.title}
-                                                            coverImage={article.coverImage}
-                                                            theme={theme}
-                                                            tags={article.tags}
-                                                            variant="card"
-                                                            loading="lazy"
-                                                        />
+                                                    <div className="flex items-start justify-between gap-2 mb-3">
+                                                        <h3 className="text-sm font-bold group-hover:underline underline-offset-4 truncate">{repo.name}</h3>
+                                                        {repo.language && (
+                                                            <span className="flex items-center gap-1.5 shrink-0">
+                                                                <span className="w-2.5 h-2.5 rounded-full" style={{ background: langColor[repo.language] ?? '#888' }} />
+                                                                <span className={`text-xs ${subtleText}`}>{repo.language}</span>
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    <h3 className="text-base font-bold leading-snug line-clamp-2">{article.title}</h3>
-                                                    <p className={`mt-2 text-sm ${mutedText} line-clamp-2`}>
-                                                        {article.excerpt || 'No description.'}
-                                                    </p>
-                                                    <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs ${subtleText}`}>
-                                                        <span className="inline-flex items-center gap-1">
-                                                            <Calendar size={12} />
-                                                            {format(new Date(article.publishedAt), 'MMM d, yyyy')}
-                                                        </span>
-                                                        <span className="inline-flex items-center gap-1">
-                                                            <Clock size={12} />
-                                                            {article.readingTimeMinutes || 1} min
-                                                        </span>
+                                                    <p className={`${subtleText} text-sm leading-relaxed line-clamp-2 mb-4`}>{repo.description || 'No description.'}</p>
+                                                    <div className={`flex items-center gap-5 text-xs ${subtleText}`}>
+                                                        <span className="flex items-center gap-1.5"><Star size={12} /> {repo.stargazers_count}</span>
+                                                        <span className="flex items-center gap-1.5"><GitFork size={12} /> {repo.forks_count}</span>
+                                                        <span>{new Date(repo.updated_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
                                                     </div>
-                                                </RouterLink>
+                                                </motion.a>
                                             </StaggerItem>
                                         ))}
                                     </div>
-                                )}
-                            </section>
-                        </RevealSection>
-
-                    </motion.div>
-
-                    {/* Footer */}
-                    <motion.footer
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        className={`max-w-4xl mx-auto mt-24 pt-10 pb-8  border-t ${divider} flex flex-col md:flex-row items-center justify-between gap-4`}
-                    >
-                        <RouterLink
-                            to="/desktop"
-                            onClick={markDesktopDirectEntry}
-                            className={`${subtleText} ${
-                                isDark
-                                    ? 'px-4 py-2.5 bg-black text-white'
-                                    : 'text-black px-4 py-2.5 bg-white'
-                            } transition-colors text-xs md:text-sm uppercase tracking-widest`}
-                        >
-                            ← Switch to Interactive
-                        </RouterLink>
-                        <div className={`flex gap-5 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
-                            {[
-                                { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={16} /> },
-                                { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={16} /> },
-                                { href: 'https://x.com/strykerin', icon: <XBrandIcon size={16} /> },
-                            ].map(({ href, icon }) => (
-                                <motion.a key={href} href={href} target="_blank" rel="noopener noreferrer"
-                                    className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors`}>{icon}</motion.a>
-                            ))}
-                        </div>
-                    </motion.footer>
-                </div>
-
-                {/* ══ PROJECT LIGHTBOX ══ */}
-                <AnimatePresence>
-                    {selectedProject && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className={`fixed inset-0 z-[95] ${isDark ? 'bg-black' : 'bg-white'}`}
-                            onClick={() => setSelectedProject(null)}
-                        >
-                            <motion.div
-                                initial={{ y: 24, scale: 0.97 }}
-                                animate={{ y: 0, scale: 1 }}
-                                exit={{ y: 20, scale: 0.97 }}
-                                transition={{ duration: 0.28, ease: EASE_SMOOTH }}
-                                className={`relative h-full w-full overflow-hidden ${isDark ? 'bg-zinc-950' : 'bg-zinc-100'}`}
-                                onClick={e => e.stopPropagation()}
-                            >
-                                <div className="absolute z-10" style={{ left: `${projectControlsPos.x}px`, top: `${projectControlsPos.y}px` }}>
-                                    <div className={`flex items-center gap-2 rounded-xl border ${isDark ? 'border-white/15 bg-black' : 'border-black/10 bg-white'} p-2 shadow-lg`}>
-                                        <button onPointerDown={handleProjectControlsPointerDown} onPointerMove={handleProjectControlsPointerMove} onPointerUp={handleProjectControlsPointerUp} onPointerCancel={handleProjectControlsPointerUp}
-                                            className={`flex h-8 w-8 items-center justify-center rounded-lg border cursor-grab active:cursor-grabbing ${isDark ? 'border-white/15 text-zinc-100 hover:bg-white/10' : 'border-black/10 text-zinc-900 hover:bg-zinc-200'} transition-colors`} title="Drag controls">
-                                            <Pin size={13} />
+                                    {reposVisibleCount < filteredRepos.length && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setReposVisibleCount((n) => n + REPOS_PAGE_SIZE)}
+                                            className={`w-full border rounded-sm px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${filterInactive}`}
+                                        >
+                                            Load more repositories ({filteredRepos.length - reposVisibleCount} left)
                                         </button>
-                                        <button onClick={() => setProjectControlsCollapsed(v => !v)}
-                                            className={`flex h-8 w-8 items-center justify-center rounded-lg border ${isDark ? 'border-white/15 text-zinc-100 hover:bg-white/10' : 'border-black/10 text-zinc-900 hover:bg-zinc-200'} transition-colors`}>
-                                            {projectControlsCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-                                        </button>
-                                        {!projectControlsCollapsed && (
-                                            <>
-                                                {selectedProject.githubUrl !== '#' && (
-                                                    <a href={selectedProject.githubUrl} target="_blank" rel="noopener noreferrer" onPointerDown={e => e.stopPropagation()}
-                                                        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-wide ${isDark ? 'border-white/15 bg-zinc-900 text-zinc-100 hover:bg-zinc-800' : 'border-black/10 bg-zinc-100 text-zinc-900 hover:bg-zinc-200'} transition-colors`}>
-                                                        <Github size={13} /> Code
-                                                    </a>
-                                                )}
-                                                {selectedProject.liveUrl !== '#' && (
-                                                    <a href={selectedProject.liveUrl} target="_blank" rel="noopener noreferrer" onPointerDown={e => e.stopPropagation()}
-                                                        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-wide ${isDark ? 'border-white/15 bg-white text-zinc-900 hover:bg-zinc-100' : 'border-black/10 bg-zinc-900 text-zinc-100 hover:bg-zinc-800'} transition-colors`}>
-                                                        <ArrowUpRight size={13} /> Open Site
-                                                    </a>
-                                                )}
-                                                <button onClick={() => setSelectedProject(null)}
-                                                    className={`flex h-8 w-8 items-center justify-center rounded-lg border ${isDark ? 'border-white/15 bg-zinc-900 text-zinc-100 hover:bg-zinc-800' : 'border-black/10 bg-zinc-100 text-zinc-900 hover:bg-zinc-200'} transition-colors`}>
-                                                    <X size={14} />
-                                                </button>
-                                            </>
-                                        )}
+                                    )}
+                                </section>
+                            </RevealSection>
+
+                            {/* ══ PHOTOS ══ */}
+                            <RevealSection>
+                                <section id="photos" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fffaf6]/90'}`}>
+                                    <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                            {sections.simplifiedPhotosIntro?.title || 'Photos'}
+                                        </SectionLabel>
+                                        <span className={`text-xs ${subtleText} uppercase tracking-widest`}>
+                                            {sections.simplifiedPhotosIntro?.subtitle || 'Recent Highlights'}
+                                        </span>
                                     </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                                        {photoEvents.map((ev, i) => (
+                                            <StaggerItem key={ev.id} index={i}>
+                                                <motion.div
+                                                    onClick={() => openGallery(ev)}
+                                                    className="group cursor-pointer space-y-3"
+                                                >
+                                                    <div className={`relative aspect-video ${isDark ? 'bg-zinc-900' : 'bg-white'} p-2 rounded-xl overflow-hidden border ${divider}`}>
+                                                        <div className="relative w-full h-full rounded-lg overflow-hidden bg-zinc-900">
+                                                            <img src={ev.images[0]} alt={ev.title}
+                                                                className="absolute inset-0 h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+                                                            <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end z-10 pointer-events-none">
+                                                                {ev.pinned && (
+                                                                    <div className="bg-white text-black px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1">
+                                                                        <Pin size={10} className="fill-current" /> Pinned
+                                                                    </div>
+                                                                )}
+                                                                {ev.images.length > 1 && (
+                                                                    <div className="bg-black px-2 py-0.5 rounded text-xs text-white flex items-center gap-1 border border-white/10">
+                                                                        <Maximize2 size={10} /> +{ev.images.length - 1}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-start justify-between">
+                                                            <h3 className="text-base font-bold group-hover:underline underline-offset-4">{ev.title}</h3>
+                                                            <span className={`text-xs ${subtleText} font-mono shrink-0 ml-2 mt-0.5`}>{ev.date}</span>
+                                                        </div>
+                                                        <p className={`text-sm ${mutedText} leading-snug mt-1`}>{ev.description}</p>
+                                                    </div>
+                                                </motion.div>
+                                            </StaggerItem>
+                                        ))}
+                                    </div>
+                                </section>
+                            </RevealSection>
+
+                            {/* ══ BLOG ══ */}
+                            <RevealSection>
+                                <section id="blog" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fcfaff]/90'}`}>
+                                    <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                            {sections.simplifiedBlogIntro?.title || 'Blog'}
+                                        </SectionLabel>
+                                        <RouterLink
+                                            to="/blogs"
+                                            className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors uppercase tracking-widest`}
+                                        >
+                                            All Posts <ArrowUpRight size={12} />
+                                        </RouterLink>
+                                    </div>
+
+                                    {isLoading && <p className={`text-sm ${mutedText}`}>Loading articles...</p>}
+
+                                    {!isLoading && popularArticles.length === 0 && (
+                                        <p className={`text-sm ${mutedText}`}>No blog posts found right now.</p>
+                                    )}
+
+                                    {!isLoading && popularArticles.length > 0 && (
+                                        <div className="space-y-3">
+                                            {visibleBlogs.map((article, index) => (
+                                                <StaggerItem key={article.id} index={index}>
+                                                    <RouterLink
+                                                        to={`/blogs/${article.slug}`}
+                                                        className={`group block border ${cardBg} rounded-sm p-4 md:p-5 transition-colors hover:border-zinc-600`}
+                                                    >
+                                                        <div className="min-w-0 flex flex-col justify-center">
+                                                            <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${subtleText}`}>
+                                                                <span className="inline-flex items-center gap-1">
+                                                                    <Calendar size={11} />
+                                                                    {format(new Date(article.publishedAt), 'MMM d, yyyy')}
+                                                                </span>
+                                                                <span>·</span>
+                                                                <span className="inline-flex items-center gap-1">
+                                                                    <Clock size={11} />
+                                                                    {article.readingTimeMinutes || 1} min read
+                                                                </span>
+                                                            </div>
+                                                            <h3 className="mt-2 text-lg font-bold leading-snug line-clamp-2 group-hover:underline underline-offset-4">
+                                                                {article.title}
+                                                            </h3>
+                                                            <p className={`mt-1.5 text-sm ${mutedText} line-clamp-2 md:line-clamp-3`}>
+                                                                {article.excerpt || 'No description.'}
+                                                            </p>
+                                                        </div>
+                                                    </RouterLink>
+                                                </StaggerItem>
+                                            ))}
+                                            {blogsVisibleCount < popularArticles.length && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBlogsVisibleCount((n) => n + BLOG_PAGE_SIZE)}
+                                                    className={`w-full border rounded-sm px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${filterInactive}`}
+                                                >
+                                                    Load more posts ({popularArticles.length - blogsVisibleCount} left)
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </section>
+                            </RevealSection>
+
+                        </motion.div>
+
+                        <MonkeytypeStats
+                            isDark={isDark}
+                            divider={divider}
+                            mutedText={mutedText}
+                            subtleText={subtleText}
+                        />
+
+                        <motion.footer
+                            initial={{ opacity: 0 }}
+                            whileInView={{ opacity: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.8 }}
+                            className={`pt-8 pb-6 border-t ${divider} px-4 md:px-6 space-y-6`}
+                        >
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                <RouterLink
+                                    to="/desktop"
+                                    onClick={markDesktopDirectEntry}
+                                    className={`${subtleText} ${
+                                        isDark
+                                            ? 'px-4 py-2.5 bg-black text-white'
+                                            : 'text-black px-4 py-2.5 bg-white'
+                                    } transition-colors text-xs md:text-sm uppercase tracking-widest`}
+                                >
+                                    ← Switch to Interactive
+                                </RouterLink>
+                                <div className={`flex flex-wrap items-center justify-center gap-4 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
+                                    {socialLinks.map((link) => (
+                                        <motion.a
+                                            key={link.id}
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`${subtleText} ${isDark ? 'hover:text-zinc-100' : 'hover:text-zinc-900'} transition-colors`}
+                                            aria-label={link.name}
+                                            title={link.name}
+                                        >
+                                            {link.icon === 'Github' && <Github size={16} />}
+                                            {link.icon === 'Linkedin' && <Linkedin size={16} />}
+                                            {link.icon === 'Instagram' && <Instagram size={16} />}
+                                            {link.icon === 'Twitter' && <XBrandIcon size={16} />}
+                                            {link.icon === 'Link' && <LinkIcon size={16} />}
+                                        </motion.a>
+                                    ))}
                                 </div>
-                                {selectedProject.liveUrl !== '#' ? (
-                                    <iframe src={selectedProject.liveUrl} title={`${selectedProject.name} live preview`}
-                                        className="h-full w-full border-0" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" loading="lazy" />
-                                ) : (
-                                    <div className="flex h-full items-center justify-center p-8">
-                                        <div className="max-w-md text-center">
-                                            <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{selectedProject.name}</p>
-                                            <p className={`mt-3 text-sm ${mutedText}`}>Live preview unavailable - check the GitHub link above.</p>
+                            </div>
+                            <p className={`text-center text-[11px] sm:text-xs leading-relaxed ${subtleText}`}>
+                                Designed &amp; developed by{' '}
+                                <a
+                                    href="https://x.com/stryker_inside"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`font-semibold tracking-wide ${isDark ? 'text-zinc-200 hover:text-white' : 'text-zinc-800 hover:text-black'} transition-colors`}
+                                >
+                                    Stryker
+                                </a>
+                                <span className="mx-2 opacity-40" aria-hidden>·</span>
+                                <a
+                                    href="https://x.com/stryker_inside"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`inline-flex items-center gap-1 font-medium ${isDark ? 'text-zinc-300 hover:text-white' : 'text-zinc-700 hover:text-black'} transition-colors`}
+                                >
+                                    <XBrandIcon size={12} />
+                                    @stryker_inside
+                                </a>
+                            </p>
+                        </motion.footer>
+                        </div>
+                    </div>
+
+                    {/* ══ PROJECT LIGHTBOX ══ */}
+                    <AnimatePresence>
+                        {selectedProject && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className={`fixed inset-0 z-[95] ${isDark ? 'bg-black' : 'bg-white'}`}
+                                onClick={() => setSelectedProject(null)}
+                            >
+                                <motion.div
+                                    initial={{ y: 24, scale: 0.97 }}
+                                    animate={{ y: 0, scale: 1 }}
+                                    exit={{ y: 20, scale: 0.97 }}
+                                    transition={{ duration: 0.28, ease: EASE_SMOOTH }}
+                                    className={`relative h-full w-full overflow-hidden ${isDark ? 'bg-zinc-950' : 'bg-zinc-100'}`}
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    <div className="absolute z-10" style={{ left: `${projectControlsPos.x}px`, top: `${projectControlsPos.y}px` }}>
+                                        <div className={`flex items-center gap-2 rounded-xl border ${isDark ? 'border-white/15 bg-black' : 'border-black/10 bg-white'} p-2 shadow-lg`}>
+                                            <button onPointerDown={handleProjectControlsPointerDown} onPointerMove={handleProjectControlsPointerMove} onPointerUp={handleProjectControlsPointerUp} onPointerCancel={handleProjectControlsPointerUp}
+                                                className={`flex h-8 w-8 items-center justify-center rounded-lg border cursor-grab active:cursor-grabbing ${isDark ? 'border-white/15 text-zinc-100 hover:bg-white/10' : 'border-black/10 text-zinc-900 hover:bg-zinc-200'} transition-colors`} title="Drag controls">
+                                                <Pin size={13} />
+                                            </button>
+                                            <button onClick={() => setProjectControlsCollapsed(v => !v)}
+                                                className={`flex h-8 w-8 items-center justify-center rounded-lg border ${isDark ? 'border-white/15 text-zinc-100 hover:bg-white/10' : 'border-black/10 text-zinc-900 hover:bg-zinc-200'} transition-colors`}>
+                                                {projectControlsCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                                            </button>
+                                            {!projectControlsCollapsed && (
+                                                <>
+                                                    {selectedProject.githubUrl !== '#' && (
+                                                        <a href={selectedProject.githubUrl} target="_blank" rel="noopener noreferrer" onPointerDown={e => e.stopPropagation()}
+                                                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-wide ${isDark ? 'border-white/15 bg-zinc-900 text-zinc-100 hover:bg-zinc-800' : 'border-black/10 bg-zinc-100 text-zinc-900 hover:bg-zinc-200'} transition-colors`}>
+                                                            <Github size={13} /> Code
+                                                        </a>
+                                                    )}
+                                                    {selectedProject.liveUrl !== '#' && (
+                                                        <a href={selectedProject.liveUrl} target="_blank" rel="noopener noreferrer" onPointerDown={e => e.stopPropagation()}
+                                                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-wide ${isDark ? 'border-white/15 bg-white text-zinc-900 hover:bg-zinc-100' : 'border-black/10 bg-zinc-900 text-zinc-100 hover:bg-zinc-800'} transition-colors`}>
+                                                            <ArrowUpRight size={13} /> Open Site
+                                                        </a>
+                                                    )}
+                                                    <button onClick={() => setSelectedProject(null)}
+                                                        className={`flex h-8 w-8 items-center justify-center rounded-lg border ${isDark ? 'border-white/15 bg-zinc-900 text-zinc-100 hover:bg-zinc-800' : 'border-black/10 bg-zinc-100 text-zinc-900 hover:bg-zinc-200'} transition-colors`}>
+                                                        <X size={14} />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
-                                )}
+                                    {selectedProject.liveUrl !== '#' ? (
+                                        <iframe src={selectedProject.liveUrl} title={`${selectedProject.name} live preview`}
+                                            className="h-full w-full border-0" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" loading="lazy" />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center p-8">
+                                            <div className="max-w-md text-center">
+                                                <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{selectedProject.name}</p>
+                                                <p className={`mt-3 text-sm ${mutedText}`}>Live preview unavailable - check the GitHub link above.</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </motion.div>
                             </motion.div>
-                        </motion.div>
-                    )}
+                        )}
 
+                        {/* ══ PHOTO LIGHTBOX ══ */}
                     {/* ══ PHOTO LIGHTBOX ══ */}
-                  {/* ══ PHOTO LIGHTBOX ══ */}
-{selectedEvent && (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className={`fixed inset-0 z-[100] ${
-      isDark ? "bg-black" : "bg-[#fffef9]"
-    } flex flex-col overflow-hidden`}
-    onClick={() => setSelectedEvent(null)}
-  >
-    {/* Top Bar */}
-    <div
-      className="flex items-center justify-between px-5 py-4 shrink-0"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div>
-        <h3 className="text-base font-semibold">
-          {selectedEvent.title}
-        </h3>
-        <p className={`text-xs ${subtleText} mt-0.5`}>
-          {selectedEvent.description}
-        </p>
-      </div>
-
-      <button
-        onClick={() => setSelectedEvent(null)}
-        className={`p-2 ${
-          isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black"
-        } transition`}
-      >
-        <X size={18} />
-      </button>
-    </div>
-
-    {/* Image Area */}
-    <div
-      className="flex-1 flex items-center justify-center relative px-4 py-6 min-h-0"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Prev */}
-      {selectedEvent.images.length > 1 && (
-        <button
-          onClick={prevImg}
-          className="absolute left-3 p-2 text-zinc-500 hover:text-white transition z-10"
-        >
-          <ChevronLeft size={22} />
-        </button>
-      )}
-
-      {/* Image (NO CONTAINER) */}
-      <motion.img
-        key={currentImageIndex}
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.25 }}
-        src={selectedEvent.images[currentImageIndex]}
-        alt=""
-        className="max-w-full max-h-[82vh] object-contain"
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.2}
-        onDragEnd={(_, { offset }) => {
-          if (offset.x < -50) nextImg();
-          else if (offset.x > 50) prevImg();
-        }}
-      />
-
-      {/* Next */}
-      {selectedEvent.images.length > 1 && (
-        <button
-          onClick={nextImg}
-          className="absolute right-3 p-2 text-zinc-500 hover:text-white transition z-10"
-        >
-          <ChevronRight size={22} />
-        </button>
-      )}
-
-      {/* Counter */}
-      <div
-        className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-xs ${
-          isDark ? "text-zinc-400" : "text-zinc-600"
-        }`}
-      >
-        {currentImageIndex + 1} / {selectedEvent.images.length}
-      </div>
-    </div>
-
-    {/* Thumbnails */}
-    {selectedEvent.images.length > 1 && (
-      <div
-        className="h-20 flex items-center gap-2 px-5 overflow-x-auto no-scrollbar justify-start md:justify-center shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {selectedEvent.images.map((img, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentImageIndex(idx)}
-            className={`h-14 aspect-video flex-shrink-0 overflow-hidden ${
-              currentImageIndex === idx ? "opacity-100" : "opacity-40"
-            }`}
-          >
-            <img
-              src={img}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          </button>
-        ))}
-      </div>
-    )}
-  </motion.div>
-)}
-                </AnimatePresence>
-
-                <LaunchWelcomeModal
-                    open={showLaunchModal}
-                    onDismiss={dismissLaunchModal}
-                />
-            </div>
-    );
-};
-
-/* ─── sub-components ──────────────────────────────────────── */
-const SectionLabel = ({ children, isDark, divider, labelText }: { children: React.ReactNode; isDark: boolean; divider: string; labelText: string }) => (
-    <h2 className={`font-display text-sm font-bold uppercase tracking-[0.3em] ${labelText} border-b ${divider} pb-3`}>{children}</h2>
-);
-
-interface Role { title: string; period: string; duration: string; location?: string; }
-interface ExpCardProps {
-    org: string; url?: string; totalDuration: string; badge: string;
-    roles?: Role[]; bullets?: string[];
-    isDark: boolean; cardBg: string; divider: string; mutedText: string; subtleText: string;
-}
-const ExpCard = ({ org, url, totalDuration, badge, roles, bullets, isDark, cardBg, divider, mutedText, subtleText }: ExpCardProps) => (
+    {selectedEvent && (
     <motion.div
-        className={`border ${cardBg} rounded-xl p-5 transition-all duration-300`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className={`fixed inset-0 z-[100] ${
+        isDark ? "bg-black" : "bg-[#fffef9]"
+        } flex flex-col overflow-hidden`}
+        onClick={() => setSelectedEvent(null)}
     >
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-1.5 mb-2.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-                <h3 className="text-base font-bold">{org}</h3>
-                <span className={`text-xs uppercase tracking-widest border ${divider} px-2 py-0.5 rounded ${subtleText}`}>{badge}</span>
-            </div>
-            <span className={`text-xs ${subtleText} font-mono shrink-0`}>{totalDuration}</span>
+        {/* Top Bar */}
+        <div
+        className="flex items-center justify-between px-5 py-4 shrink-0"
+        onClick={(e) => e.stopPropagation()}
+        >
+        <div>
+            <h3 className="text-base font-semibold">
+            {selectedEvent.title}
+            </h3>
+            <p className={`text-xs ${subtleText} mt-0.5`}>
+            {selectedEvent.description}
+            </p>
         </div>
-        {url && (
-            <a href={url} target="_blank" rel="noopener noreferrer"
-                className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-300' : 'text-zinc-700'} underline decoration-zinc-400 underline-offset-4 transition-colors block mb-3`}>
-                {url.replace('https://', '')}
-            </a>
+
+        <button
+            onClick={() => setSelectedEvent(null)}
+            className={`p-2 ${
+            isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black"
+            } transition`}
+        >
+            <X size={18} />
+        </button>
+        </div>
+
+        {/* Image Area */}
+        <div
+        className="flex-1 flex items-center justify-center relative px-4 py-6 min-h-0"
+        onClick={(e) => e.stopPropagation()}
+        >
+        {/* Prev */}
+        {selectedEvent.images.length > 1 && (
+            <button
+            onClick={prevImg}
+            className="absolute left-3 p-2 text-zinc-500 hover:text-white transition z-10"
+            >
+            <ChevronLeft size={22} />
+            </button>
         )}
-        {roles?.map(r => (
-            <div key={r.title} className={`mt-3 pl-4 border-l ${divider} space-y-0.5`}>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-0.5">
-                    <span className="text-sm font-semibold">{r.title}</span>
-                    <span className={`text-xs ${subtleText} font-mono`}>{r.period} · {r.duration}</span>
-                </div>
-                {r.location && <p className={`text-xs ${subtleText}`}>{r.location}</p>}
-            </div>
-        ))}
-        {bullets && (
-            <ul className={`mt-3 space-y-2 pl-4 border-l ${divider}`}>
-                {bullets.map(b => (
-                    <li key={b} className={`text-sm ${mutedText} flex gap-2.5 items-start`}>
-                        <span className={`${subtleText} mt-0.5 shrink-0`}>–</span>{b}
-                    </li>
-                ))}
-            </ul>
+
+        {/* Image (NO CONTAINER) */}
+        <motion.img
+            key={currentImageIndex}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.25 }}
+            src={selectedEvent.images[currentImageIndex]}
+            alt=""
+            className="max-w-full max-h-[82vh] object-contain"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_, { offset }) => {
+            if (offset.x < -50) nextImg();
+            else if (offset.x > 50) prevImg();
+            }}
+        />
+
+        {/* Next */}
+        {selectedEvent.images.length > 1 && (
+            <button
+            onClick={nextImg}
+            className="absolute right-3 p-2 text-zinc-500 hover:text-white transition z-10"
+            >
+            <ChevronRight size={22} />
+            </button>
+        )}
+
+        {/* Counter */}
+        <div
+            className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-xs ${
+            isDark ? "text-zinc-400" : "text-zinc-600"
+            }`}
+        >
+            {currentImageIndex + 1} / {selectedEvent.images.length}
+        </div>
+        </div>
+
+        {/* Thumbnails */}
+        {selectedEvent.images.length > 1 && (
+        <div
+            className="h-20 flex items-center gap-2 px-5 overflow-x-auto no-scrollbar justify-start md:justify-center shrink-0"
+            onClick={(e) => e.stopPropagation()}
+        >
+            {selectedEvent.images.map((img, idx) => (
+            <button
+                key={idx}
+                onClick={() => setCurrentImageIndex(idx)}
+                className={`h-14 aspect-video flex-shrink-0 overflow-hidden ${
+                currentImageIndex === idx ? "opacity-100" : "opacity-40"
+                }`}
+            >
+                <img
+                src={img}
+                alt=""
+                className="w-full h-full object-cover"
+                />
+            </button>
+            ))}
+        </div>
         )}
     </motion.div>
-);
+    )}
+                    </AnimatePresence>
 
-interface ProjectCardProps {
-    project: ResumeProject;
-    isDark: boolean; cardBg: string; divider: string; mutedText: string; subtleText: string; tagBg: string;
-    onPreview: (p: ResumeProject) => void;
-    onImgError: (id: string) => void;
-    imgError: boolean;
-}
-const ProjectCard = memo(({ project: p, isDark, mutedText, subtleText, onPreview, onImgError, imgError }: ProjectCardProps) => {
-    const hasVisual = !!p.img && !imgError;
-    const hashtags = (p.tag || '')
-        .split(/[^\p{L}\p{N}+#.]+/u)
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .map((part) => `#${part.replace(/^#/, '')}`);
-    const surface = isDark
-        ? 'bg-[#09090b] shadow-[0_18px_44px_rgba(0,0,0,0.28)]'
-        : 'bg-[#fffef9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
-    return (
-        <article className={`group flex h-full w-full flex-col ${surface} rounded-xl overflow-hidden text-left`}>
-            <div className="relative h-44 w-full bg-black overflow-hidden shrink-0">
-                {hasVisual ? (
-                    <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">
-                        <img src={p.img} alt={p.name} className="max-h-[82%] max-w-[88%] object-contain"
-                            onError={() => onImgError(p.id)} />
-                    </div>
-                ) : (
-                    <div className="absolute inset-0 bg-black flex items-center justify-center px-5 text-center">
-                        <h3 className="text-4xl font-black tracking-tight leading-none text-white md:text-5xl">{p.name}</h3>
-                    </div>
-                )}
-            </div>
-            <div className="flex min-h-[330px] flex-1 flex-col p-5">
-                <div className="space-y-1">
-                    <h3 className="text-xl font-bold leading-tight">{p.name}</h3>
+                    <LaunchWelcomeModal
+                        open={showLaunchModal}
+                        onDismiss={dismissLaunchModal}
+                    />
                 </div>
+            </>
+        );
+    };
 
-                {p.tech.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                        {p.tech.map((tech) => (
-                            <span
-                                key={tech}
-                                className={`inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold leading-none ${
-                                    isDark
-                                        ? 'border-zinc-800 bg-zinc-900 text-zinc-300'
-                                        : 'border-[#e3d2c4] bg-[#fffddb] text-[#4f4036]'
-                                }`}
-                            >
-                                {tech}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                <div className="mt-4 max-h-28 overflow-y-auto pr-1 md:overflow-y-hidden md:group-hover:overflow-y-auto md:group-focus-within:overflow-y-auto">
-                    <p className={`text-sm ${mutedText} leading-relaxed`}>
-                        {p.description}
-                    </p>
-                </div>
-
-                {hashtags.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                        {hashtags.map((tag) => (
-                            <span key={tag} className={`text-xs font-semibold ${isDark ? 'text-[#d0fffe]/80' : 'text-[#7b3e77]'}`}>
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                )}
-                <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
-                    {p.liveUrl !== '#' && (
-                        <button type="button" onClick={() => onPreview(p)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-black hover:bg-zinc-100 transition-colors">
-                            <Maximize2 size={13} /> Preview
-                        </button>
-                    )}
-                    {p.githubUrl !== '#' && (
-                        <a href={p.githubUrl} target="_blank" rel="noopener noreferrer"
-                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide border ${isDark ? 'bg-zinc-800 text-white hover:bg-zinc-700 border-white/10' : 'bg-[#ffd3fd] text-[#3f2a3d] hover:bg-[#f8bbf5] border-[#f1b4ee]'}`}>
-                            <Github size={13} /> Code
-                        </a>
-                    )}
-                    {p.liveUrl !== '#' && (
-                        <a href={p.liveUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-black/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black/80 transition-colors">
-                            <ArrowUpRight size={13} /> Open Site
-                        </a>
-                    )}
-                </div>
-            </div>
-        </article>
+    /* ─── sub-components ──────────────────────────────────────── */
+    const SectionLabel = ({ children, isDark, divider, labelText }: { children: React.ReactNode; isDark: boolean; divider: string; labelText: string }) => (
+        <h2 className={`font-serif-display text-2xl md:text-3xl ${labelText} border-b ${divider} pb-3`}>{children}</h2>
     );
-});
 
-export default SimplifiedResume;
+    interface Role { title: string; period: string; duration: string; location?: string; }
+    interface ExpCardProps {
+        roleTitle?: string;
+        org: string;
+        logoUrl?: string;
+        url?: string;
+        totalDuration: string;
+        badge?: string;
+        roles?: Role[];
+        bullets?: string[];
+        isDark: boolean;
+        cardBg: string;
+        divider: string;
+        mutedText: string;
+        subtleText: string;
+    }
+    const ExpCard = ({ roleTitle, org, logoUrl, url, totalDuration, badge, roles, bullets, cardBg, divider, mutedText, subtleText }: ExpCardProps) => (
+        <motion.div
+            className={`border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+        >
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-2.5">
+                <div className="flex gap-3 min-w-0">
+                    {logoUrl && (
+                        <img
+                            src={logoUrl}
+                            alt=""
+                            className={`h-11 w-11 shrink-0 rounded-md border object-cover ${divider}`}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                        />
+                    )}
+                    <div className="min-w-0">
+                        <h3 className="text-base font-bold">{roleTitle || org}</h3>
+                        <p className={`text-sm italic ${mutedText}`}>
+                            {roleTitle ? (
+                                url ? (
+                                    <a href={url} target="_blank" rel="noopener noreferrer" className="underline decoration-zinc-500/60 underline-offset-2 hover:opacity-90">
+                                        {org}
+                                    </a>
+                                ) : (
+                                    org
+                                )
+                            ) : null}
+                            {badge ? (
+                                <span className="not-italic">
+                                    {roleTitle ? ' · ' : ''}
+                                    {badge}
+                                </span>
+                            ) : null}
+                        </p>
+                    </div>
+                </div>
+                <span className={`text-xs ${subtleText} font-mono shrink-0 md:text-right`}>{totalDuration}</span>
+            </div>
+            {roles?.map(r => (
+                <div key={r.title} className={`mt-3 pl-4 border-l ${divider} space-y-0.5`}>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-0.5">
+                        <span className="text-sm font-semibold">{r.title}</span>
+                        <span className={`text-xs ${subtleText} font-mono`}>{r.period} · {r.duration}</span>
+                    </div>
+                    {r.location && <p className={`text-xs ${subtleText}`}>{r.location}</p>}
+                </div>
+            ))}
+            {bullets && (
+                <ul className={`mt-3 space-y-2 pl-4 border-l ${divider}`}>
+                    {bullets.map(b => (
+                        <li key={b} className={`text-sm ${mutedText} flex gap-2.5 items-start`}>
+                            <span className={`${subtleText} mt-0.5 shrink-0`}>–</span>{b}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </motion.div>
+    );
+
+    interface ProjectCardProps {
+        project: ResumeProject;
+        isDark: boolean; cardBg: string; divider: string; mutedText: string; subtleText: string; tagBg: string;
+        onPreview: (p: ResumeProject) => void;
+        onImgError: (id: string) => void;
+        imgError: boolean;
+    }
+    const ProjectCard = memo(({ project: p, isDark, mutedText, subtleText, onPreview, onImgError, imgError }: ProjectCardProps) => {
+        const hasVisual = !!p.img && !imgError;
+        const hashtags = (p.tag || '')
+            .split(/[^\p{L}\p{N}+#.]+/u)
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .map((part) => `#${part.replace(/^#/, '')}`);
+        const surface = isDark
+            ? 'bg-[#09090b] shadow-[0_18px_44px_rgba(0,0,0,0.28)]'
+            : 'bg-[#fffef9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
+        return (
+            <article className={`group flex h-full w-full flex-col ${surface} rounded-sm overflow-hidden text-left border ${isDark ? 'border-zinc-800' : 'border-[#d8c8b9]'}`}>
+                <div className="relative h-44 w-full bg-black overflow-hidden shrink-0">
+                    {hasVisual ? (
+                        <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">
+                            <img src={p.img} alt={p.name} className="max-h-[82%] max-w-[88%] object-contain"
+                                onError={() => onImgError(p.id)} />
+                        </div>
+                    ) : (
+                        <div className="absolute inset-0 bg-black flex items-center justify-center px-5 text-center">
+                            <h3 className="text-4xl font-black tracking-tight leading-none text-white md:text-5xl">{p.name}</h3>
+                        </div>
+                    )}
+                </div>
+                <div className="flex min-h-[330px] flex-1 flex-col p-5">
+                    <div className="space-y-1">
+                        <h3 className="text-xl font-bold leading-tight">{p.name}</h3>
+                    </div>
+
+                    {p.tech.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {p.tech.map((tech) => (
+                                <span
+                                    key={tech}
+                                    className={`inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold leading-none ${
+                                        isDark
+                                            ? 'border-zinc-800 bg-zinc-900 text-zinc-300'
+                                            : 'border-[#e3d2c4] bg-[#fffddb] text-[#4f4036]'
+                                    }`}
+                                >
+                                    {tech}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="mt-4 max-h-28 overflow-y-auto pr-1 md:overflow-y-hidden md:group-hover:overflow-y-auto md:group-focus-within:overflow-y-auto">
+                        <p className={`text-sm ${mutedText} leading-relaxed`}>
+                            {p.description}
+                        </p>
+                    </div>
+
+                    {hashtags.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {hashtags.map((tag) => (
+                                <span key={tag} className={`text-xs font-semibold ${isDark ? 'text-[#d0fffe]/80' : 'text-[#7b3e77]'}`}>
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    {p.id === 'staylokalapp' && (
+                        <a
+                            href="https://www.producthunt.com/products/staylokal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-staylokal"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-4 inline-block"
+                        >
+                            <img
+                                alt="StayLokal - Private file tools that run on your device. | Product Hunt"
+                                width={250}
+                                height={54}
+                                src={`https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1265400&theme=${isDark ? 'dark' : 'light'}&t=1790872811725`}
+                                className="h-[54px] w-[250px] max-w-full"
+                            />
+                        </a>
+                    )}
+                    <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
+                        {p.liveUrl !== '#' && (
+                            <button type="button" onClick={() => onPreview(p)}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-black hover:bg-zinc-100 transition-colors">
+                                <Maximize2 size={13} /> Preview
+                            </button>
+                        )}
+                        {p.githubUrl !== '#' && (
+                            <a href={p.githubUrl} target="_blank" rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide border ${isDark ? 'bg-zinc-800 text-white hover:bg-zinc-700 border-white/10' : 'bg-[#ffd3fd] text-[#3f2a3d] hover:bg-[#f8bbf5] border-[#f1b4ee]'}`}>
+                                <Github size={13} /> Code
+                            </a>
+                        )}
+                        {p.liveUrl !== '#' && (
+                            <a href={p.liveUrl} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-black/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black/80 transition-colors">
+                                <ArrowUpRight size={13} /> Open Site
+                            </a>
+                        )}
+                    </div>
+                </div>
+            </article>
+        );
+    });
+
+    export default SimplifiedResume;

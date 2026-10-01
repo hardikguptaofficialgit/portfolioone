@@ -1,0 +1,29 @@
+name: GitHub contribution snake
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate snake
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: hardikguptaofficialgit
+          outputs: |
+            public/github-snake/github-snake.svg
+            public/github-snake/github-snake-dark.svg?palette=github-dark
+
+      - name: Commit snake
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: update GitHub contribution snake'
+          file_pattern: public/github-snake/*.svg

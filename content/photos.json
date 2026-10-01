@@ -1,0 +1,60 @@
+{
+  "photoEvents": [
+    {
+      "id": "growth-hackathon-banglore-2025",
+      "date": "Dec 2025",
+      "title": "Growth Hackathon Banglore - The Residency",
+      "images": [
+        "/images/misc/f136cc3791.jpg",
+        "/images/photos/4133a8b82a.jpg"
+      ],
+      "pinned": true,
+      "sortOrder": 1,
+      "description": "Recent participation in major tech hackathons and community meetups."
+    },
+    {
+      "id": "gdg-hackathon-2025",
+      "date": "Nov 2025",
+      "title": "Google Dev Hackathon",
+      "images": [
+        "/images/misc/e1c54f6913.jpg"
+      ],
+      "pinned": false,
+      "sortOrder": 2,
+      "description": "Building Bad Hackathon, won cash prize."
+    },
+    {
+      "id": "ycombinator-hackathon-2025",
+      "date": "Nov 2025",
+      "title": "Y Combinator Hackathon",
+      "images": [
+        "/images/misc/7a826176de.jpg"
+      ],
+      "pinned": true,
+      "sortOrder": 3,
+      "description": "Got selected among many participants in the hackathon held in San Francisco."
+    },
+    {
+      "id": "sih2025",
+      "date": "Oct 2025",
+      "title": "Smart India Hackthon 2025",
+      "images": [
+        "/images/photos/22240ece19.jpg"
+      ],
+      "pinned": false,
+      "sortOrder": 4,
+      "description": "Ranked 13th out of 522 teams in SIH."
+    },
+    {
+      "id": "fabrithon",
+      "date": "May 2025",
+      "title": "Fabrithon",
+      "images": [
+        "/images/photos/62c811f2ac.jpg"
+      ],
+      "pinned": false,
+      "sortOrder": 5,
+      "description": "Participated in a hackathon focused on incubating startup ideas, understanding customer needs, and delivering investor pitches."
+    }
+  ]
+}

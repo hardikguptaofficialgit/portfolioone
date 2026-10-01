@@ -135,8 +135,8 @@ export const StartMenu = ({ onSignOut }: StartMenuProps) => {
                   return (
                     <motion.button
                       key={app.id}
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ y: -2 }}
+                      whileTap={{ opacity: 0.85 }}
                       onClick={() => handleAppClick(app)}
                       onContextMenu={handleRightClick}
                       className="flex flex-col items-center gap-3 group relative"

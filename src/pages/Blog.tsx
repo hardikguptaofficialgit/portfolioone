@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -9,11 +9,9 @@ import {
   ExternalLink,
   Flame,
   Copy,
-  Moon,
   RefreshCw,
   Search,
   Share2,
-  Sun,
   Tag,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -28,7 +26,11 @@ import rehypeRaw from 'rehype-raw';
 import { Input } from '@/components/ui/input';
 import { useDesktopStore } from '@/store/desktopStore';
 import type { BlogPost } from '@/content/types';
-import BlogCover from '@/components/blog/BlogCover';
+import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
+import { transitionPortfolioTheme } from '@/lib/theme-transition';
+import { useSeo } from '@/hooks/useSeo';
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/seo/site-config';
+import { usePortfolioPageBackground } from '@/hooks/usePortfolioPageBackground';
 
 type BlogTheme = 'dark' | 'light';
 
@@ -43,22 +45,22 @@ const readingTime = (text: string) =>
 
 const T = {
   dark: {
-    root: 'bg-[#0d0f0f] text-[#f0f0ee]',
-    surface: 'bg-[#111414]',
-    card: 'bg-[#141818] hover:bg-[#181d1d]',
-    input: 'bg-[#1a1f1f] border-0 text-[#f0f0ee] placeholder:text-white/35 focus-visible:ring-1 focus-visible:ring-white/20 rounded-md',
-    muted: 'text-white/60',
-    subtle: 'text-white/40',
-    badge: 'bg-white/8 text-white/70',
-    btn: 'bg-white/6 hover:bg-white/10 text-white/70 hover:text-white',
-    accentBtn: 'bg-[#d0fffe] text-[#0d1515] hover:bg-[#b8f5f3]',
-    divider: 'bg-white/8',
-    border: 'border-white/10',
-    codeHeader: 'bg-white/[0.04] text-white/55 border-white/10',
-    codeSurface: '#0b0d0d',
-    tableHeader: 'bg-white/[0.05] text-white/80',
-    quote: 'border-[#d0fffe]/45 bg-white/[0.035] text-white/78',
-    prose: 'prose-invert prose-headings:text-[#f0f0ee] prose-p:text-white/78 prose-li:text-white/78 prose-a:text-[#d0fffe] prose-code:text-[#ffd3c4] prose-pre:bg-transparent prose-strong:text-white',
+    root: 'bg-zinc-950 text-zinc-100',
+    surface: 'bg-zinc-950',
+    card: 'bg-zinc-900 hover:bg-zinc-800',
+    input: 'bg-zinc-950 border-0 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-1 focus-visible:ring-zinc-600 rounded-md',
+    muted: 'text-zinc-400',
+    subtle: 'text-zinc-500',
+    badge: 'bg-white/8 text-zinc-300',
+    btn: 'bg-white/6 hover:bg-white/10 text-zinc-300 hover:text-zinc-100',
+    accentBtn: 'bg-[#d0fffe] text-zinc-950 hover:bg-[#b8f5f3]',
+    divider: 'bg-zinc-800',
+    border: 'border-zinc-800',
+    codeHeader: 'bg-zinc-900 text-zinc-400 border-zinc-800',
+    codeSurface: '#09090b',
+    tableHeader: 'bg-zinc-900 text-zinc-200',
+    quote: 'border-[#d0fffe]/45 bg-zinc-900/50 text-zinc-300',
+    prose: 'prose-invert prose-headings:text-zinc-100 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-a:text-[#d0fffe] prose-code:text-[#ffd3fd] prose-pre:bg-transparent prose-strong:text-zinc-100',
   },
   light: {
     root: 'bg-[#f6f5f0] text-[#1a1a1a]',
@@ -80,10 +82,119 @@ const T = {
   },
 };
 
-const useBlogTheme = () => {
+const NoiseOverlay = () => (
+  <div
+    aria-hidden
+    className="pointer-events-none fixed inset-0 z-[5] opacity-[0.035]"
+    style={{
+      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+      backgroundRepeat: 'repeat',
+      backgroundSize: '128px 128px',
+      mixBlendMode: 'overlay',
+    }}
+  />
+);
+
+const useResumeShellTheme = () => {
   const { settings, updateSettings } = useDesktopStore();
-  const theme: BlogTheme = settings.darkMode ? 'dark' : 'light';
-  return { theme, toggleTheme: () => updateSettings({ darkMode: !settings.darkMode }) };
+  const isDark = settings.darkMode;
+  usePortfolioPageBackground(isDark);
+  const theme: BlogTheme = isDark ? 'dark' : 'light';
+  const toggleTheme = useCallback((origin?: { x: number; y: number }) => {
+    const nextDark = !settings.darkMode;
+    void transitionPortfolioTheme(nextDark, () => updateSettings({ darkMode: nextDark }), origin);
+  }, [settings.darkMode, updateSettings]);
+
+  return {
+    isDark,
+    theme,
+    toggleTheme,
+    bg: 'bg-transparent',
+    bgImage: isDark ? '/bgdarkimage.png' : '/bgimage.png',
+    text: isDark ? 'text-zinc-100' : 'text-[#1f1a17]',
+    navBg: isDark ? 'bg-black/90 border-zinc-800' : 'bg-[#fffef9]/95 border-[#e6d8cb]',
+    mutedText: isDark ? 'text-zinc-400' : 'text-[#5f5248]',
+    subtleText: isDark ? 'text-zinc-500' : 'text-[#7d6b5c]',
+    cardBg: isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-[#fffef9] border-[#d8c8b9]',
+    divider: isDark ? 'border-zinc-800' : 'border-[#e7dacb]',
+    gridColumnShell: isDark ? 'border-zinc-800' : 'border-[#d8c8b9]',
+    shellBase: isDark
+      ? 'rounded-2xl border border-zinc-800 bg-black/80 p-6 md:p-9 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.08)] backdrop-blur-xl'
+      : 'rounded-2xl border border-[#ded4ca] p-6 md:p-9 bg-white/90 shadow-[0_24px_80px_-48px_rgba(67,47,31,0.22)] backdrop-blur-xl',
+    labelText: isDark ? 'text-zinc-500' : 'text-[#6f5b4e]',
+    filterInactive: isDark
+      ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
+      : 'text-[#7b6b5e] border-[#d9cabd] hover:text-[#3a312b] hover:border-[#bfaea0]',
+    filterActive: isDark ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'bg-[#ffd3fd] text-[#4f2d4c] border-[#dba5d7]',
+    inputBg: isDark
+      ? 'bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-600'
+      : 'bg-[#fffef9] border-[#d9cabd] text-[#1f1a17] placeholder:text-[#9a8a7d]',
+    accentBtn: isDark ? 'bg-[#d0fffe] text-[#0d1515] hover:bg-[#b8f5f3]' : 'bg-[#1a1a1a] text-white hover:bg-[#333]',
+    btn: isDark ? 'bg-white/6 hover:bg-white/10 text-white/70 hover:text-white' : 'bg-black/5 hover:bg-black/9 text-black/60 hover:text-black',
+    badge: isDark ? 'bg-white/8 text-white/70' : 'bg-black/6 text-black/55',
+  };
+};
+
+const BlogChrome = ({ children }: { children: React.ReactNode }) => {
+  const shell = useResumeShellTheme();
+  const { isDark, toggleTheme, bg, bgImage, text, navBg, divider, gridColumnShell } = shell;
+
+  return (
+    <div
+      className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27]`}
+      style={{
+        backgroundImage: `url('${bgImage}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      <NoiseOverlay />
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`}
+      />
+      <div aria-hidden className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'}`} />
+      <div className="relative z-10 w-full px-3 md:px-6 pt-4 md:pt-6 pb-16">
+        <div
+          className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${
+            isDark
+              ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.08)]'
+              : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'
+          } backdrop-blur-xl`}
+        >
+          <header className={`sticky top-0 z-40 border-b ${divider} ${navBg} backdrop-blur-xl bg-opacity-90`}>
+            <div className="flex items-center gap-3 px-4 md:px-5 py-3">
+              <Link
+                to="/"
+                className={`flex items-center gap-2.5 shrink-0 rounded-xl px-1.5 py-1 transition-colors ${
+                  isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.035]'
+                }`}
+              >
+                <img
+                  src="/logoimage.png"
+                  alt="Hardik Gupta"
+                  className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
+                />
+                <span className="font-serif-display text-[17px] leading-none tracking-tight">stryker.inside</span>
+              </Link>
+              <div className="ml-auto flex items-center gap-2">
+                <span
+                  className={`text-[13px] font-medium px-3 py-2 rounded-lg ${
+                    isDark ? 'text-white bg-white/[0.07]' : 'text-zinc-900 bg-black/[0.045]'
+                  }`}
+                >
+                  Blogs
+                </span>
+                <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
+              </div>
+            </div>
+          </header>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const usePageScroll = () => {
@@ -170,7 +281,8 @@ const MarkdownCodeBlock = ({ inline, className, children, theme, ...props }: any
 
 export const BlogListPage = () => {
   usePageScroll();
-  const { theme, toggleTheme } = useBlogTheme();
+  const shell = useResumeShellTheme();
+  const { theme } = shell;
   const C = T[theme];
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,145 +328,184 @@ export const BlogListPage = () => {
   const devToUrl = posts.find((post) => post.sourceUrl)?.sourceUrl || 'https://dev.to/strykerinside';
 
   return (
-    <div className={`min-h-screen font-sans antialiased ${C.root}`}>
-      <div className="mx-auto max-w-6xl px-3 py-4 md:px-5 md:py-6">
-        <header className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <BlogChrome>
+      <div className={`border-b ${shell.divider} px-4 md:px-6 py-8 md:py-10 ${shell.shellBase} mx-3 md:mx-6 mt-4 mb-6`}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between border-b border-inherit pb-6 mb-6">
           <div>
-            <h1 className="text-xl font-black leading-none tracking-tight md:text-2xl">Blogs</h1>
-            <p className={`mt-1.5 max-w-xl text-xs md:text-sm md:leading-5 ${C.muted}`}>
-              Thoughts, deep dives, and things I'm learning- documented.
+            <h1 className={`font-serif-display text-2xl md:text-3xl ${shell.labelText} border-b ${shell.divider} pb-3`}>
+              Blogs
+            </h1>
+            <p className={`mt-4 max-w-xl text-sm leading-relaxed ${shell.mutedText}`}>
+              Thoughts, deep dives, and things I&apos;m learning - documented.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => window.location.reload()} className={`inline-flex h-6 w-6 items-center justify-center rounded-md ${C.btn}`} aria-label="Reload posts">
-              <RefreshCw className="h-3 w-3" />
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-sm border ${shell.filterInactive}`}
+              aria-label="Reload posts"
+            >
+              <RefreshCw className="h-4 w-4" />
             </button>
-            <button onClick={toggleTheme} className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-[10px] font-semibold ${C.btn}`}>
-              {theme === 'dark' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </button>
-            <a href={devToUrl} target="_blank" rel="noopener noreferrer" className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-[10px] font-bold ${C.accentBtn}`}>
-              DEV.to <ExternalLink className="h-3 w-3" />
+            <a
+              href={devToUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex h-9 items-center gap-1.5 rounded-sm px-3 text-xs font-semibold uppercase tracking-wider ${shell.accentBtn}`}
+            >
+              DEV.to <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </div>
-        </header>
+        </div>
 
-        <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)]">
-          <aside className={`h-max rounded-lg p-3 lg:sticky lg:top-4 border ${C.border} ${C.surface}`}>
+        <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <aside className={`h-max rounded-sm border p-4 lg:sticky lg:top-24 ${shell.cardBg}`}>
             <div className="relative">
-              <Search className={`absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 ${C.subtle}`} />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search posts..." className={`h-6 pl-6 text-[10px] ${C.input}`} />
+              <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${shell.subtleText}`} />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search posts..."
+                className={`h-9 pl-9 text-sm border rounded-sm ${shell.inputBg}`}
+              />
             </div>
-            <p className={`mt-2 font-mono text-[9px] ${C.muted}`}>{filteredPosts.length} of {posts.length} posts</p>
+            <p className={`mt-2 text-xs ${shell.subtleText}`}>{filteredPosts.length} of {posts.length} posts</p>
 
-            <div className="mt-5">
-              <p className={`mb-2 font-mono text-[9px] uppercase tracking-[0.1em] ${C.subtle}`}>Sort By</p>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button onClick={() => setSort('latest')} className={`inline-flex items-center justify-center gap-1 rounded-[4px] px-1 py-1.5 text-[9px] font-semibold transition-colors ${sort === 'latest' ? C.accentBtn : C.btn}`}>
-                  <Clock className="h-2.5 w-2.5" /> Latest
+            <div className="mt-6">
+              <p className={`mb-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>Sort by</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSort('latest')}
+                  className={`inline-flex items-center justify-center gap-1 rounded-sm border px-2 py-2 text-xs font-semibold transition-colors ${
+                    sort === 'latest' ? shell.filterActive : shell.filterInactive
+                  }`}
+                >
+                  <Clock className="h-3.5 w-3.5" /> Latest
                 </button>
-                <button onClick={() => setSort('popular')} className={`inline-flex items-center justify-center gap-1 rounded-[4px] px-1 py-1.5 text-[9px] font-semibold transition-colors ${sort === 'popular' ? C.accentBtn : C.btn}`}>
-                  <Flame className="h-2.5 w-2.5" /> Popular
+                <button
+                  type="button"
+                  onClick={() => setSort('popular')}
+                  className={`inline-flex items-center justify-center gap-1 rounded-sm border px-2 py-2 text-xs font-semibold transition-colors ${
+                    sort === 'popular' ? shell.filterActive : shell.filterInactive
+                  }`}
+                >
+                  <Flame className="h-3.5 w-3.5" /> Popular
                 </button>
               </div>
             </div>
 
-            <div className="mt-5">
-              <p className={`mb-2 inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.1em] ${C.subtle}`}>
-                <Tag className="h-2.5 w-2.5" /> Tags
+            <div className="mt-6">
+              <p className={`mb-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
+                <Tag className="h-3.5 w-3.5" /> Tags
               </p>
               <div className="flex flex-col gap-1">
-                <button onClick={() => setActiveTag('all')} className={`flex items-center justify-between rounded-[4px] px-2 py-1 text-left text-[10px] transition-colors ${activeTag === 'all' ? C.accentBtn : C.btn}`}>
-                  <span>All posts</span><span className="opacity-70">{posts.length}</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTag('all')}
+                  className={`flex items-center justify-between rounded-sm border px-2 py-1.5 text-left text-xs transition-colors ${
+                    activeTag === 'all' ? shell.filterActive : shell.filterInactive
+                  }`}
+                >
+                  <span>All posts</span>
+                  <span className="opacity-70">{posts.length}</span>
                 </button>
                 {tagStats.map(([tag, count]) => (
-                  <button key={tag} onClick={() => setActiveTag(tag)} className={`flex items-center justify-between rounded-[4px] px-2 py-1 text-left text-[10px] transition-colors ${activeTag === tag ? C.accentBtn : C.btn}`}>
-                    <span>#{tag}</span><span className="opacity-70">{count}</span>
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setActiveTag(tag)}
+                    className={`flex items-center justify-between rounded-sm border px-2 py-1.5 text-left text-xs transition-colors ${
+                      activeTag === tag ? shell.filterActive : shell.filterInactive
+                    }`}
+                  >
+                    <span>#{tag}</span>
+                    <span className="opacity-70">{count}</span>
                   </button>
                 ))}
               </div>
             </div>
           </aside>
 
-          <main>
-            {loading && <p className={`py-4 text-[10px] ${C.muted}`}>Loading posts...</p>}
-            {error && <p className="py-4 text-[10px] text-rose-400">{error}</p>}
-            {!loading && !error && filteredPosts.length === 0 && <p className={`py-4 text-[10px] ${C.muted}`}>No posts found.</p>}
+          <main className="space-y-3 min-w-0">
+            {loading && <p className={`py-4 text-sm ${shell.mutedText}`}>Loading posts...</p>}
+            {error && <p className="py-4 text-sm text-rose-400">{error}</p>}
+            {!loading && !error && filteredPosts.length === 0 && (
+              <p className={`py-4 text-sm ${shell.mutedText}`}>No posts found.</p>
+            )}
 
             {featuredPost && (
-              <div className="grid gap-4">
+              <div className="space-y-3">
                 <motion.article initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <Link to={`/blogs/${featuredPost.slug}`} className={`grid min-h-[200px] overflow-hidden rounded-xl border ${C.border} lg:grid-cols-[1.5fr_1fr] ${C.card}`}>
-                    <div className="flex flex-col justify-center p-4">
-                      <p className={`mb-2 font-mono text-[9px] uppercase tracking-[0.2em] ${C.subtle}`}>Featured</p>
-                      <h2 className="text-base font-bold leading-tight tracking-tight sm:text-lg">{featuredPost.title}</h2>
-                      <p className={`mt-2 line-clamp-2 text-[10px] leading-relaxed ${C.muted}`}>{featuredPost.excerpt || 'No description.'}</p>
-                      
-                      <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[9px]">
-                        {featuredPost.tags.slice(0, 3).map((tag) => (
-                           <span key={tag} className={`rounded-[4px] px-1.5 py-0.5 ${C.badge}`}>#{tag}</span>
-                        ))}
-                      </div>
-                      
-                      <div className={`mt-3 flex flex-wrap items-center gap-3 font-mono text-[9px] ${C.subtle}`}>
-                        <span className="inline-flex items-center gap-1"><Calendar className="h-2.5 w-2.5" />{format(new Date(featuredPost.publishedAt), 'MMM d, yyyy')}</span>
-                        <span className="inline-flex items-center gap-1"><Clock className="h-2.5 w-2.5" />{featuredPost.readingTimeMinutes || readingTime(featuredPost.body || featuredPost.excerpt)} min read</span>
-                      </div>
+                  <Link
+                    to={`/blogs/${featuredPost.slug}`}
+                    className={`group block border rounded-sm p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
+                  >
+                    <p className={`mb-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>Featured</p>
+                    <h2 className="text-lg font-bold leading-snug group-hover:underline underline-offset-4">{featuredPost.title}</h2>
+                    <p className={`mt-2 line-clamp-3 text-sm leading-relaxed ${shell.mutedText}`}>
+                      {featuredPost.excerpt || 'No description.'}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {featuredPost.tags.slice(0, 4).map((tag) => (
+                        <span key={tag} className={`rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-wider ${shell.badge} ${shell.divider}`}>
+                          #{tag}
+                        </span>
+                      ))}
                     </div>
-                    
-                    <div className="relative h-40 w-full shrink-0 overflow-hidden lg:h-full">
-                      <BlogCover
-                        title={featuredPost.title}
-                        coverImage={featuredPost.coverImage}
-                        theme={theme}
-                        tags={featuredPost.tags}
-                        variant="featured"
-                        className="absolute inset-0"
-                        loading="eager"
-                      />
+                    <div className={`mt-3 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {format(new Date(featuredPost.publishedAt), 'MMM d, yyyy')}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        {featuredPost.readingTimeMinutes || readingTime(featuredPost.body || featuredPost.excerpt)} min read
+                      </span>
                     </div>
                   </Link>
                 </motion.article>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {remainingPosts.map((post, index) => (
-                    <motion.article key={post.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }}>
-                      <Link to={`/blogs/${post.slug}`} className={`flex flex-col h-full overflow-hidden rounded-lg border ${C.border} ${C.card}`}>
-                        <div className="relative h-24 shrink-0 overflow-hidden sm:h-28">
-                          <BlogCover
-                            title={post.title}
-                            coverImage={post.coverImage}
-                            theme={theme}
-                            tags={post.tags}
-                            variant="card"
-                            className="absolute inset-0"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="flex flex-col grow p-3">
-                          <h2 className="line-clamp-2 text-[11px] font-bold leading-tight">{post.title}</h2>
-                          <p className={`mt-1.5 line-clamp-2 text-[9px] leading-relaxed grow ${C.muted}`}>{post.excerpt || 'No description.'}</p>
-                          <div className={`mt-3 flex flex-wrap items-center gap-2 font-mono text-[8px] ${C.subtle}`}>
-                            <span className="inline-flex items-center gap-1"><Calendar className="h-2 w-2" />{format(new Date(post.publishedAt), 'MMM d, yyyy')}</span>
-                            <span className="inline-flex items-center gap-1"><Clock className="h-2 w-2" />{post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min</span>
-                          </div>
-                        </div>
-                      </Link>
-                    </motion.article>
-                  ))}
-                </div>
+                {remainingPosts.map((post, index) => (
+                  <motion.article key={post.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }}>
+                    <Link
+                      to={`/blogs/${post.slug}`}
+                      className={`group block border rounded-sm p-4 md:p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
+                    >
+                      <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {format(new Date(post.publishedAt), 'MMM d, yyyy')}
+                        </span>
+                        <span>·</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          {post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min read
+                        </span>
+                      </div>
+                      <h2 className="mt-2 text-lg font-bold leading-snug line-clamp-2 group-hover:underline underline-offset-4">
+                        {post.title}
+                      </h2>
+                      <p className={`mt-1.5 text-sm leading-relaxed line-clamp-2 md:line-clamp-3 ${shell.mutedText}`}>
+                        {post.excerpt || 'No description.'}
+                      </p>
+                    </Link>
+                  </motion.article>
+                ))}
               </div>
             )}
           </main>
         </div>
       </div>
-    </div>
+    </BlogChrome>
   );
 };
 
 export const BlogPostPage = () => {
   usePageScroll();
-  const { theme, toggleTheme } = useBlogTheme();
+  const shell = useResumeShellTheme();
+  const { theme } = shell;
   const C = T[theme];
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
@@ -365,6 +516,35 @@ export const BlogPostPage = () => {
     () => (post ? buildBlogPostPrompt(post, buildPostUrl(post.slug)) : ''),
     [post]
   );
+
+  const postSeo = useMemo(() => {
+    if (!post) return null;
+    const description = post.excerpt?.trim() || post.title;
+    const ogImage = post.coverImage
+      ? post.coverImage.startsWith('http')
+        ? post.coverImage
+        : `${SITE_URL}${post.coverImage}`
+      : DEFAULT_OG_IMAGE;
+    return {
+      title: `${post.title} | ${SITE_NAME}`,
+      description,
+      canonicalPath: `/blogs/${post.slug}`,
+      ogType: 'article' as const,
+      ogImage,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description,
+        datePublished: post.publishedAt,
+        author: { '@type': 'Person', name: 'Hardik Gupta', url: SITE_URL },
+        mainEntityOfPage: `${SITE_URL}/blogs/${post.slug}`,
+        image: ogImage,
+      },
+    };
+  }, [post]);
+
+  useSeo(postSeo);
 
   useEffect(() => {
     if (!slug) {
@@ -381,19 +561,19 @@ export const BlogPostPage = () => {
   const markdownComponents = useMemo(() => ({
     pre: ({ children }: any) => <>{children}</>,
     h1: ({ children, ...props }: any) => (
-      <h1 className="mb-2 mt-4 text-xl font-bold leading-tight tracking-tight" {...props}>{children}</h1>
+      <h1 className="mb-3 mt-8 text-2xl font-bold leading-tight tracking-tight md:text-3xl" {...props}>{children}</h1>
     ),
     h2: ({ children, ...props }: any) => (
-      <h2 className="mb-2 mt-4 border-b border-current/10 pb-1 text-lg font-bold leading-tight tracking-tight" {...props}>{children}</h2>
+      <h2 className={`mb-2 mt-8 border-b ${shell.divider} pb-2 text-xl font-bold leading-tight md:text-2xl`} {...props}>{children}</h2>
     ),
     h3: ({ children, ...props }: any) => (
-      <h3 className="mb-1 mt-3 text-base font-bold leading-snug" {...props}>{children}</h3>
+      <h3 className="mb-2 mt-6 text-lg font-bold leading-snug" {...props}>{children}</h3>
     ),
     h4: ({ children, ...props }: any) => (
-      <h4 className="mb-1 mt-2 text-sm font-bold leading-snug" {...props}>{children}</h4>
+      <h4 className="mb-1 mt-4 text-base font-bold leading-snug" {...props}>{children}</h4>
     ),
     p: ({ children, ...props }: any) => (
-      <p className="my-2 text-[10px] leading-5 md:text-xs md:leading-6" {...props}>{children}</p>
+      <p className="my-3 text-sm leading-relaxed md:text-base md:leading-7" {...props}>{children}</p>
     ),
     a: ({ href, children, ...props }: any) => (
       <a
@@ -407,16 +587,16 @@ export const BlogPostPage = () => {
       </a>
     ),
     ul: ({ children, ...props }: any) => (
-      <ul className="my-2 list-disc space-y-1 pl-4 marker:text-current/45 text-[10px] md:text-xs" {...props}>{children}</ul>
+      <ul className="my-3 list-disc space-y-2 pl-5 marker:text-current/45 text-sm md:text-base" {...props}>{children}</ul>
     ),
     ol: ({ children, ...props }: any) => (
-      <ol className="my-2 list-decimal space-y-1 pl-4 marker:font-semibold marker:text-current/55 text-[10px] md:text-xs" {...props}>{children}</ol>
+      <ol className="my-3 list-decimal space-y-2 pl-5 marker:font-semibold marker:text-current/55 text-sm md:text-base" {...props}>{children}</ol>
     ),
     li: ({ children, ...props }: any) => (
-      <li className="pl-1 leading-5 md:leading-6" {...props}>{children}</li>
+      <li className="pl-1 leading-relaxed" {...props}>{children}</li>
     ),
     blockquote: ({ children, ...props }: any) => (
-      <blockquote className={`my-3 rounded-r-md border-l-2 px-3 py-2 text-[10px] md:text-xs italic leading-5 ${C.quote}`} {...props}>
+      <blockquote className={`my-4 rounded-r-sm border-l-2 px-4 py-3 text-sm md:text-base italic leading-relaxed ${C.quote}`} {...props}>
         {children}
       </blockquote>
     ),
@@ -440,12 +620,18 @@ export const BlogPostPage = () => {
       </MarkdownCodeBlock>
     ),
     img: ({ src, alt, ...props }: any) => (
-      <span className="my-3 block">
-        <img src={src} alt={alt || ''} className={`mx-auto h-auto max-h-[300px] w-full max-w-full rounded-lg border object-cover ${C.border}`} loading="lazy" {...props} />
-        {alt && <span className={`mt-1.5 block text-center text-[9px] leading-4 ${C.subtle}`}>{alt}</span>}
+      <span className="my-6 block">
+        <img
+          src={src}
+          alt={alt || ''}
+          className={`mx-auto h-auto w-full max-w-full rounded-sm border object-contain ${C.border}`}
+          loading="lazy"
+          {...props}
+        />
+        {alt && <span className={`mt-2 block text-center text-xs ${shell.subtleText}`}>{alt}</span>}
       </span>
     ),
-  }), [C, theme]);
+  }), [C, shell.divider, shell.subtleText, theme]);
 
   const share = async () => {
     if (!post) return;
@@ -464,80 +650,85 @@ export const BlogPostPage = () => {
   };
 
   return (
-    <div className={`min-h-screen font-sans antialiased ${C.root}`}>
-      <main className="mx-auto max-w-3xl px-3 py-4 md:px-5 md:py-6">
-        <div className="mb-4 flex items-center justify-between">
-          <Link to="/blogs" className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-medium transition-colors ${C.btn}`}>
-            <ArrowLeft className="h-2.5 w-2.5" /> All posts
+    <BlogChrome>
+      <article className={`border-b ${shell.divider} px-4 md:px-6 py-8 md:py-10 ${shell.shellBase} mx-3 md:mx-6 mt-4 mb-6`}>
+        <div className="mb-6">
+          <Link
+            to="/blogs"
+            className={`inline-flex items-center gap-1.5 text-xs uppercase tracking-widest transition-colors ${shell.subtleText} ${
+              shell.isDark ? 'hover:text-zinc-100' : 'hover:text-zinc-900'
+            }`}
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> All posts
           </Link>
-          <button onClick={toggleTheme} className={`inline-flex h-5 items-center gap-1 rounded-md px-2 text-[9px] font-medium transition-colors ${C.btn}`}>
-            {theme === 'dark' ? <Sun className="h-2.5 w-2.5" /> : <Moon className="h-2.5 w-2.5" />}
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </button>
         </div>
 
-        {loading && <p className={`py-6 text-center text-[10px] ${C.muted}`}>Loading article...</p>}
-        {error && <p className="py-6 text-center text-[10px] text-rose-400">{error}</p>}
-        
+        {loading && <p className={`py-6 text-center text-sm ${shell.mutedText}`}>Loading article...</p>}
+        {error && <p className="py-6 text-center text-sm text-rose-400">{error}</p>}
+
         {!loading && post && (
-          <article>
-            <div className={`mb-5 aspect-[16/6] w-full overflow-hidden rounded-xl border md:aspect-[21/8] ${C.border}`}>
-              <BlogCover
-                title={post.title}
-                coverImage={post.coverImage}
-                theme={theme}
-                tags={post.tags}
-                variant="hero"
-                loading="eager"
-              />
-            </div>
-            <header className="mx-auto mb-5 max-w-2xl space-y-2">
-              <h1 className="text-xl font-bold leading-tight tracking-tight md:text-2xl">{post.title}</h1>
-              {post.excerpt && <p className={`text-[10px] leading-5 md:text-xs md:leading-6 ${C.muted}`}>{post.excerpt}</p>}
-              
-              <div className={`flex flex-wrap items-center gap-3 text-[9px] font-mono mt-1 ${C.subtle}`}>
-                <span className="inline-flex items-center gap-1"><Calendar className="h-2.5 w-2.5" />{format(new Date(post.publishedAt), 'MMM d, yyyy')}</span>
-                <span className="inline-flex items-center gap-1"><Clock className="h-2.5 w-2.5" />{post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min read</span>
+          <>
+            <header className="space-y-4 border-b border-inherit pb-6 mb-8">
+              <h1 className="font-serif-display text-2xl md:text-4xl font-bold leading-tight tracking-tight">{post.title}</h1>
+              {post.excerpt && <p className={`text-sm md:text-base leading-relaxed max-w-2xl ${shell.mutedText}`}>{post.excerpt}</p>}
+
+              <div className={`flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
+                <span className="inline-flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {format(new Date(post.publishedAt), 'MMM d, yyyy')}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min read
+                </span>
               </div>
-              
-              <div className="flex flex-wrap gap-1.5 pt-1.5">
-                {post.tags.map((tag) => (
-                   <span key={tag} className={`rounded-[4px] px-1.5 py-0.5 text-[8px] font-medium ${C.badge}`}>#{tag}</span>
-                ))}
-              </div>
+
+              {post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {post.tags.map((tag) => (
+                    <span key={tag} className={`rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-wider ${shell.badge} ${shell.divider}`}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </header>
-            
-            <div className={`mx-auto mb-5 h-px max-w-2xl ${C.divider}`} />
-            
-            <div className={`mx-auto max-w-2xl rounded-xl border p-3 sm:p-5 md:p-6 ${C.border} ${C.surface}`}>
-              <div className={`prose max-w-none text-[10px] leading-5 md:text-xs md:leading-6 ${C.prose}`}>
-                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]} components={markdownComponents as any}>
-                  {post.body || post.excerpt || 'No content available.'}
-                </ReactMarkdown>
-              </div>
+
+            <div className={`prose max-w-none ${C.prose}`}>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]} components={markdownComponents as any}>
+                {post.body || post.excerpt || 'No content available.'}
+              </ReactMarkdown>
             </div>
-            
-            <div className="mx-auto mt-5 flex max-w-2xl flex-wrap items-center gap-2">
-              <button onClick={share} className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-semibold transition-colors ${C.btn}`}>
-                <Share2 className="h-3 w-3" /> Share
+
+            <div className={`mt-10 pt-6 border-t ${shell.divider} flex flex-wrap items-center gap-2`}>
+              <button
+                type="button"
+                onClick={share}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-sm border px-3 text-xs font-semibold uppercase tracking-wider transition-colors ${shell.filterInactive}`}
+              >
+                <Share2 className="h-3.5 w-3.5" /> Share
               </button>
               <button
+                type="button"
                 onClick={async () => {
                   await navigator.clipboard.writeText(buildPostUrl(post.slug));
                   setCopied(true);
                   window.setTimeout(() => setCopied(false), 1200);
                 }}
-                className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-semibold transition-colors ${C.btn}`}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-sm border px-3 text-xs font-semibold uppercase tracking-wider transition-colors ${shell.filterInactive}`}
               >
-                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 {copied ? 'Copied' : 'Copy link'}
               </button>
-              <Link to="/blogs" className={`inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-semibold transition-colors ${C.btn}`}>
-                <ArrowLeft className="h-3 w-3" /> All articles
+              <Link
+                to="/blogs"
+                className={`inline-flex h-9 items-center gap-1.5 rounded-sm border px-3 text-xs font-semibold uppercase tracking-wider transition-colors ${shell.filterInactive}`}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> All articles
               </Link>
             </div>
 
-            <section className={`mx-auto mt-5 max-w-2xl rounded-xl border p-4 ${C.border} ${C.surface}`}>
+            <section className={`mt-8 rounded-sm border p-5 md:p-6 ${shell.cardBg}`}>
               <AskAIPanel
                 prompt={aiPrompt}
                 darkMode={theme === 'dark'}
@@ -547,9 +738,9 @@ export const BlogPostPage = () => {
                 showExtraProviders
               />
             </section>
-          </article>
+          </>
         )}
-      </main>
-    </div>
+      </article>
+    </BlogChrome>
   );
 };

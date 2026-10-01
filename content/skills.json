@@ -1,0 +1,81 @@
+{
+  "skillCategories": [
+    {
+      "items": [
+        "TypeScript",
+        "JavaScript",
+        "C++",
+        "C",
+        "Dart",
+        "PHP"
+      ],
+      "label": "Languages"
+    },
+    {
+      "items": [
+        "React.js",
+        "Next.js",
+        "Flutter",
+        "Tailwind CSS",
+        "HTML5",
+        "CSS3",
+        "PWA"
+      ],
+      "label": "Frontend"
+    },
+    {
+      "items": [
+        "Node.js",
+        "Express.js",
+        "REST APIs",
+        "WebSockets",
+        "Socket.IO",
+        "Redis"
+      ],
+      "label": "Backend"
+    },
+    {
+      "items": [
+        "OpenAI",
+        "Anthropic",
+        "Gemini",
+        "Llama",
+        "RAG",
+        "Prompt Engineering",
+        "TensorFlow"
+      ],
+      "label": "AI / ML"
+    },
+    {
+      "items": [
+        "Firebase",
+        "PostgreSQL",
+        "Docker",
+        "Vercel",
+        "Render",
+        "PostHog",
+        "API Design"
+      ],
+      "label": "DB & DevOps"
+    }
+  ],
+  "skillsFlat": [
+    "ReactJS",
+    "Tailwind CSS",
+    "NodeJS",
+    "ExpressJS",
+    "Git",
+    "GitHub",
+    "Vercel",
+    "C",
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "Firebase",
+    "TypeScript",
+    "PostHog",
+    "Render",
+    "Docker",
+    "Redis"
+  ]
+}

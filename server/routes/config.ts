@@ -1,12 +1,6 @@
-type PublicConfig = {
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-};
+type PublicConfig = Record<string, never>;
 
-const getPublicConfig = (): PublicConfig => ({
-  supabaseUrl: process.env.SUPABASE_URL || '',
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
-});
+const getPublicConfig = (): PublicConfig => ({});
 
 export default function handler(req: any, res: any) {
   if (req.method !== 'GET') {

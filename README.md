@@ -1,6 +1,6 @@
 # StrykerOS Portfolio
 
-Windows-inspired portfolio site with a Supabase-backed content admin, local blog publishing, Cloudinary image uploads, and Resend newsletter subscription.
+Windows-inspired portfolio site with JSON-backed content and local blog publishing.
 
 ## Quick start
 
@@ -11,50 +11,35 @@ npm run dev
 
 ## Vercel deploy
 
-Use Vercel for this project.
-
 - Install command: `npm ci`
 - Build command: `npm run build`
 - Output directory: `dist`
 - Framework preset: `Vite`
 
-Portfolio content falls back to `content/portfolio.json`, but `/admin` edits are saved in Supabase.
-Portfolio content falls back to `content/portfolio.json`, but `/admin` edits are saved in Supabase. Newsletter subscriptions are handled by `api/newsletter/subscribe.ts` and also use Supabase storage:
+## Content (edit these files)
 
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+| File | What it holds |
+|------|----------------|
+| `content/site.json` | Profile, social links, sections, education, achievements |
+| `content/skills.json` | Skill categories and flat list |
+| `content/projects.json` | Projects |
+| `content/experience.json` | Timeline + simplified resume experience |
+| `content/blogs.json` | Blog posts |
+| `content/photos.json` | Photo gallery events |
+| `content/site-metrics.json` | Portfolio view counter (API writes locally) |
+| `content/dooms-waitlist.json` | Dooms waitlist entries (API writes locally) |
 
-Admin login requires:
+Static images live under `public/images/`.
 
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
-- `ADMIN_SESSION_SECRET`
+## Blog posts
 
-AI chat uses GitHub Models through a server-side API route:
+Edit `content/blogs.json` → `blogPosts` array. Each post’s **`body` is Markdown** (GFM) inside a JSON string. See **[content/BLOGS.md](content/BLOGS.md)** and copy **`content/blog-post.template.json`** for a starter object.
 
-- `GITHUB_TOKEN` with the GitHub Models `models` scope
-- `GITHUB_MODELS_MODEL` optional, defaults to `openai/gpt-4o`
+## Environment
 
-Newsletter welcome emails additionally need:
+Only needed for **Ask AI / chat**:
 
-- `RESEND_API_KEY`
-- `NEWSLETTER_FROM_EMAIL`
+- `GITHUB_TOKEN` - GitHub token with [Models API](https://docs.github.com/en/rest/models) access
+- `GITHUB_MODELS_MODEL` - optional, default `openai/gpt-4o`
 
-Cloudinary image uploads and blog image imports need:
-
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
-
-The authenticated admin blog importer can do a one-time import from DEV:
-
-- `DEV_IMPORT_USERNAME` optional
-- `DEV_API_KEY` optional, useful for importing authenticated/personal articles
-
-## Content
-
-- Canonical content: `content/portfolio.json`
-- Admin route: `/admin`
-- Portfolio table schema: `supabase/portfolio_schema.sql`
-- Newsletter schema: `supabase/newsletter_schema.sql`
+Portfolio, blogs, waitlist, and views use **`content/*.json`** only - no database env vars.

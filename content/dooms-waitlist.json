@@ -1,0 +1,24 @@
+{
+  "entries": [
+    {
+      "email": "hardik@mail.com",
+      "name": "Hardik Gupta",
+      "joined_at": "2026-08-16T21:34:04.751+00:00"
+    },
+    {
+      "email": "vansh.goel.in@gmail.com",
+      "name": "Vansh Goel",
+      "joined_at": "2026-08-17T03:26:10.172+00:00"
+    },
+    {
+      "email": "mrigankrajchouhan@gmail.com",
+      "name": "Mrigank Raj Chouhan",
+      "joined_at": "2026-08-17T08:29:50.517+00:00"
+    },
+    {
+      "email": "hardikgupta6783hg81@gmail.com",
+      "name": "Hardik Gupta",
+      "joined_at": "2026-09-10T19:07:44.547+00:00"
+    }
+  ]
+}

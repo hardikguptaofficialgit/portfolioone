@@ -611,8 +611,8 @@ const SettingsContent = () => {
                 className={cn(
                   `w-12 h-12 rounded-full ${color.class} transition-all duration-200 flex items-center justify-center`,
                   settings.themeColor === color.name
-                    ? 'ring-4 ring-white/20 scale-110'
-                    : 'hover:scale-105 opacity-80 hover:opacity-100'
+                    ? 'ring-4 ring-white/20'
+                    : 'opacity-80 hover:opacity-100'
                 )}
               >
                 {settings.themeColor === color.name && (

@@ -18,7 +18,7 @@ import { useContextMenu } from '@/hooks/useContextMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { getIconComponent } from '@/utils/apps';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DESKTOP_DIRECT_KEY } from '@/lib/desktop-entry';
 
 type AuthStep = 'boot' | 'lock' | 'desktop';
@@ -268,15 +268,22 @@ const Index = () => {
           settings.darkMode ? "bg-black" : "bg-zinc-100"
         )}>
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/bgwallpaper.png')" }}
+            className={cn(
+              'absolute inset-0 bg-center bg-no-repeat',
+              settings.darkMode ? 'bg-contain' : 'bg-cover',
+            )}
+            style={{
+              backgroundImage: settings.darkMode
+                ? "url('/logoimage.png')"
+                : "url('/desktoplightbg.png')",
+            }}
           />
           <div
             className={cn(
               "absolute inset-0",
               settings.darkMode
-                ? "bg-[linear-gradient(135deg,rgba(5,8,20,0.78),rgba(5,5,5,0.55)_45%,rgba(6,10,18,0.8))]"
-                : "bg-transparent"
+                ? "bg-[linear-gradient(160deg,rgba(9,9,11,0.42),rgba(9,9,11,0.28)_50%,rgba(9,9,11,0.5))]"
+                : "bg-white/[0.08]"
             )}
           />
 
@@ -296,6 +303,28 @@ const Index = () => {
 
         {/* Interactive Rope */}
         {!isMobile && <DesktopRope />}
+
+        <Link
+          to="/"
+          className={cn(
+            'absolute top-4 left-4 z-20 flex items-center gap-2.5 rounded-xl px-2 py-1.5 pointer-events-auto transition-colors',
+            settings.darkMode
+              ? 'text-white/90 hover:bg-white/10'
+              : 'text-zinc-900 hover:bg-black/5'
+          )}
+        >
+          <img
+            src="/logoimage.png"
+            alt="stryker.inside"
+            className={cn(
+              'h-9 w-9 rounded-lg object-cover ring-1',
+              settings.darkMode ? 'ring-white/15' : 'ring-black/10'
+            )}
+          />
+          <span className="font-serif-display text-base leading-none tracking-tight hidden sm:inline">
+            stryker.inside
+          </span>
+        </Link>
 
         {/* Desktop Content */}
         {/* Desktop Icons Container */}

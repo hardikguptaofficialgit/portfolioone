@@ -52,18 +52,6 @@ export type BlogPost = {
   sourceUrl?: string;
 };
 
-export type NewsletterSettings = {
-  title: string;
-  description: string;
-  welcomeSubject: string;
-  welcomeText: string;
-  fromName?: string;
-  campaignSubject?: string;
-  campaignPreviewText?: string;
-  campaignHtml?: string;
-  campaignText?: string;
-};
-
 export type Experience = {
   id: string;
   role: string;
@@ -115,7 +103,9 @@ export type Profile = {
 
 export type SimplifiedExperienceCard = {
   id: string;
+  roleTitle?: string;
   org: string;
+  logoUrl?: string;
   url?: string;
   totalDuration: string;
   badge?: string;
@@ -132,6 +122,7 @@ export type PortfolioSections = {
   simplifiedPhotosIntro?: { title: string; subtitle: string };
   simplifiedBlogIntro?: { title: string; subtitle: string };
   simplifiedSummaryHighlight?: string;
+  simplifiedAboutBullets?: string[];
 };
 
 export type PortfolioDocument = {
@@ -143,7 +134,6 @@ export type PortfolioDocument = {
   projects: Project[];
   photoEvents: PhotoEvent[];
   blogPosts: BlogPost[];
-  newsletterSettings?: NewsletterSettings;
   experience: Experience[];
   simplifiedExperience?: SimplifiedExperienceCard[];
   education: Education[];

@@ -41,18 +41,6 @@ export const blogPostSchema = z.object({
   sourceUrl: z.string().optional(),
 });
 
-export const newsletterSettingsSchema = z.object({
-  title: z.string().min(1).default('Stryker Newsletter'),
-  description: z.string().min(1).default('Updates on products, engineering, AI, and things I am building.'),
-  welcomeSubject: z.string().min(1).default('Thanks for subscribing'),
-  welcomeText: z.string().min(1).default('You are subscribed to Stryker updates.'),
-  fromName: z.string().optional(),
-  campaignSubject: z.string().optional(),
-  campaignPreviewText: z.string().optional(),
-  campaignHtml: z.string().optional(),
-  campaignText: z.string().optional(),
-});
-
 export const experienceSchema = z.object({
   id: z.string().min(1).regex(/^[a-z0-9-]+$/),
   role: z.string().min(1),
@@ -97,7 +85,6 @@ export const portfolioDocumentSchema = z.object({
   projects: z.array(projectSchema),
   photoEvents: z.array(photoEventSchema).default([]),
   blogPosts: z.array(blogPostSchema).default([]),
-  newsletterSettings: newsletterSettingsSchema.optional(),
   experience: z.array(experienceSchema),
   education: z.array(
     z.object({
@@ -131,7 +118,9 @@ export const portfolioDocumentSchema = z.object({
     .array(
       z.object({
         id: z.string().min(1),
+        roleTitle: z.string().optional(),
         org: z.string().min(1),
+        logoUrl: z.string().optional(),
         url: z.string().optional(),
         totalDuration: z.string().min(1),
         badge: z.string().optional(),
@@ -159,6 +148,7 @@ export const portfolioDocumentSchema = z.object({
       simplifiedPhotosIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
       simplifiedBlogIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
       simplifiedSummaryHighlight: z.string().optional(),
+      simplifiedAboutBullets: z.array(z.string()).optional(),
     })
     .passthrough()
     .default({}),

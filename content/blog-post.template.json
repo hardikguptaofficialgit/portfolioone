@@ -1,0 +1,14 @@
+{
+  "id": "my-post-slug",
+  "slug": "my-post-slug",
+  "title": "Your post title",
+  "excerpt": "One or two sentences shown on the blog list and under the title.",
+  "body": "## Intro\n\nWrite the article in **Markdown** (see content/BLOGS.md).\n\n- bullet lists\n- `inline code`\n\n```ts\nconst example = true;\n```\n\n![Alt text for an image](/images/blogs/your-image.png)",
+  "coverImage": null,
+  "tags": ["webdev", "notes"],
+  "publishedAt": "2026-10-02T12:00:00.000Z",
+  "readingTimeMinutes": 5,
+  "featured": true,
+  "archived": false,
+  "sortOrder": 0
+}
