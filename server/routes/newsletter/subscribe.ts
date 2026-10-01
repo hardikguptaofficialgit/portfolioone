@@ -1,4 +1,5 @@
 import { getPortfolio } from '../../_lib/portfolio-store.js';
+import { findSubscriberByEmail, upsertSubscriber } from '../../_lib/newsletter-subscribers-store.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,12 +15,6 @@ const parseBody = (req: { body?: unknown }): JsonObject => {
     }
   }
   return req.body as JsonObject;
-};
-
-const getSupabaseConfig = () => {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return url && key ? { url, key } : null;
 };
 
 const renderWelcomeNewsletterHtml = (email: string, text: string) => `
@@ -84,46 +79,13 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const [{ data: portfolio }, config] = await Promise.all([
-      getPortfolio(),
-      Promise.resolve(getSupabaseConfig()),
-    ]);
-    if (!config) {
-      res.status(501).json({
-        error:
-          'Newsletter storage is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel.',
-      });
-      return;
-    }
+    const { data: portfolio } = await getPortfolio();
     const newsletterSettings = portfolio.newsletterSettings ?? {
       welcomeSubject: 'Thanks for subscribing - you are all set',
       welcomeText: 'You will now receive updates about AI, engineering, and new posts.',
     };
 
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(config.url, config.key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    const now = new Date().toISOString();
-
-    const { data: existingRow, error: existingError } = await supabase
-      .from('newsletter_subscribers')
-      .select('id,is_active')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (existingError) {
-      const raw = existingError.message || 'Failed to check existing subscriber.';
-      if (raw.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
-        res.status(500).json({
-          error: 'Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.',
-        });
-        return;
-      }
-      res.status(500).json({ error: raw });
-      return;
-    }
-
+    const existingRow = findSubscriberByEmail(email);
     if (existingRow?.is_active) {
       res.status(200).json({
         ok: true,
@@ -133,28 +95,8 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const { error } = await supabase.from('newsletter_subscribers').upsert(
-      {
-        email,
-        is_active: true,
-        subscribed_at: existingRow ? undefined : now,
-        updated_at: now,
-      },
-      { onConflict: 'email' }
-    );
-
-    if (error) {
-      const raw = error.message || 'Failed to save subscriber.';
-      if (raw.toLowerCase().includes("could not find the table 'public.newsletter_subscribers'")) {
-        res.status(500).json({
-          error: 'Supabase table missing. Run supabase/newsletter_schema.sql in your Supabase SQL editor.',
-        });
-        return;
-      }
-      res.status(500).json({ error: raw });
-      return;
-    }
-
+    const now = new Date().toISOString();
+    const { existing } = upsertSubscriber(email, now);
     const welcome = await sendWelcomeEmail(email, newsletterSettings);
 
     res.status(200).json({
@@ -162,7 +104,7 @@ export default async function handler(req: any, res: any) {
       alreadySubscribed: false,
       welcomeEmailSent: welcome.sent,
       welcomeEmailError: welcome.error,
-      message: existingRow ? 'Subscription re-activated successfully.' : 'Subscribed successfully.',
+      message: existing ? 'Subscription re-activated successfully.' : 'Subscribed successfully.',
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Subscription failed.';

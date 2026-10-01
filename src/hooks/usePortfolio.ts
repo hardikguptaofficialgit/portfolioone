@@ -19,7 +19,7 @@ export const usePortfolio = () => {
   const query = useQuery({
     queryKey: portfolioQueryKey,
     queryFn: fetchPortfolio,
-    staleTime: 60_000,
+    staleTime: Infinity,
     placeholderData: defaultPortfolio,
   });
   const doc = query.data ?? defaultPortfolio;

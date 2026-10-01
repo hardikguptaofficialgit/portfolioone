@@ -115,7 +115,9 @@ export type Profile = {
 
 export type SimplifiedExperienceCard = {
   id: string;
+  roleTitle?: string;
   org: string;
+  logoUrl?: string;
   url?: string;
   totalDuration: string;
   badge?: string;
@@ -132,6 +134,7 @@ export type PortfolioSections = {
   simplifiedPhotosIntro?: { title: string; subtitle: string };
   simplifiedBlogIntro?: { title: string; subtitle: string };
   simplifiedSummaryHighlight?: string;
+  simplifiedAboutBullets?: string[];
 };
 
 export type PortfolioDocument = {

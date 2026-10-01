@@ -6,8 +6,11 @@ import {
     Maximize2, Pin, Github, Linkedin, Instagram,
     Link as LinkIcon, Star, GitFork, Download, ArrowUpRight, Clock,
     Menu,
-    MapPin, Calendar, Sun, Moon
+    MapPin, Calendar, Eye
 } from 'lucide-react';
+import { GitHubActivityChart } from '@/components/portfolio/GitHubActivityChart';
+import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
+import { transitionPortfolioTheme } from '@/lib/theme-transition';
 import { format } from 'date-fns';
 import { useDesktopStore } from '@/store/desktopStore';
 import { usePortfolio } from '@/hooks/usePortfolio';
@@ -20,8 +23,6 @@ import BlogCover from '@/components/blog/BlogCover';
 type Theme = 'dark' | 'light';
 
 const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
-const NAV_SPRING = { type: 'spring', stiffness: 140, damping: 20 } as const;
-
 /* ─── Noise SVG overlay (CSS) ─────────────────────────────── */
 const NoiseOverlay = () => (
     <div
@@ -168,6 +169,10 @@ const navItems = [
 ];
 
 const LAUNCH_MODAL_DISMISSED_KEY = 'portfolio_launch_modal_dismissed_v1';
+const PORTFOLIO_VIEW_SESSION_KEY = 'portfolio_view_session_v1';
+const PROJECTS_PAGE_SIZE = 4;
+const REPOS_PAGE_SIZE = 8;
+const BLOG_PAGE_SIZE = 4;
 
 /* ═══════════════════════════════════════════════════════════ */
 /*  MAIN COMPONENT                                             */
@@ -176,17 +181,24 @@ type ResumeProject = Project & { img?: string | null };
 
 const SimplifiedResume = () => {
     const { settings, updateSettings } = useDesktopStore();
-    const { profile, projects, skillCategories, achievements, simplifiedExperience, photoEvents, blogPosts, sections, isLoading } = usePortfolio();
+    const { profile, projects, skillCategories, achievements, simplifiedExperience, education, photoEvents, blogPosts, sections, isLoading } = usePortfolio();
+    const githubUsername = profile.githubUsername || 'hardikguptaofficialgit';
+    const resumeDownloadUrl =
+        profile.resumePdfUrl && !/drive\.google|docs\.google/i.test(profile.resumePdfUrl)
+            ? profile.resumePdfUrl
+            : '/files/hardikresume.pdf';
     const resumeProjects: ResumeProject[] = projects.map((p) => ({
         ...p,
         img: p.imageUrl ?? null,
     }));
     const [activeSection, setActiveSection] = useState('resume');
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-    const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
+    const [projectsVisibleCount, setProjectsVisibleCount] = useState(PROJECTS_PAGE_SIZE);
+    const [reposVisibleCount, setReposVisibleCount] = useState(REPOS_PAGE_SIZE);
+    const [blogsVisibleCount, setBlogsVisibleCount] = useState(BLOG_PAGE_SIZE);
     const [repos, setRepos] = useState<any[]>([]);
     const [filteredRepos, setFilteredRepos] = useState<any[]>([]);
-    const [filterMode, setFilterMode] = useState<'top' | 'latest' | 'pushed' | 'all'>('top');
+    const [filterMode, setFilterMode] = useState<'top' | 'latest' | 'pushed' | 'all'>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [previewErrors, setPreviewErrors] = useState<Record<string, boolean>>({});
     const [selectedProject, setSelectedProject] = useState<ResumeProject | null>(null);
@@ -195,42 +207,66 @@ const SimplifiedResume = () => {
     const [projectControlsCollapsed, setProjectControlsCollapsed] = useState(false);
     const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
     const [isDraggingProjectControls, setIsDraggingProjectControls] = useState(false);
-    const [isNavCompact, setIsNavCompact] = useState(false);
-    const [isDesktopView, setIsDesktopView] = useState(
-        () => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
-    );
+    const [portfolioViews, setPortfolioViews] = useState<number | null>(null);
     const [showLaunchModal, setShowLaunchModal] = useState(
         () => typeof window !== 'undefined' ? sessionStorage.getItem(LAUNCH_MODAL_DISMISSED_KEY) !== '1' : true,
     );
     const dragOffsetRef = useRef({ x: 0, y: 0 });
-    const themeTransitionTimerRef = useRef<number | null>(null);
 
     const theme: Theme = settings.darkMode ? 'dark' : 'light';
     const isDark = theme === 'dark';
-    const shouldUseCompactNav = isDesktopView && isNavCompact;
 
     useEffect(() => {
-        const onScroll = () => setIsNavCompact(window.scrollY > 56);
-        onScroll();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setIsDesktopView(window.innerWidth >= 1024);
-        onResize();
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
+        let cancelled = false;
+        const loadViews = async () => {
+            try {
+                const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
+                const res = await fetch(seen ? '/api/portfolio/views' : '/api/portfolio/views', {
+                    method: seen ? 'GET' : 'POST',
+                });
+                if (!res.ok) return;
+                const payload = (await res.json()) as { count?: number };
+                if (!cancelled && typeof payload.count === 'number') {
+                    setPortfolioViews(payload.count);
+                    if (!seen) sessionStorage.setItem(PORTFOLIO_VIEW_SESSION_KEY, '1');
+                }
+            } catch {
+                // ignore analytics failures
+            }
+        };
+        loadViews();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const popularArticles = blogPosts.filter((post) => post.featured !== false).slice(0, 6);
 
     useEffect(() => {
-        fetch(`https://api.github.com/users/${profile.githubUsername || 'hardikguptaofficialgit'}/repos?per_page=100`)
-            .then(r => r.json())
-            .then(d => Array.isArray(d) && setRepos(d))
-            .catch(() => {});
-    }, []);
+        let cancelled = false;
+        const loadRepos = async () => {
+            const collected: any[] = [];
+            try {
+                for (let page = 1; page <= 5; page += 1) {
+                    const res = await fetch(
+                        `https://api.github.com/users/${githubUsername}/repos?per_page=100&page=${page}&sort=updated`,
+                    );
+                    if (!res.ok) break;
+                    const data = await res.json();
+                    if (!Array.isArray(data) || data.length === 0) break;
+                    collected.push(...data);
+                    if (data.length < 100) break;
+                }
+                if (!cancelled) setRepos(collected);
+            } catch {
+                if (!cancelled) setRepos([]);
+            }
+        };
+        loadRepos();
+        return () => {
+            cancelled = true;
+        };
+    }, [githubUsername]);
 
     useEffect(() => {
         let list = [...repos];
@@ -244,6 +280,10 @@ const SimplifiedResume = () => {
         if (filterMode === 'top') list = list.slice(0, 10);
         setFilteredRepos(list);
     }, [repos, filterMode, searchQuery]);
+
+    useEffect(() => {
+        setReposVisibleCount(REPOS_PAGE_SIZE);
+    }, [filterMode, searchQuery]);
 
     useEffect(() => {
         const ids = ['resume', 'projects', 'github', 'photos', 'blog'];
@@ -330,16 +370,18 @@ const SimplifiedResume = () => {
         document.documentElement.style.overflow = 'auto';
     }, []);
 
-    useEffect(() => () => { if (themeTransitionTimerRef.current) window.clearTimeout(themeTransitionTimerRef.current); }, []);
-
-    const toggleTheme = useCallback(() => {
-        setIsThemeTransitioning(true);
-        updateSettings({ darkMode: !settings.darkMode });
-        if (themeTransitionTimerRef.current) window.clearTimeout(themeTransitionTimerRef.current);
-        themeTransitionTimerRef.current = window.setTimeout(() => {
-            setIsThemeTransitioning(false);
-        }, 260);
+    const toggleTheme = useCallback((origin?: { x: number; y: number }) => {
+        const nextDark = !settings.darkMode;
+        void transitionPortfolioTheme(
+            nextDark,
+            () => updateSettings({ darkMode: nextDark }),
+            origin,
+        );
     }, [settings.darkMode, updateSettings]);
+
+    const visibleProjects = resumeProjects.slice(0, projectsVisibleCount);
+    const visibleRepos = filteredRepos.slice(0, reposVisibleCount);
+    const visibleBlogs = popularArticles.slice(0, blogsVisibleCount);
 
     // ── theme-aware classes
     const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
@@ -349,8 +391,8 @@ const SimplifiedResume = () => {
     const mutedText = isDark ? 'text-zinc-400' : 'text-[#5f5248]';
     const subtleText = isDark ? 'text-zinc-500' : 'text-[#7d6b5c]';
     const cardBg = isDark
-        ? 'bg-zinc-950 border-zinc-800 shadow-[0_18px_44px_rgba(0,0,0,0.22)]'
-        : 'bg-[#fffef9] border-[#d8c8b9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
+        ? 'bg-zinc-950 border-zinc-800'
+        : 'bg-[#fffef9] border-[#d8c8b9]';
     const accent = isDark ? 'text-[#d0fffe]' : 'text-[#7b3e77]';
     const accentBorder = isDark ? 'border-[#d0fffe]/40 text-[#d0fffe]' : 'border-[#d39ad0] text-[#7b3e77]';
     const accentHover = isDark ? 'hover:bg-[#d0fffe] hover:text-black' : 'hover:bg-[#ffd3fd] hover:text-[#3f2a3d]';
@@ -361,8 +403,16 @@ const SimplifiedResume = () => {
     const filterInactive = isDark ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700' : 'text-[#7b6b5e] border-[#d9cabd] hover:text-[#3a312b] hover:border-[#bfaea0]';
     const labelText = isDark ? 'text-zinc-500' : 'text-[#6f5b4e]';
     const shellBase = isDark
-        ? 'rounded-2xl border border-zinc-800 bg-black p-6 md:p-8'
-        : 'rounded-2xl border-2 border-[#d8c8b9] p-6 md:p-8 shadow-[6px_6px_0_0_rgba(80,58,41,0.16)]';
+        ? 'rounded-sm border border-zinc-800 bg-black/90 p-6 md:p-8 backdrop-blur-[2px]'
+        : 'rounded-sm border border-[#d8c8b9] p-6 md:p-8 bg-[#fffef9]/95 backdrop-blur-[2px]';
+    const gridColumnShell = isDark ? 'border-zinc-800' : 'border-[#d8c8b9]';
+    const aboutBullets =
+        sections.simplifiedAboutBullets?.length
+            ? sections.simplifiedAboutBullets
+            : [
+                  'I am a software engineer focused on building reliable, production-ready systems.',
+                  '2nd-year B.Tech CSE (AI/ML) student at KIIT University, Bhubaneswar.',
+              ];
 
     /* ─ page entrance stagger ─ */
     const containerVariants = {
@@ -375,308 +425,146 @@ const SimplifiedResume = () => {
     };
 
     return (
-            <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color,filter] duration-500`}
+            <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color] duration-500`}
                 style={{ backgroundImage: bgImage ? `url('${bgImage}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
-                {/* ── Noise & dim overlays ── */}
                 <NoiseOverlay />
-                <div aria-hidden className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/64' : 'bg-white/55'} transition-colors duration-500`} />
+                <div aria-hidden className={`pointer-events-none absolute inset-0 z-[1] portfolio-dot-grid ${isDark ? 'bg-black/52' : 'bg-white/42'} transition-colors duration-500`} />
+                <div aria-hidden className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/20' : 'bg-white/25'} transition-colors duration-500`} />
 
-                <div
-                    aria-hidden
-                    className={`pointer-events-none fixed inset-0 z-[49] transition-opacity duration-300 ${
-                        isThemeTransitioning ? 'opacity-100' : 'opacity-0'
-                    } ${isDark ? 'bg-black/10' : 'bg-white/25'}`}
-                />
+                <div className="relative z-10 w-full px-3 md:px-6 pt-3 md:pt-4 pb-12">
+                    <div className={`max-w-3xl mx-auto border-x ${gridColumnShell} ${isDark ? 'bg-black/35' : 'bg-[#fffef9]/55'} backdrop-blur-[1px]`}>
+                        <header className={`sticky top-0 z-40 border-b ${divider} ${navBg} backdrop-blur-md`}>
+                            <div className="flex items-center gap-3 px-3 md:px-4 py-2.5">
+                                <button
+                                    type="button"
+                                    onClick={() => scrollTo('resume')}
+                                    className="flex items-center gap-2 shrink-0"
+                                >
+                                    <img src="/logoimage.png" alt="Hardik Gupta" className="h-7 w-7 rounded-sm border object-cover" />
+                                    <span className="font-serif-display text-lg leading-none">stryker.inside</span>
+                                </button>
 
-             {/* ══════════ NAV ══════════ */}
-<motion.nav
-    layout={isDesktopView}
-    transition={NAV_SPRING}
-    className={`fixed z-50 ${
-        shouldUseCompactNav ? 'top-6 left-2' : 'top-3 left-0 right-0 px-3 md:px-6'
-    }`}
->
-    <motion.div
-        layout
-        transition={NAV_SPRING}
-        className={`hidden lg:flex border shadow-sm ${navBg} ${
-            shouldUseCompactNav
-                ? 'w-[164px] flex-col rounded-2xl p-2 items-start'
-                : 'mx-auto max-w-6xl items-center justify-between rounded-[1.5rem] px-4 md:px-6 py-3 md:py-4'
-        }`}
-        animate={{ scale: shouldUseCompactNav ? 1 : 0.98 }}
-    >
-        {/* LOGO */}
-        <motion.button
-            layout
-            layoutId="nav-logo"
-            transition={NAV_SPRING}
-            onClick={() => scrollTo('resume')}
-            className={`flex items-center gap-2.5 text-sm font-bold tracking-wider uppercase ${
-                isDark ? 'text-zinc-100' : 'text-zinc-900'
-            }`}
-        >
-            <img
-                src="/harvix_logo.png"
-                alt="Harvix logo"
-                className="h-8 w-8 rounded-md object-cover"
-            />
-            <span className={shouldUseCompactNav ? 'text-xs' : 'text-xs sm:text-sm'}>
-                stryker.inside
-            </span>
-        </motion.button>
+                                <nav className="hidden lg:flex items-center gap-1 ml-auto mr-2">
+                                    {navItems.map((item) => (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            onClick={() => {
+                                                if (item.id === 'contact') {
+                                                    window.location.href = 'mailto:hardikgupta8792@gmail.com';
+                                                } else {
+                                                    scrollTo(item.id);
+                                                }
+                                            }}
+                                            className={`relative px-3 py-2 text-sm transition-colors ${
+                                                activeSection === item.id && !item.isAction
+                                                    ? isDark ? 'text-zinc-100' : 'text-zinc-900'
+                                                    : isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-600 hover:text-zinc-900'
+                                            }`}
+                                        >
+                                            {item.label}
+                                            {activeSection === item.id && !item.isAction && (
+                                                <span className={`absolute left-1/2 -translate-x-1/2 -bottom-0.5 h-1 w-1 rounded-full ${isDark ? 'bg-zinc-100' : 'bg-zinc-900'}`} />
+                                            )}
+                                        </button>
+                                    ))}
+                                </nav>
 
-        {/* NAV ITEMS */}
-        <motion.div
-            layout
-            transition={NAV_SPRING}
-            className={`flex ${
-                shouldUseCompactNav
-                    ? 'w-full flex-col gap-2 mt-4'
-                    : 'items-center gap-1 ml-auto mr-3'
-            }`}
-        >
-            {navItems.map((item) => (
-                <motion.button
-                    key={item.id}
-                    layout
-                    transition={NAV_SPRING}
-                    whileHover={{ y: -1 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                        if (item.id === 'contact') {
-                            window.location.href =
-                                'mailto:hardikgupta8792@gmail.com';
-                        } else {
-                            scrollTo(item.id);
-                        }
-                    }}
-                    className={`relative rounded-lg uppercase transition-colors ${
-                        shouldUseCompactNav
-                            ? `w-full overflow-hidden text-left px-3 py-2 text-xs font-semibold tracking-wide border ${
-                                  activeSection === item.id && !item.isAction
-                                      ? isDark
-                                          ? 'text-zinc-100 border-zinc-700'
-                                          : 'text-zinc-900 border-zinc-300'
-                                      : isDark
-                                      ? 'text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-900'
-                                      : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
-                              }`
-                            : `overflow-hidden px-4 py-2 text-xs font-medium tracking-wide ${
-                                  activeSection === item.id && !item.isAction
-                                      ? isDark
-                                          ? 'text-zinc-100'
-                                          : 'text-zinc-900'
-                                      : isDark
-                                      ? 'text-zinc-500 hover:text-zinc-300'
-                                      : 'text-zinc-500 hover:text-zinc-700'
-                              }`
-                    }`}
-                >
-                    {activeSection === item.id && !item.isAction && (
-                        <motion.span
-                            layoutId={shouldUseCompactNav ? 'compact-nav-item-active' : 'nav-item-active'}
-                            transition={NAV_SPRING}
-                            className={`absolute inset-0 rounded-lg ${
-                                isDark ? 'bg-zinc-800' : 'bg-zinc-200'
-                            }`}
-                        />
-                    )}
-                    <span className="relative z-10">{item.label}</span>
-                </motion.button>
-            ))}
-        </motion.div>
+                                <div className="flex items-center gap-2 ml-auto lg:ml-0">
+                                    <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsMobileNavOpen((v) => !v)}
+                                        className={`lg:hidden flex h-8 w-8 items-center justify-center border rounded-sm ${isDark ? 'border-zinc-700' : 'border-[#d8c8b9]'}`}
+                                        aria-label="Open menu"
+                                    >
+                                        <Menu size={15} />
+                                    </button>
+                                </div>
+                            </div>
 
-        {/* RIGHT CONTROLS */}
-        <motion.div
-            layout
-            transition={NAV_SPRING}
-            className={`flex ${
-                shouldUseCompactNav
-                    ? `w-full mt-2 pt-2 border-t ${divider} items-center justify-between`
-                    : 'items-center gap-2 md:gap-3'
-            }`}
-        >
-            {/* THEME TOGGLE */}
-            <button
-                onClick={toggleTheme}
-                className={`relative h-8 w-14 rounded-full p-1 border overflow-hidden transition-colors ${
-                    isDark
-                        ? 'bg-zinc-900 border-zinc-700'
-                        : 'bg-zinc-100 border-zinc-300'
-                }`}
-                aria-label="Toggle theme"
-            >
-                <span
-                    className={`absolute inset-0 ${
-                        isDark
-                            ? 'bg-[radial-gradient(circle_at_20%_20%,#2f3a58_0%,#0b0d16_55%)]'
-                            : 'bg-[radial-gradient(circle_at_80%_20%,#ffe89a_0%,#ffd3fd_55%,#f4f4f5_100%)]'
-                    }`}
-                />
-                <span
-                    className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border shadow transition-transform duration-300 ${
-                        isDark
-                            ? 'translate-x-6 bg-zinc-950 border-zinc-700'
-                            : 'translate-x-0 bg-white border-zinc-300'
-                    }`}
-                >
-                    {isDark ? (
-                        <Moon size={14} className="text-[#d0fffe]" />
-                    ) : (
-                        <Sun size={14} className="text-[#7b3e77]" />
-                    )}
-                </span>
-            </button>
+                            <AnimatePresence initial={false}>
+                                {isMobileNavOpen && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className={`lg:hidden overflow-hidden border-t ${divider}`}
+                                    >
+                                        <div className="grid grid-cols-2 gap-2 p-3">
+                                            {navItems.map((item) => (
+                                                <button
+                                                    key={item.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (item.id === 'contact') {
+                                                            window.location.href = 'mailto:hardikgupta8792@gmail.com';
+                                                        } else {
+                                                            scrollTo(item.id);
+                                                        }
+                                                        setIsMobileNavOpen(false);
+                                                    }}
+                                                    className={`px-3 py-2 text-xs border rounded-sm ${
+                                                        activeSection === item.id && !item.isAction
+                                                            ? isDark ? 'border-zinc-600 text-zinc-100' : 'border-zinc-400 text-zinc-900'
+                                                            : isDark ? 'border-zinc-800 text-zinc-400' : 'border-[#e3d2c4] text-zinc-600'
+                                                    }`}
+                                                >
+                                                    {item.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </header>
 
-            {!shouldUseCompactNav && (
-                <RouterLink
-                    to="/desktop"
-                    onClick={markDesktopDirectEntry}
-                    className={`hidden md:flex items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors ${
-                        isDark
-                            ? 'text-zinc-500 hover:text-zinc-300'
-                            : 'text-zinc-500 hover:text-zinc-700'
-                    }`}
-                >
-                    <span>Switch to Interactive</span>
-                </RouterLink>
-            )}
-        </motion.div>
-    </motion.div>
+                        <div className={`border-b ${divider}`}>
+                            <img
+                                src="/banner.jpg"
+                                alt=""
+                                className="h-36 md:h-44 w-full object-cover object-center block"
+                            />
+                        </div>
 
-    {/* MOBILE NAV */}
-    <div className="lg:hidden px-3 md:px-6">
-        <div
-            className={`mx-auto border shadow-sm rounded-[1.2rem] px-4 py-3 ${navBg}`}
-        >
-            <div className="flex items-center justify-between gap-3">
-                <button
-                    onClick={() => scrollTo('resume')}
-                    className={`flex items-center gap-2.5 text-sm font-bold tracking-wider uppercase ${
-                        isDark ? 'text-zinc-100' : 'text-zinc-900'
-                    }`}
-                >
-                    <img
-                        src="/harvix_logo.png"
-                        alt="Harvix logo"
-                        className="h-8 w-8 rounded-md object-cover border border-white/20"
-                    />
-                    <span className="text-xs sm:text-sm">
-                        stryker.inside
-                    </span>
-                </button>
-
-                <button
-                    onClick={() => setIsMobileNavOpen((v) => !v)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
-                        isDark
-                            ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
-                            : 'border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                    }`}
-                >
-                    <Menu size={16} />
-                </button>
-            </div>
-        </div>
-    </div>
-
-    {/* MOBILE DROPDOWN */}
-    <AnimatePresence initial={false}>
-        {isMobileNavOpen && (
-            <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.985 }}
-                transition={{ duration: 0.18, ease: EASE_SMOOTH }}
-                className={`lg:hidden overflow-hidden border mt-2 mx-3 rounded-xl ${
-                    isDark
-                        ? 'border-zinc-800 bg-black'
-                        : 'border-[#e6d8cb] bg-[#fffef9]'
-                } px-4 pb-4 pt-3`}
-            >
-                <div className="grid grid-cols-2 gap-2">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => {
-                                if (item.id === 'contact') {
-                                    window.location.href =
-                                        'mailto:hardikgupta8792@gmail.com';
-                                } else {
-                                    scrollTo(item.id);
-                                }
-                                setIsMobileNavOpen(false);
-                            }}
-                            className={`px-3 py-2.5 text-xs font-semibold tracking-wide uppercase rounded-lg border transition-colors ${
-                                activeSection === item.id && !item.isAction
-                                    ? isDark
-                                        ? 'text-zinc-100 bg-zinc-800 border-zinc-700'
-                                        : 'text-zinc-900 bg-zinc-200 border-zinc-300'
-                                    : isDark
-                                    ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900'
-                                    : 'text-zinc-600 border-zinc-300 hover:text-zinc-900 hover:bg-zinc-100'
-                            }`}
-                        >
-                            {item.label}
-                        </button>
-                    ))}
-                </div>
-            </motion.div>
-        )}
-    </AnimatePresence>
-</motion.nav>
-
-                {/* ══════════ BODY ══════════ */}
-                <div className="relative z-10 w-full px-4 md:px-10 lg:px-16 pt-28 pb-12">
-                    <div className="max-w-4xl mx-auto mb-4 flex justify-end">
-                        <RouterLink
-                            to="/desktop"
-                            onClick={markDesktopDirectEntry}
-                            className={`text-xs font-medium uppercase tracking-wider transition-colors md:hidden ${
-                                isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700'
-                            }`}
-                        >
-                            Switch to Interactive →
-                        </RouterLink>
-                    </div>
                     <motion.div
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        className="max-w-4xl mx-auto space-y-24"
+                        className="space-y-0"
                     >
 
                         {/* ══ RESUME ══ */}
-                        <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-32 ${shellBase} ${isDark ? 'bg-black' : 'bg-[#fffddb]'}`}>
+                        <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-24 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/90' : 'bg-[#fffef9]/95'}`}>
 
                             {/* Header */}
-                            <header className={`space-y-6 pb-10 border-b ${divider}`}>
-                                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-                                    <div className="space-y-3">
-                                        <motion.p
-                                            className={`text-xs uppercase tracking-[0.3em] ${subtleText}`}
-                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                                        >Software Engineer</motion.p>
+                            <header className={`space-y-6 pb-8 border-b ${divider}`}>
+                                <div className={`flex items-center justify-end gap-1.5 text-xs ${subtleText}`}>
+                                    <Eye size={14} aria-hidden />
+                                    <span>{portfolioViews === null ? '—' : portfolioViews.toLocaleString()}</span>
+                                </div>
+                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                                    <div className="flex gap-4">
+                                        <img
+                                            src="/logoimage.png"
+                                            alt={profile.name}
+                                            className={`h-24 w-24 shrink-0 rounded-sm border object-cover ${divider}`}
+                                        />
+                                    <div className="space-y-3 min-w-0">
                                         <motion.h1
-                                            className="font-display text-5xl md:text-6xl font-bold tracking-tight leading-none"
+                                            className="font-serif-display text-5xl md:text-6xl leading-none"
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.55, duration: 0.7, ease: EASE_SMOOTH }}
                                         >
-Hardik Gupta                                        </motion.h1>
-                                      <motion.p
-    className={`${mutedText} text-base max-w-lg leading-relaxed`}
-    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
->
-    Software developer focused on building scalable products, solving complex problems, and turning ideas into reliable, production-ready systems.
-</motion.p>
+                                            {profile.name}
+                                        </motion.h1>
                                         <motion.div
                                             className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${subtleText}`}
                                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.72 }}
                                         >
-                                            <span className="flex items-center gap-1.5"><MapPin size={12} /> Jaipur, India</span>
+                                            <span className="flex items-center gap-1.5"><MapPin size={12} /> {profile.location}</span>
                                             <span>·</span>
                                             <a href="https://strykerinside.vercel.app" target="_blank" rel="noopener noreferrer"
                                                 className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">Portfolio</a>
@@ -684,6 +572,7 @@ Hardik Gupta                                        </motion.h1>
                                             <a href="mailto:hardikgupta8792@gmail.com"
                                                 className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">hardikgupta8792@gmail.com</a>
                                         </motion.div>
+                                    </div>
                                     </div>
 
                                     <motion.div
@@ -693,8 +582,9 @@ Hardik Gupta                                        </motion.h1>
                                         transition={{ delay: 0.7, duration: 0.6 }}
                                     >
                                         <motion.a
-                                            href="/files/resume.pdf" download
-                                            className={`inline-flex items-center gap-2 px-5 py-2.5 border ${accentBorder} text-sm tracking-wider uppercase rounded-lg ${accentHover} transition-all duration-300`}
+                                            href={resumeDownloadUrl}
+                                            download="Hardik-Gupta-Resume.pdf"
+                                            className={`inline-flex items-center gap-2 px-5 py-2.5 border ${accentBorder} text-sm tracking-wider uppercase rounded-sm ${accentHover} transition-all duration-300`}
                                         >
                                             <Download size={14} /> Download CV
                                         </motion.a>
@@ -719,25 +609,24 @@ Hardik Gupta                                        </motion.h1>
                                 </div>
                             </header>
 
-                            {/* Summary */}
                             <RevealSection>
                                 <div className="space-y-4">
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Summary</SectionLabel>
-                                    <p className={`text-base ${mutedText} leading-relaxed max-w-3xl`}>
-                                        {profile.summary || profile.title}{' '}
-                                        {sections.simplifiedSummaryHighlight && (
-                                            <span className={isDark ? 'text-zinc-200' : 'text-zinc-800'}>
-                                                {sections.simplifiedSummaryHighlight}
-                                            </span>
-                                        )}
-                                    </p>
+                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>About</SectionLabel>
+                                    <ul className={`space-y-2.5 text-sm ${mutedText} leading-relaxed max-w-3xl`}>
+                                        {aboutBullets.map((line) => (
+                                            <li key={line} className="flex gap-2.5 items-start">
+                                                <span className={`${subtleText} mt-0.5 shrink-0`}>–</span>
+                                                <span>{line}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </RevealSection>
 
                             {/* Experience */}
                             <RevealSection delay={0.05}>
                                 <div className="space-y-5">
-                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Experience</SectionLabel>
+                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Professional Experience</SectionLabel>
                                     <div className="space-y-4">
                                         {simplifiedExperience.map((exp, i) => (
                                             <StaggerItem key={exp.id} index={i}>
@@ -747,15 +636,11 @@ Hardik Gupta                                        </motion.h1>
                                                     divider={divider}
                                                     mutedText={mutedText}
                                                     subtleText={subtleText}
+                                                    roleTitle={exp.roleTitle}
                                                     org={exp.org}
+                                                    logoUrl={exp.logoUrl}
                                                     url={exp.url}
-                                                    totalDuration={
-                                                        exp.id === 'gfg-kiit-chapter'
-                                                            ? `${exp.totalDuration} · ${calcDuration('2025-02-01')}`
-                                                            : exp.id === 'fed-kiit-org'
-                                                              ? `${exp.totalDuration} · ${calcDuration('2024-11-01')}`
-                                                              : exp.totalDuration
-                                                    }
+                                                    totalDuration={exp.totalDuration}
                                                     badge={exp.badge}
                                                     bullets={exp.bullets}
                                                     roles={
@@ -772,6 +657,31 @@ Hardik Gupta                                        </motion.h1>
                                 </div>
                             </RevealSection>
 
+                            {education.length > 0 && (
+                                <RevealSection delay={0.05}>
+                                    <div className="space-y-5">
+                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Education</SectionLabel>
+                                        <div className="space-y-3">
+                                            {education.map((edu, i) => (
+                                                <StaggerItem key={edu.id} index={i}>
+                                                    <div className={`border ${cardBg} rounded-sm p-5`}>
+                                                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+                                                            <div>
+                                                                <h3 className="text-base font-bold">{edu.institution}</h3>
+                                                                <p className={`text-sm ${mutedText}`}>{edu.degree}</p>
+                                                            </div>
+                                                            <p className={`text-xs ${subtleText} font-mono shrink-0`}>
+                                                                {edu.startYear} – {edu.endYear ?? 'Present'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </StaggerItem>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </RevealSection>
+                            )}
+
                         {/* Tech Stack */}
 <RevealSection delay={0.05}>
   <div className="space-y-8">
@@ -781,52 +691,23 @@ Hardik Gupta                                        </motion.h1>
       divider={divider}
       labelText={labelText}
     >
-      Technical Skills
+      Skills
     </SectionLabel>
 
-    <div className="space-y-6">
-
+    <div className="space-y-3">
       {skillCategories.map((cat, ci) => (
-        <motion.div
+        <motion.p
           key={cat.label}
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: ci * 0.08 }}
-          className="space-y-3"
+          transition={{ delay: ci * 0.05 }}
+          className={`text-sm leading-relaxed ${mutedText}`}
         >
-          {/* Category Label */}
-          <div
-            className={`text-[11px] uppercase tracking-[0.25em] ${
-              isDark ? "text-zinc-500" : "text-[#6b5c4f]"
-            }`}
-          >
-            {cat.label}
-          </div>
-
-          {/* Skills Grid */}
-          <div className="flex flex-wrap gap-2.5">
-            {cat.items.map((s, si) => (
-              <motion.div
-                key={s}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: ci * 0.08 + si * 0.02 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs ${
-                  isDark
-                    ? "bg-zinc-900 text-zinc-300"
-                    : "bg-[#fffddb] text-[#3f3a34]"
-                }`}
-              >
-                <TechIcon name={s} />
-                <span>{s}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+          <span className={`font-semibold ${isDark ? 'text-zinc-200' : 'text-[#1f1a17]'}`}>{cat.label}:</span>{' '}
+          {cat.items.join(', ')}
+        </motion.p>
       ))}
-
     </div>
   </div>
 </RevealSection>
@@ -840,7 +721,7 @@ Hardik Gupta                                        </motion.h1>
                                             return (
                                                 <StaggerItem key={a.title} index={i}>
                                                     <motion.div
-                                                        className={`flex items-start gap-4 border ${cardBg} rounded-xl p-5 transition-all duration-300`}
+                                                        className={`flex items-start gap-4 border ${cardBg} rounded-sm p-5 transition-all duration-300`}
                                                     >
                                                         <div className={`w-10 h-10 rounded-lg border ${divider} flex items-center justify-center shrink-0 overflow-hidden`}
                                                             style={{ backgroundColor: achievementIconBg[iconKey] }}>
@@ -864,7 +745,7 @@ Hardik Gupta                                        </motion.h1>
 
                         {/* ══ PROJECTS ══ */}
                         <RevealSection>
-                            <section id="projects" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#d0fffe]'}`}>
+                            <section id="projects" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/85' : 'bg-[#eefcfb]/95'}`}>
                                 <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                     <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                         {sections.simplifiedProjectsIntro?.title || 'Projects'}
@@ -874,7 +755,7 @@ Hardik Gupta                                        </motion.h1>
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {resumeProjects.map((p, i) => (
+                                    {visibleProjects.map((p, i) => (
                                         <StaggerItem key={p.id} index={i}>
                                             <ProjectCard
                                                 project={p} isDark={isDark} cardBg={cardBg} divider={divider}
@@ -886,43 +767,61 @@ Hardik Gupta                                        </motion.h1>
                                         </StaggerItem>
                                     ))}
                                 </div>
+                                {projectsVisibleCount < resumeProjects.length && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setProjectsVisibleCount((n) => n + PROJECTS_PAGE_SIZE)}
+                                        className={`w-full border rounded-sm px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${filterInactive}`}
+                                    >
+                                        Load more projects ({resumeProjects.length - projectsVisibleCount} left)
+                                    </button>
+                                )}
                             </section>
                         </RevealSection>
 
                         {/* ══ GITHUB ══ */}
                         <RevealSection>
-                            <section id="github" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#e4ffde]'}`}>
-                                <div className={`flex flex-col gap-5 border-b ${divider} pb-5`}>
-                                    <div className="flex items-end justify-between">
-                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
-                                            {sections.simplifiedGithubIntro?.title || 'My GitHub'}
-                                        </SectionLabel>
-                                        <a href={`https://github.com/${profile.githubUsername || 'hardikguptaofficialgit'}`} target="_blank" rel="noopener noreferrer"
-                                            className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors`}>
-                                            View Profile <ArrowUpRight size={12} />
-                                        </a>
-                                    </div>
-                                    <div className="flex flex-col md:flex-row gap-3 justify-between">
+                            <section id="github" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/85' : 'bg-[#f3fff0]/95'}`}>
+                                <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
+                                    <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
+                                        {sections.simplifiedGithubIntro?.title || 'GitHub'}
+                                    </SectionLabel>
+                                    <a href={`https://github.com/${githubUsername}`} target="_blank" rel="noopener noreferrer"
+                                        className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} flex items-center gap-1 transition-colors`}>
+                                        View Profile <ArrowUpRight size={12} />
+                                    </a>
+                                </div>
+
+                                <GitHubActivityChart username={githubUsername} isDark={isDark} />
+
+                                <div className={`flex flex-col gap-3 border-b ${divider} pb-5`}>
+                                    <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
                                         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                                            {([['top', 'Top Rated'], ['latest', 'Latest'], ['pushed', 'Recently Pushed'], ['all', 'All']] as const).map(([id, label]) => (
-                                                <motion.button key={id} onClick={() => setFilterMode(id as any)}
-                                                    className={`px-3 py-2 text-xs font-medium border rounded-lg transition-all duration-300 ${filterMode === id ? filterActive : filterInactive}`}>
+                                            {([['all', 'All'], ['top', 'Top Rated'], ['latest', 'Latest'], ['pushed', 'Recently Pushed']] as const).map(([id, label]) => (
+                                                <motion.button key={id} onClick={() => setFilterMode(id as typeof filterMode)}
+                                                    className={`px-3 py-2 text-xs font-medium border rounded-sm transition-all duration-300 ${filterMode === id ? filterActive : filterInactive}`}>
                                                     {label}
                                                 </motion.button>
                                             ))}
                                         </div>
-                                        <input type="text" placeholder="Search…" value={searchQuery}
+                                        <input type="text" placeholder="Search repositories…" value={searchQuery}
                                             onChange={e => setSearchQuery(e.target.value)}
-                                            className={`border rounded-lg px-4 py-2 text-sm w-full md:w-60 focus:outline-none transition-all duration-300 ${inputBg} focus:border-zinc-500`} />
+                                            className={`border rounded-sm px-4 py-2 text-sm w-full md:w-64 focus:outline-none transition-all duration-300 ${inputBg} focus:border-zinc-500`} />
                                     </div>
+                                    <p className={`text-xs ${subtleText}`}>
+                                        Showing {filteredRepos.length} of {repos.length} repositories
+                                    </p>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {filteredRepos.map((repo, i) => (
+                                    {filteredRepos.length === 0 && (
+                                        <p className={`text-sm ${mutedText} md:col-span-2`}>No repositories match this filter.</p>
+                                    )}
+                                    {visibleRepos.map((repo, i) => (
                                         <StaggerItem key={repo.id} index={i}>
                                             <motion.a
                                                 href={repo.html_url} target="_blank" rel="noopener noreferrer"
-                                                className={`group block border ${cardBg} rounded-xl p-5 transition-all duration-300`}
+                                                className={`group block border ${cardBg} rounded-sm p-5 transition-all duration-300`}
                                             >
                                                 <div className="flex items-start justify-between gap-2 mb-3">
                                                     <h3 className="text-sm font-bold group-hover:underline underline-offset-4 truncate">{repo.name}</h3>
@@ -943,12 +842,21 @@ Hardik Gupta                                        </motion.h1>
                                         </StaggerItem>
                                     ))}
                                 </div>
+                                {reposVisibleCount < filteredRepos.length && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setReposVisibleCount((n) => n + REPOS_PAGE_SIZE)}
+                                        className={`w-full border rounded-sm px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${filterInactive}`}
+                                    >
+                                        Load more repositories ({filteredRepos.length - reposVisibleCount} left)
+                                    </button>
+                                )}
                             </section>
                         </RevealSection>
 
                         {/* ══ PHOTOS ══ */}
                         <RevealSection>
-                            <section id="photos" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#ffe7d3]'}`}>
+                            <section id="photos" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/85' : 'bg-[#fff3ea]/95'}`}>
                                 <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                     <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                         {sections.simplifiedPhotosIntro?.title || 'Photos'}
@@ -998,7 +906,7 @@ Hardik Gupta                                        </motion.h1>
 
                         {/* ══ BLOG ══ */}
                         <RevealSection>
-                            <section id="blog" className={`space-y-7 scroll-mt-32 ${shellBase} ${isDark ? '' : 'bg-[#efe7ff]'}`}>
+                            <section id="blog" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/85' : 'bg-[#f4efff]/95'}`}>
                                 <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                     <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                         {sections.simplifiedBlogIntro?.title || 'Blog'}
@@ -1018,14 +926,14 @@ Hardik Gupta                                        </motion.h1>
                                 )}
 
                                 {!isLoading && popularArticles.length > 0 && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {popularArticles.map((article, index) => (
+                                    <div className="space-y-3">
+                                        {visibleBlogs.map((article, index) => (
                                             <StaggerItem key={article.id} index={index}>
                                                 <RouterLink
                                                     to={`/blogs/${article.slug}`}
-                                                    className={`block border ${cardBg} rounded-xl p-4 transition-colors`}
+                                                    className={`group grid grid-cols-1 md:grid-cols-[140px_1fr] gap-4 border ${cardBg} rounded-sm p-3 md:p-4 transition-colors hover:border-zinc-600`}
                                                 >
-                                                    <div className={`mb-3 h-40 overflow-hidden rounded-lg border ${divider}`}>
+                                                    <div className={`h-28 md:h-full min-h-[7rem] overflow-hidden rounded-sm border ${divider}`}>
                                                         <BlogCover
                                                             title={article.title}
                                                             coverImage={article.coverImage}
@@ -1035,23 +943,37 @@ Hardik Gupta                                        </motion.h1>
                                                             loading="lazy"
                                                         />
                                                     </div>
-                                                    <h3 className="text-base font-bold leading-snug line-clamp-2">{article.title}</h3>
-                                                    <p className={`mt-2 text-sm ${mutedText} line-clamp-2`}>
-                                                        {article.excerpt || 'No description.'}
-                                                    </p>
-                                                    <div className={`mt-3 flex flex-wrap items-center gap-3 text-xs ${subtleText}`}>
-                                                        <span className="inline-flex items-center gap-1">
-                                                            <Calendar size={12} />
-                                                            {format(new Date(article.publishedAt), 'MMM d, yyyy')}
-                                                        </span>
-                                                        <span className="inline-flex items-center gap-1">
-                                                            <Clock size={12} />
-                                                            {article.readingTimeMinutes || 1} min
-                                                        </span>
+                                                    <div className="min-w-0 flex flex-col justify-center">
+                                                        <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${subtleText}`}>
+                                                            <span className="inline-flex items-center gap-1">
+                                                                <Calendar size={11} />
+                                                                {format(new Date(article.publishedAt), 'MMM d, yyyy')}
+                                                            </span>
+                                                            <span>·</span>
+                                                            <span className="inline-flex items-center gap-1">
+                                                                <Clock size={11} />
+                                                                {article.readingTimeMinutes || 1} min read
+                                                            </span>
+                                                        </div>
+                                                        <h3 className="mt-2 text-lg font-bold leading-snug line-clamp-2 group-hover:underline underline-offset-4">
+                                                            {article.title}
+                                                        </h3>
+                                                        <p className={`mt-1.5 text-sm ${mutedText} line-clamp-2 md:line-clamp-3`}>
+                                                            {article.excerpt || 'No description.'}
+                                                        </p>
                                                     </div>
                                                 </RouterLink>
                                             </StaggerItem>
                                         ))}
+                                        {blogsVisibleCount < popularArticles.length && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setBlogsVisibleCount((n) => n + BLOG_PAGE_SIZE)}
+                                                className={`w-full border rounded-sm px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${filterInactive}`}
+                                            >
+                                                Load more posts ({popularArticles.length - blogsVisibleCount} left)
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </section>
@@ -1059,13 +981,12 @@ Hardik Gupta                                        </motion.h1>
 
                     </motion.div>
 
-                    {/* Footer */}
                     <motion.footer
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
-                        className={`max-w-4xl mx-auto mt-24 pt-10 pb-8  border-t ${divider} flex flex-col md:flex-row items-center justify-between gap-4`}
+                        className={`pt-8 pb-6 border-t ${divider} px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4`}
                     >
                         <RouterLink
                             to="/desktop"
@@ -1089,6 +1010,7 @@ Hardik Gupta                                        </motion.h1>
                             ))}
                         </div>
                     </motion.footer>
+                    </div>
                 </div>
 
                 {/* ══ PROJECT LIGHTBOX ══ */}
@@ -1282,32 +1204,63 @@ Hardik Gupta                                        </motion.h1>
 
 /* ─── sub-components ──────────────────────────────────────── */
 const SectionLabel = ({ children, isDark, divider, labelText }: { children: React.ReactNode; isDark: boolean; divider: string; labelText: string }) => (
-    <h2 className={`font-display text-sm font-bold uppercase tracking-[0.3em] ${labelText} border-b ${divider} pb-3`}>{children}</h2>
+    <h2 className={`font-serif-display text-2xl md:text-3xl ${labelText} border-b ${divider} pb-3`}>{children}</h2>
 );
 
 interface Role { title: string; period: string; duration: string; location?: string; }
 interface ExpCardProps {
-    org: string; url?: string; totalDuration: string; badge: string;
-    roles?: Role[]; bullets?: string[];
-    isDark: boolean; cardBg: string; divider: string; mutedText: string; subtleText: string;
+    roleTitle?: string;
+    org: string;
+    logoUrl?: string;
+    url?: string;
+    totalDuration: string;
+    badge?: string;
+    roles?: Role[];
+    bullets?: string[];
+    isDark: boolean;
+    cardBg: string;
+    divider: string;
+    mutedText: string;
+    subtleText: string;
 }
-const ExpCard = ({ org, url, totalDuration, badge, roles, bullets, isDark, cardBg, divider, mutedText, subtleText }: ExpCardProps) => (
+const ExpCard = ({ roleTitle, org, logoUrl, url, totalDuration, badge, roles, bullets, cardBg, divider, mutedText, subtleText }: ExpCardProps) => (
     <motion.div
-        className={`border ${cardBg} rounded-xl p-5 transition-all duration-300`}
+        className={`border ${cardBg} rounded-sm p-5 transition-all duration-300`}
     >
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-1.5 mb-2.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-                <h3 className="text-base font-bold">{org}</h3>
-                <span className={`text-xs uppercase tracking-widest border ${divider} px-2 py-0.5 rounded ${subtleText}`}>{badge}</span>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-2.5">
+            <div className="flex gap-3 min-w-0">
+                {logoUrl && (
+                    <img
+                        src={logoUrl}
+                        alt=""
+                        className={`h-11 w-11 shrink-0 rounded-md border object-cover ${divider}`}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                    />
+                )}
+                <div className="min-w-0">
+                    <h3 className="text-base font-bold">{roleTitle || org}</h3>
+                    <p className={`text-sm italic ${mutedText}`}>
+                        {roleTitle ? (
+                            url ? (
+                                <a href={url} target="_blank" rel="noopener noreferrer" className="underline decoration-zinc-500/60 underline-offset-2 hover:opacity-90">
+                                    {org}
+                                </a>
+                            ) : (
+                                org
+                            )
+                        ) : null}
+                        {badge ? (
+                            <span className="not-italic">
+                                {roleTitle ? ' · ' : ''}
+                                {badge}
+                            </span>
+                        ) : null}
+                    </p>
+                </div>
             </div>
-            <span className={`text-xs ${subtleText} font-mono shrink-0`}>{totalDuration}</span>
+            <span className={`text-xs ${subtleText} font-mono shrink-0 md:text-right`}>{totalDuration}</span>
         </div>
-        {url && (
-            <a href={url} target="_blank" rel="noopener noreferrer"
-                className={`text-xs ${subtleText} hover:${isDark ? 'text-zinc-300' : 'text-zinc-700'} underline decoration-zinc-400 underline-offset-4 transition-colors block mb-3`}>
-                {url.replace('https://', '')}
-            </a>
-        )}
         {roles?.map(r => (
             <div key={r.title} className={`mt-3 pl-4 border-l ${divider} space-y-0.5`}>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-0.5">
@@ -1347,7 +1300,7 @@ const ProjectCard = memo(({ project: p, isDark, mutedText, subtleText, onPreview
         ? 'bg-[#09090b] shadow-[0_18px_44px_rgba(0,0,0,0.28)]'
         : 'bg-[#fffef9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
     return (
-        <article className={`group flex h-full w-full flex-col ${surface} rounded-xl overflow-hidden text-left`}>
+        <article className={`group flex h-full w-full flex-col ${surface} rounded-sm overflow-hidden text-left border ${isDark ? 'border-zinc-800' : 'border-[#d8c8b9]'}`}>
             <div className="relative h-44 w-full bg-black overflow-hidden shrink-0">
                 {hasVisual ? (
                     <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">
@@ -1396,6 +1349,22 @@ const ProjectCard = memo(({ project: p, isDark, mutedText, subtleText, onPreview
                             </span>
                         ))}
                     </div>
+                )}
+                {p.id === 'staylokalapp' && (
+                    <a
+                        href="https://www.producthunt.com/products/staylokal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-staylokal"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 inline-block"
+                    >
+                        <img
+                            alt="StayLokal - Private file tools that run on your device. | Product Hunt"
+                            width={250}
+                            height={54}
+                            src={`https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1265400&theme=${isDark ? 'dark' : 'light'}&t=1790872811725`}
+                            className="h-[54px] w-[250px] max-w-full"
+                        />
+                    </a>
                 )}
                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
                     {p.liveUrl !== '#' && (

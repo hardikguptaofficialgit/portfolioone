@@ -131,7 +131,9 @@ export const portfolioDocumentSchema = z.object({
     .array(
       z.object({
         id: z.string().min(1),
+        roleTitle: z.string().optional(),
         org: z.string().min(1),
+        logoUrl: z.string().optional(),
         url: z.string().optional(),
         totalDuration: z.string().min(1),
         badge: z.string().optional(),
@@ -159,6 +161,7 @@ export const portfolioDocumentSchema = z.object({
       simplifiedPhotosIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
       simplifiedBlogIntro: z.object({ title: z.string(), subtitle: z.string() }).optional(),
       simplifiedSummaryHighlight: z.string().optional(),
+      simplifiedAboutBullets: z.array(z.string()).optional(),
     })
     .passthrough()
     .default({}),

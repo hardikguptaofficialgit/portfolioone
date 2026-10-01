@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -262,6 +262,145 @@ All colors MUST be HSL.
 
   .theme-circle.grow {
     animation: theme-circle-grow 0.44s var(--ease-out) forwards;
+  }
+
+  .font-serif-display {
+    font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+  }
+
+  .portfolio-dot-grid {
+    background-image:
+      radial-gradient(circle, hsl(var(--foreground) / 0.14) 1px, transparent 1px),
+      linear-gradient(to right, hsl(var(--foreground) / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
+    background-size: 16px 16px, 48px 48px, 48px 48px;
+  }
+
+  .theme-toggle {
+    --theme-toggle-inset: 3px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 2rem;
+    isolation: isolate;
+    overflow: hidden;
+    padding: var(--theme-toggle-inset);
+    position: relative;
+    width: 3.6rem;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .theme-toggle-dark {
+    background: rgb(0 0 0 / 0.46);
+    border-color: rgb(255 255 255 / 0.16);
+    color: rgb(255 255 255 / 0.72);
+  }
+
+  .theme-toggle-light {
+    background: rgb(255 255 255 / 0.72);
+    border-color: rgb(26 20 16 / 0.14);
+    box-shadow: 0 1px 4px rgb(26 20 16 / 0.06);
+    color: rgb(26 20 16 / 0.7);
+  }
+
+  .theme-toggle-thumb {
+    border-radius: 999px;
+    height: calc(100% - var(--theme-toggle-inset) * 2);
+    left: var(--theme-toggle-inset);
+    position: absolute;
+    top: var(--theme-toggle-inset);
+    transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+    width: calc((100% - var(--theme-toggle-inset) * 2) / 2);
+    z-index: 0;
+  }
+
+  .theme-toggle-dark .theme-toggle-thumb {
+    background: rgb(255 255 255 / 0.94);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.28);
+    transform: translateX(0);
+  }
+
+  .theme-toggle-light .theme-toggle-thumb {
+    background: #1a1410;
+    box-shadow: 0 1px 4px rgb(26 20 16 / 0.2);
+    transform: translateX(100%);
+  }
+
+  .theme-toggle-icon {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .theme-toggle-dark .theme-toggle-moon {
+    color: #111;
+  }
+
+  .theme-toggle-dark .theme-toggle-sun {
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  .theme-toggle-light .theme-toggle-moon {
+    color: rgb(26 20 16 / 0.42);
+  }
+
+  .theme-toggle-light .theme-toggle-sun {
+    color: #fffaf6;
+  }
+
+  html.theme-pixelating::view-transition {
+    pointer-events: none;
+  }
+
+  html.theme-pixelating::view-transition-group(root) {
+    animation-duration: var(--theme-transition-duration, 720ms);
+  }
+
+  html.theme-pixelating::view-transition-old(root) {
+    animation: none;
+    mix-blend-mode: normal;
+    z-index: 1;
+  }
+
+  html.theme-pixelating::view-transition-new(root) {
+    -webkit-mask-image: var(--theme-pixel-sprite);
+    -webkit-mask-position: 0 0;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 100% calc(100% * var(--theme-pixel-frames, 20));
+    animation: theme-pixel-scrub var(--theme-transition-duration, 720ms) steps(19, end) both;
+    image-rendering: pixelated;
+    mask-image: var(--theme-pixel-sprite);
+    mask-mode: alpha;
+    mask-position: 0 0;
+    mask-repeat: no-repeat;
+    mask-size: 100% calc(100% * var(--theme-pixel-frames, 20));
+    mix-blend-mode: normal;
+    z-index: 2;
+  }
+
+  @keyframes theme-pixel-scrub {
+    from {
+      -webkit-mask-position: 0 0;
+      mask-position: 0 0;
+    }
+    to {
+      -webkit-mask-position: 0 100%;
+      mask-position: 0 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .theme-toggle-thumb {
+      transition-duration: 1ms;
+    }
+
+    html.theme-pixelating::view-transition-new(root) {
+      animation-duration: 1ms;
+    }
   }
 
   @keyframes theme-circle-grow {

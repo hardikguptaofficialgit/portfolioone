@@ -1,0 +1,45 @@
+{
+  "experience": [],
+  "simplifiedExperience": [
+    {
+      "id": "sparkeefy-backend",
+      "roleTitle": "Backend Engineer",
+      "org": "Sparkeefy",
+      "logoUrl": "/images/logos/sparkeefy.png",
+      "url": "https://sparkeefy.com",
+      "totalDuration": "Jul 2026 – Aug 2026",
+      "badge": "Part-time · Remote",
+      "bullets": [
+        "Built the production backend for Sparkeefy's AI relationship wellness app ahead of its V3 Play Store launch, including Supabase authentication and GCP Cloud Run deployment.",
+        "Built the Wingman AI chat backend with session handling, guardrails, and OpenRouter/DeepSeek LLM integration; shipped performance improvements.",
+        "Implemented phone OTP authentication, user entitlements, rate limiting, and security fixes; built 2 internal tools (Admin Panel, Wingman Lab) for testing and QA."
+      ]
+    },
+    {
+      "id": "reticle-oss",
+      "roleTitle": "Open Source Contributor",
+      "org": "Reticle",
+      "logoUrl": "/images/logos/reticle.png",
+      "url": "https://github.com/ReticleAI/reticle",
+      "totalDuration": "Jul 2026 – Present",
+      "badge": "Part-time · Remote",
+      "bullets": [
+        "Contributing to Reticle, an open-source AI verification platform that uses live DOM, network, and routing signals from running web apps.",
+        "Merged a 4,500+ LOC, 46-file dev HUD redesign and a bridge reliability fix that prevents false success states; improved assertion grammar for agent workflows."
+      ]
+    },
+    {
+      "id": "nextround-intern",
+      "roleTitle": "Frontend Engineer Intern",
+      "org": "NextRound Private Limited",
+      "logoUrl": "/nextroundai.jpg",
+      "url": "https://nextround.tech",
+      "totalDuration": "Jun 2025 – Aug 2025",
+      "badge": "Remote",
+      "bullets": [
+        "Built a meeting-transcription Chrome extension with a real-time audio capture and WebSocket streaming pipeline, delivering speech-to-text at sub-1-second latency for 100+ concurrent sessions; processed 50+ hours of test recordings.",
+        "Designed responsive live-caption and transcript-management interfaces, reducing transcript retrieval time by 80%."
+      ]
+    }
+  ]
+}

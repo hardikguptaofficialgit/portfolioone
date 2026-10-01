@@ -1,15 +1,22 @@
-import seed from '../../content/portfolio.json';
+import site from '../../content/site.json';
+import skills from '../../content/skills.json';
+import projects from '../../content/projects.json';
+import experience from '../../content/experience.json';
+import blogs from '../../content/blogs.json';
+import photos from '../../content/photos.json';
 import type { PortfolioDocument } from './types';
-import { portfolioDocumentSchema } from './schema';
+import { mergePortfolioContent } from './merge-content';
 
-const parsed = portfolioDocumentSchema.safeParse(seed);
-if (!parsed.success) {
-  console.error('Invalid content/portfolio.json', parsed.error.flatten());
-}
+const parsed = mergePortfolioContent({
+  site,
+  skills,
+  projects,
+  experience,
+  blogs,
+  photos,
+});
 
-export const defaultPortfolio: PortfolioDocument = (parsed.success
-  ? parsed.data
-  : seed) as PortfolioDocument;
+export const defaultPortfolio: PortfolioDocument = parsed;
 
 export const getActiveProjects = (doc: PortfolioDocument) =>
   [...doc.projects]
