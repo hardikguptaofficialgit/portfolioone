@@ -1,14 +1,31 @@
+User-agent: *
+Allow: /
+
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
-User-agent: Twitterbot
+User-agent: OAI-SearchBot
 Allow: /
 
-User-agent: facebookexternalhit
+User-agent: GPTBot
 Allow: /
 
-User-agent: *
+User-agent: ChatGPT-User
 Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://strykerinside.vercel.app/sitemap.xml

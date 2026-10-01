@@ -9,6 +9,7 @@ import SimplifiedResume from "./pages/SimplifiedResume";
 import { BlogListPage, BlogPostPage } from "./pages/Blog";
 import DoomsWaitlist from "./pages/DoomsWaitlist";
 import NotFound from "./pages/NotFound";
+import { SeoManager } from "@/components/seo/SeoManager";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <SeoManager />
         <Routes>
           <Route path="/" element={<SimplifiedResume />} />
           <Route path="/desktop" element={<Index />} />

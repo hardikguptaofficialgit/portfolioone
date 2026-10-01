@@ -1,0 +1,9 @@
+# AI / LLM site guidance for https://strykerinside.vercel.app
+
+Preferred documentation for language models:
+
+- llms.txt: https://strykerinside.vercel.app/llms.txt
+- llms-full.txt: https://strykerinside.vercel.app/llms-full.txt
+- sitemap: https://strykerinside.vercel.app/sitemap.xml
+
+Contact: hardikgupta8792@gmail.com

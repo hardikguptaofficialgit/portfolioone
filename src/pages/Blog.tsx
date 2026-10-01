@@ -28,6 +28,8 @@ import { useDesktopStore } from '@/store/desktopStore';
 import type { BlogPost } from '@/content/types';
 import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
 import { transitionPortfolioTheme } from '@/lib/theme-transition';
+import { useSeo } from '@/hooks/useSeo';
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/seo/site-config';
 import { usePortfolioPageBackground } from '@/hooks/usePortfolioPageBackground';
 
 type BlogTheme = 'dark' | 'light';
@@ -514,6 +516,35 @@ export const BlogPostPage = () => {
     () => (post ? buildBlogPostPrompt(post, buildPostUrl(post.slug)) : ''),
     [post]
   );
+
+  const postSeo = useMemo(() => {
+    if (!post) return null;
+    const description = post.excerpt?.trim() || post.title;
+    const ogImage = post.coverImage
+      ? post.coverImage.startsWith('http')
+        ? post.coverImage
+        : `${SITE_URL}${post.coverImage}`
+      : DEFAULT_OG_IMAGE;
+    return {
+      title: `${post.title} | ${SITE_NAME}`,
+      description,
+      canonicalPath: `/blogs/${post.slug}`,
+      ogType: 'article' as const,
+      ogImage,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description,
+        datePublished: post.publishedAt,
+        author: { '@type': 'Person', name: 'Hardik Gupta', url: SITE_URL },
+        mainEntityOfPage: `${SITE_URL}/blogs/${post.slug}`,
+        image: ogImage,
+      },
+    };
+  }, [post]);
+
+  useSeo(postSeo);
 
   useEffect(() => {
     if (!slug) {
