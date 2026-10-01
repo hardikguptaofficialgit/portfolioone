@@ -10,6 +10,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
     } from 'lucide-react';
     import { GitHubActivityChart } from '@/components/portfolio/GitHubActivityChart';
     import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
+    import { MonkeytypeStats } from '@/components/portfolio/MonkeytypeStats';
+    import { SkillIcon } from '@/components/portfolio/SkillIcon';
     import { transitionPortfolioTheme } from '@/lib/theme-transition';
     import { format } from 'date-fns';
     import { useDesktopStore } from '@/store/desktopStore';
@@ -181,7 +183,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
     const SimplifiedResume = () => {
         const { settings, updateSettings } = useDesktopStore();
-        const { profile, projects, skillCategories, achievements, simplifiedExperience, education, photoEvents, blogPosts, sections, isLoading } = usePortfolio();
+        const { profile, projects, skillCategories, achievements, simplifiedExperience, education, photoEvents, blogPosts, sections, socialLinks, isLoading } = usePortfolio();
         const githubUsername = profile.githubUsername || 'hardikguptaofficialgit';
         const resumeDownloadUrl =
             profile.resumePdfUrl && !/drive\.google|docs\.google/i.test(profile.resumePdfUrl)
@@ -401,6 +403,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         const visibleProjects = resumeProjects.slice(0, projectsVisibleCount);
         const visibleRepos = filteredRepos.slice(0, reposVisibleCount);
         const visibleBlogs = popularArticles.slice(0, blogsVisibleCount);
+        const githubTotalStars = useMemo(
+            () => repos.reduce((sum, repo) => sum + (repo.stargazers_count ?? 0), 0),
+            [repos],
+        );
 
         // ── theme-aware classes
         const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
@@ -444,18 +450,14 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         };
 
         return (
-                <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color] duration-500`}
-                    style={{ backgroundImage: bgImage ? `url('${bgImage}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
-
-                    <NoiseOverlay />
-                    <div aria-hidden className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`} />
-                    <div aria-hidden className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'} transition-colors duration-500`} />
-
+            <>
                     <motion.nav
-                        layout={isDesktopView}
+                        layout={isDesktopView && !shouldUseCompactNav}
                         transition={NAV_SPRING}
                         className={`fixed z-50 ${
-                            shouldUseCompactNav ? 'top-5 left-3 md:left-4' : 'top-3 left-0 right-0 px-3 md:px-6'
+                            shouldUseCompactNav
+                                ? 'top-5 left-[max(1rem,env(safe-area-inset-left,0px))] md:left-5 lg:left-6'
+                                : 'top-3 left-0 right-0 px-3 md:px-6'
                         }`}
                     >
                         <motion.div
@@ -640,6 +642,25 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                         </AnimatePresence>
                     </motion.nav>
 
+                <div
+                    className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color] duration-500`}
+                    style={{
+                        backgroundImage: bgImage ? `url('${bgImage}')` : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundAttachment: 'fixed',
+                    }}
+                >
+                    <NoiseOverlay />
+                    <div
+                        aria-hidden
+                        className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`}
+                    />
+                    <div
+                        aria-hidden
+                        className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'} transition-colors duration-500`}
+                    />
+
                     <div className="relative z-10 w-full px-3 md:px-6 pt-[5.5rem] lg:pt-28 pb-16">
                         <div className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${isDark ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.25)]' : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'} backdrop-blur-xl`}>
                             <div className={`relative border-b ${divider} p-2 md:p-3`}>
@@ -667,7 +688,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                 <header className={`space-y-6 pb-8 border-b ${divider}`}>
                                     <div className={`flex items-center justify-end gap-1.5 text-xs ${subtleText}`}>
                                         <Eye size={14} aria-hidden />
-                                        <span>{portfolioViews === null ? '—' : portfolioViews.toLocaleString()}</span>
+                                        <span>{portfolioViews === null ? '-' : portfolioViews.toLocaleString()}</span>
                                     </div>
                                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                                         <div className="flex gap-4">
@@ -718,7 +739,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                                     { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={18} /> },
                                                     { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={18} /> },
                                                     { href: 'https://www.instagram.com/stryker.inside/', icon: <Instagram size={18} /> },
-                                                    { href: 'https://x.com/strykerin', icon: <XBrandIcon size={18} /> },
+                                                    { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={18} /> },
                                                     { href: 'https://linkitapp.in/stryker', icon: <LinkIcon size={18} /> },
                                                 ].map(({ href, icon }, i) => (
                                                     <motion.a
@@ -819,19 +840,33 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         Skills
         </SectionLabel>
 
-        <div className="space-y-3">
+        <div className="space-y-5">
         {skillCategories.map((cat, ci) => (
-            <motion.p
+            <motion.div
             key={cat.label}
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: ci * 0.05 }}
-            className={`text-sm leading-relaxed ${mutedText}`}
+            className="space-y-2.5"
             >
-            <span className={`font-semibold ${isDark ? 'text-zinc-200' : 'text-[#1f1a17]'}`}>{cat.label}:</span>{' '}
-            {cat.items.join(', ')}
-            </motion.p>
+            <p className={`text-sm font-semibold ${isDark ? 'text-zinc-200' : 'text-[#1f1a17]'}`}>{cat.label}</p>
+            <ul className="flex flex-wrap gap-2">
+                {cat.items.map((skill) => (
+                    <li
+                        key={skill}
+                        className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium ${
+                            isDark
+                                ? 'border-zinc-800 bg-zinc-950/50 text-zinc-300'
+                                : 'border-[#e6d8cb] bg-white/70 text-zinc-700'
+                        }`}
+                    >
+                        <SkillIcon skill={skill} isDark={isDark} className="h-4 w-4" />
+                        <span>{skill}</span>
+                    </li>
+                ))}
+            </ul>
+            </motion.div>
         ))}
         </div>
     </div>
@@ -917,7 +952,12 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                         </a>
                                     </div>
 
-                                    <GitHubActivityChart username={githubUsername} isDark={isDark} />
+                                    <GitHubActivityChart
+                                        username={githubUsername}
+                                        isDark={isDark}
+                                        repoCount={repos.length}
+                                        totalStars={githubTotalStars}
+                                    />
 
                                     <div className={`flex flex-col gap-3 border-b ${divider} pb-5`}>
                                         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
@@ -1096,34 +1136,73 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
                         </motion.div>
 
+                        <MonkeytypeStats
+                            isDark={isDark}
+                            divider={divider}
+                            mutedText={mutedText}
+                            subtleText={subtleText}
+                        />
+
                         <motion.footer
                             initial={{ opacity: 0 }}
                             whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8 }}
-                            className={`pt-8 pb-6 border-t ${divider} px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4`}
+                            className={`pt-8 pb-6 border-t ${divider} px-4 md:px-6 space-y-6`}
                         >
-                            <RouterLink
-                                to="/desktop"
-                                onClick={markDesktopDirectEntry}
-                                className={`${subtleText} ${
-                                    isDark
-                                        ? 'px-4 py-2.5 bg-black text-white'
-                                        : 'text-black px-4 py-2.5 bg-white'
-                                } transition-colors text-xs md:text-sm uppercase tracking-widest`}
-                            >
-                                ← Switch to Interactive
-                            </RouterLink>
-                            <div className={`flex gap-5 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
-                                {[
-                                    { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={16} /> },
-                                    { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={16} /> },
-                                    { href: 'https://x.com/strykerin', icon: <XBrandIcon size={16} /> },
-                                ].map(({ href, icon }) => (
-                                    <motion.a key={href} href={href} target="_blank" rel="noopener noreferrer"
-                                        className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors`}>{icon}</motion.a>
-                                ))}
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                <RouterLink
+                                    to="/desktop"
+                                    onClick={markDesktopDirectEntry}
+                                    className={`${subtleText} ${
+                                        isDark
+                                            ? 'px-4 py-2.5 bg-black text-white'
+                                            : 'text-black px-4 py-2.5 bg-white'
+                                    } transition-colors text-xs md:text-sm uppercase tracking-widest`}
+                                >
+                                    ← Switch to Interactive
+                                </RouterLink>
+                                <div className={`flex flex-wrap items-center justify-center gap-4 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
+                                    {socialLinks.map((link) => (
+                                        <motion.a
+                                            key={link.id}
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`${subtleText} ${isDark ? 'hover:text-zinc-100' : 'hover:text-zinc-900'} transition-colors`}
+                                            aria-label={link.name}
+                                            title={link.name}
+                                        >
+                                            {link.icon === 'Github' && <Github size={16} />}
+                                            {link.icon === 'Linkedin' && <Linkedin size={16} />}
+                                            {link.icon === 'Instagram' && <Instagram size={16} />}
+                                            {link.icon === 'Twitter' && <XBrandIcon size={16} />}
+                                            {link.icon === 'Link' && <LinkIcon size={16} />}
+                                        </motion.a>
+                                    ))}
+                                </div>
                             </div>
+                            <p className={`text-center text-[11px] sm:text-xs leading-relaxed ${subtleText}`}>
+                                Designed &amp; developed by{' '}
+                                <a
+                                    href="https://x.com/stryker_inside"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`font-semibold tracking-wide ${isDark ? 'text-zinc-200 hover:text-white' : 'text-zinc-800 hover:text-black'} transition-colors`}
+                                >
+                                    Stryker
+                                </a>
+                                <span className="mx-2 opacity-40" aria-hidden>·</span>
+                                <a
+                                    href="https://x.com/stryker_inside"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`inline-flex items-center gap-1 font-medium ${isDark ? 'text-zinc-300 hover:text-white' : 'text-zinc-700 hover:text-black'} transition-colors`}
+                                >
+                                    <XBrandIcon size={12} />
+                                    @stryker_inside
+                                </a>
+                            </p>
                         </motion.footer>
                         </div>
                     </div>
@@ -1314,6 +1393,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                         onDismiss={dismissLaunchModal}
                     />
                 </div>
+            </>
         );
     };
 

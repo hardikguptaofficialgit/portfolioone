@@ -11,45 +11,45 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Desktop OS Theme - Windows 11 Inspired */
-    --desktop-bg: 222 47% 11%;
+    /* Desktop OS Theme - neutral zinc (matches portfolio #09090b), no navy cast */
+    --desktop-bg: 240 6% 4%;
     --desktop-accent: 217 91% 60%;
     --desktop-accent-glow: 217 91% 70%;
 
-    --glass-bg: 222 47% 15%;
-    --glass-border: 217 50% 30%;
+    --glass-bg: 240 5% 8%;
+    --glass-border: 240 4% 18%;
     --glass-text: 210 40% 98%;
-    --glass-text-muted: 215 20% 65%;
+    --glass-text-muted: 240 5% 65%;
 
-    --taskbar-bg: 222 47% 8%;
-    --taskbar-hover: 217 50% 20%;
+    --taskbar-bg: 240 6% 3%;
+    --taskbar-hover: 240 4% 14%;
     --taskbar-active: 217 91% 60%;
 
-    --window-bg: 222 47% 12%;
-    --window-border: 217 50% 25%;
-    --window-titlebar: 222 47% 10%;
+    --window-bg: 240 5% 7%;
+    --window-border: 240 4% 16%;
+    --window-titlebar: 240 6% 5%;
 
-    --widget-bg: 222 47% 14%;
-    --widget-border: 217 50% 28%;
+    --widget-bg: 240 5% 9%;
+    --widget-border: 240 4% 18%;
 
     /* Standard Shadcn Colors */
-    --background: 222 47% 11%;
+    --background: 240 6% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 12%;
+    --card: 240 5% 7%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 10%;
+    --popover: 240 6% 5%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 222 47% 15%;
+    --secondary: 240 5% 10%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 47% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 240 5% 10%;
+    --muted-foreground: 240 5% 65%;
 
     --accent: 217 91% 60%;
     --accent-foreground: 210 40% 98%;
@@ -57,8 +57,8 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 50% 25%;
-    --input: 217 50% 25%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
     --ring: 217 91% 60%;
 
     --radius: 0.75rem;
@@ -76,7 +76,7 @@ All colors MUST be HSL.
 
     --glass-bg: 210 20% 95%;
     --glass-border: 217 30% 70%;
-    --glass-text: 222 47% 11%;
+    --glass-text: 24 10% 12%;
     --glass-text-muted: 215 15% 40%;
 
     --taskbar-bg: 210 20% 92%;
@@ -91,19 +91,19 @@ All colors MUST be HSL.
     --widget-border: 217 30% 85%;
 
     --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 24 10% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 24 10% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 24 10% 12%;
 
     --primary: 217 91% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 20% 90%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary-foreground: 24 10% 12%;
 
     --muted: 210 20% 93%;
     --muted-foreground: 215 15% 40%;
@@ -363,7 +363,8 @@ All colors MUST be HSL.
     -webkit-mask-position: 0 0;
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: 100% calc(100% * var(--theme-pixel-frames, 20));
-    animation: theme-pixel-scrub var(--theme-transition-duration, 720ms) steps(19, end) both;
+    animation: theme-pixel-scrub var(--theme-transition-duration, 720ms)
+      steps(var(--theme-pixel-steps, 19), end) both;
     image-rendering: pixelated;
     mask-image: var(--theme-pixel-sprite);
     mask-mode: alpha;

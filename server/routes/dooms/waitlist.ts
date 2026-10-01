@@ -51,9 +51,17 @@ const isRateLimited = (ip: string) => {
   return false;
 };
 
+const stripControlChars = (value: string) => {
+  let out = '';
+  for (const ch of value) {
+    const code = ch.charCodeAt(0);
+    if (code >= 32 && code !== 127) out += ch;
+  }
+  return out;
+};
+
 const sanitizeName = (value: unknown) => {
-  const name = String(value || '')
-    .replace(/[\u0000-\u001F\u007F]/g, '')
+  const name = stripControlChars(String(value || ''))
     .trim()
     .slice(0, MAX_NAME_LENGTH);
   return name || null;

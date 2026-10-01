@@ -1,6 +1,32 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useDesktopStore } from '@/store/desktopStore';
+
+const WELCOME_LINE_1 = "Hey - I'm Hardik (aka Stryker).";
+const WELCOME_LINE_2 = 'Welcome to my corner of the internet.';
+const WELCOME_MESSAGE = `${WELCOME_LINE_1}\n${WELCOME_LINE_2}`;
+
+function useTypewriter(text: string, active: boolean, msPerChar = 32) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setCount(0);
+      return;
+    }
+    setCount(0);
+    let i = 0;
+    const id = window.setInterval(() => {
+      i += 1;
+      setCount(i);
+      if (i >= text.length) window.clearInterval(id);
+    }, msPerChar);
+    return () => window.clearInterval(id);
+  }, [text, active, msPerChar]);
+
+  const done = count >= text.length;
+  return { visible: text.slice(0, count), done };
+}
 
 interface LaunchWelcomeModalProps {
   open: boolean;
@@ -10,6 +36,11 @@ interface LaunchWelcomeModalProps {
 export const LaunchWelcomeModal = ({ open, onDismiss }: LaunchWelcomeModalProps) => {
   const isDark = useDesktopStore((state) => state.settings.darkMode);
   const updateSettings = useDesktopStore((state) => state.updateSettings);
+  const { visible, done } = useTypewriter(WELCOME_MESSAGE, open);
+  const newlineAt = visible.indexOf('\n');
+  const line1 = newlineAt === -1 ? visible : visible.slice(0, newlineAt);
+  const line2 = newlineAt === -1 ? '' : visible.slice(newlineAt + 1);
+  const onLine2 = newlineAt !== -1;
 
   const T = isDark
     ? {
@@ -50,12 +81,12 @@ export const LaunchWelcomeModal = ({ open, onDismiss }: LaunchWelcomeModalProps)
   if (!open) return null;
 
   return (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm p-4 ${T.overlay}`}>
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm p-4 sm:p-6 ${T.overlay}`}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="launch-welcome-title"
-        className={`relative w-full max-w-[460px] rounded-2xl flex flex-col overflow-hidden ${T.panel}`}
+        className={`relative w-full max-w-[min(100%,28rem)] sm:max-w-md rounded-2xl flex flex-col overflow-hidden ${T.panel}`}
       >
         <button
           type="button"
@@ -67,21 +98,41 @@ export const LaunchWelcomeModal = ({ open, onDismiss }: LaunchWelcomeModalProps)
           {isDark ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
-        <div className="px-6 pt-8 pb-8 text-center flex flex-col items-center">
+        <div className="px-5 sm:px-6 pt-8 pb-8 text-center flex flex-col items-center w-full">
           <img
             src="/harvix_logo.png"
             alt="Stryker"
-            className="mb-4 h-12 w-12 rounded-xl object-contain"
+            className="mb-5 h-12 w-12 sm:h-14 sm:w-14 rounded-xl object-contain shrink-0"
             loading="lazy"
           />
 
-          <h2 id="launch-welcome-title" className={`text-lg font-semibold ${T.title}`}>
-            Welcome to stryker.inside
+          <h2 id="launch-welcome-title" className="sr-only">
+            {WELCOME_MESSAGE}
           </h2>
 
-          <p className={`text-sm mt-1 mb-6 max-w-sm ${T.body}`}>
-            Projects, writing, and the interactive desktop — pick what you want to explore.
-          </p>
+          <div
+            className="text-[0.9375rem] sm:text-base leading-snug sm:leading-relaxed w-full min-h-[5.25rem] sm:min-h-[5.75rem] mb-6 px-0.5 flex flex-col gap-2 sm:gap-2.5"
+            aria-live="polite"
+          >
+            <p className={`font-semibold text-pretty m-0 ${T.title}`}>
+              <span>{line1}</span>
+              {!onLine2 && (
+                <span
+                  className={`inline-block w-[2px] h-[1em] align-[-0.12em] ml-0.5 ${isDark ? 'bg-zinc-300' : 'bg-[#1c2a3d]'} ${done ? 'opacity-0' : 'animate-pulse'}`}
+                  aria-hidden
+                />
+              )}
+            </p>
+            <p className={`font-medium text-pretty m-0 min-h-[1.35em] ${T.body}`}>
+              <span>{line2}</span>
+              {onLine2 && (
+                <span
+                  className={`inline-block w-[2px] h-[1em] align-[-0.12em] ml-0.5 ${isDark ? 'bg-zinc-400' : 'bg-[#5d6675]'} ${done ? 'opacity-0' : 'animate-pulse'}`}
+                  aria-hidden
+                />
+              )}
+            </p>
+          </div>
 
           <button
             type="button"

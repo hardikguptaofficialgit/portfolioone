@@ -107,7 +107,7 @@
       "imageUrl": "/images/misc/3cb1ec1c1b.png",
       "githubUrl": "https://github.com/hardikguptaofficialgit/pigglubackendme",
       "sortOrder": 6,
-      "description": " Pigglu — a real-time multiplayer drawing-and-guessing game with host-controlled rooms, live canvas, chat, DiceBear avatars, and fast local dev (in-memory); production-ready with Redis and Socket.IO."
+      "description": " Pigglu - a real-time multiplayer drawing-and-guessing game with host-controlled rooms, live canvas, chat, DiceBear avatars, and fast local dev (in-memory); production-ready with Redis and Socket.IO."
     },
     {
       "id": "opensource-hire",

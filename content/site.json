@@ -78,12 +78,12 @@
       "subtitle": "Selected Works"
     },
     "simplifiedSummaryHighlight": "Selected for YC Hackathon (top applicants globally); GDG Hackathon winner.",
-    "simplifiedAboutBullets": [
-      "Software engineer focused on reliable, production-ready systems across backend, frontend, and AI tooling.",
-      "2nd-year B.Tech CSE (AI/ML) at KIIT University, Bhubaneswar.",
-      "Ship features end-to-end—from APIs and auth to deployment, performance, and security.",
-      "GDG Hackathon (Building Bad) winner; YC Hackathon selectee."
-    ]
+ "simplifiedAboutBullets": [
+  "Contextually Overthinking Human - always curious ,  learning, and usually thinking about how things could work better.",
+  "Software engineer building AI systems, developer tools, and products from idea to deployment.",
+  "Built LinkitApp.in and StayLokal.app, along with a bunch of other things along the way.",
+  "Started building in 9th grade; still learning, shipping, breaking things, and figuring them out - aka 'jugaad'."
+]
   },
   "education": [
     {

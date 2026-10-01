@@ -39,7 +39,7 @@ Edit `content/blogs.json` → `blogPosts` array. Each post’s **`body` is Markd
 
 Only needed for **Ask AI / chat**:
 
-- `GITHUB_TOKEN` — GitHub token with [Models API](https://docs.github.com/en/rest/models) access
-- `GITHUB_MODELS_MODEL` — optional, default `openai/gpt-4o`
+- `GITHUB_TOKEN` - GitHub token with [Models API](https://docs.github.com/en/rest/models) access
+- `GITHUB_MODELS_MODEL` - optional, default `openai/gpt-4o`
 
-Portfolio, blogs, waitlist, and views use **`content/*.json`** only — no database env vars.
+Portfolio, blogs, waitlist, and views use **`content/*.json`** only - no database env vars.

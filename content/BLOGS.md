@@ -13,7 +13,7 @@ In JSON you write Markdown as one string. Use `\n` for new lines (or format the 
 | Field | Notes |
 |-------|--------|
 | `id` | Unique, lowercase letters, numbers, hyphens only (e.g. `my-post-slug`) |
-| `slug` | URL path: `/blogs/my-post-slug` — usually same as `id` |
+| `slug` | URL path: `/blogs/my-post-slug` - usually same as `id` |
 | `title` | Headline |
 | `excerpt` | Short blurb for list cards |
 | `body` | Full article (Markdown) |
@@ -43,7 +43,7 @@ Put files under `public/images/blogs/` and reference them in Markdown:
 
 1. Add a new object to the **top** (or anywhere) of `blogPosts` in `content/blogs.json`.
 2. Run `npm run dev` and open `/blogs/your-slug`.
-3. Deploy — content is read from the repo JSON (no database).
+3. Deploy - content is read from the repo JSON (no database).
 
 ## Markdown cheat sheet
 

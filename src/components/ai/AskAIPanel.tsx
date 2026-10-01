@@ -144,9 +144,7 @@ export const AskAIPanel = ({
                 'flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors',
                 isBlog ? 'py-2.5' : 'py-2',
                 darkMode
-                  ? isBlog
-                    ? 'border-white/10 bg-[#141818] text-[#f0f0ee] hover:bg-[#181d1d]'
-                    : 'border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800'
+                  ? 'border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800'
                   : 'border-zinc-200 bg-white text-zinc-950 hover:bg-zinc-50'
               )}
               title={provider.label}

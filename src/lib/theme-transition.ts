@@ -21,9 +21,15 @@ function pixelGrid() {
   const width = Math.max(window.innerWidth, 1);
   const height = Math.max(window.innerHeight, 1);
   const tile = width < 720 ? 12 : 10;
-  const cols = Math.max(24, Math.min(72, Math.round(width / tile)));
-  const rows = Math.max(16, Math.round(cols * (height / width)));
+  const cols = Math.max(24, Math.min(64, Math.round(width / tile)));
+  const rows = Math.max(16, Math.min(40, Math.round(cols * (height / width))));
   return { cols, rows };
+}
+
+function nextFrame() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
 }
 
 function buildPixelSprite(origin: ThemeOrigin, cols: number, rows: number, frames: number) {
@@ -81,6 +87,7 @@ export async function transitionPortfolioTheme(
   const root = document.documentElement;
   const { cols, rows } = pixelGrid();
   const source = origin ?? { x: window.innerWidth - 72, y: 36 };
+  await nextFrame();
   const sprite = buildPixelSprite(source, cols, rows, THEME_PIXEL_FRAMES);
   if (!sprite) {
     applyTheme();
@@ -91,6 +98,7 @@ export async function transitionPortfolioTheme(
   root.style.setProperty('--theme-transition-duration', `${THEME_PIXEL_DURATION_MS}ms`);
   root.style.setProperty('--theme-pixel-sprite', `url("${sprite}")`);
   root.style.setProperty('--theme-pixel-frames', String(THEME_PIXEL_FRAMES));
+  root.style.setProperty('--theme-pixel-steps', String(Math.max(1, THEME_PIXEL_FRAMES - 1)));
   root.classList.add('theme-pixelating');
 
   try {
@@ -101,6 +109,7 @@ export async function transitionPortfolioTheme(
     root.classList.remove('theme-pixelating');
     root.style.removeProperty('--theme-pixel-sprite');
     root.style.removeProperty('--theme-pixel-frames');
+    root.style.removeProperty('--theme-pixel-steps');
     themeTransitioning = false;
   }
 }

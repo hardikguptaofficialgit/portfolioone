@@ -5,6 +5,7 @@ import portfolioViews from './routes/portfolio-views.js';
 import blogs from './routes/blogs/index.js';
 import blogBySlug from './routes/blogs/[slug].js';
 import doomsWaitlist from './routes/dooms/waitlist.js';
+import monkeytypeStats from './routes/monkeytype-stats.js';
 
 type Handler = (req: any, res: any) => unknown | Promise<unknown>;
 
@@ -20,6 +21,7 @@ const exactRoutes = new Map<string, Handler>([
   ['portfolio/views', portfolioViews],
   ['blogs', blogs],
   ['dooms/waitlist', doomsWaitlist],
+  ['monkeytype-stats', monkeytypeStats],
 ]);
 
 const normalizePath = (req: any) => {

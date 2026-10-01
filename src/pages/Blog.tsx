@@ -28,6 +28,7 @@ import { useDesktopStore } from '@/store/desktopStore';
 import type { BlogPost } from '@/content/types';
 import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
 import { transitionPortfolioTheme } from '@/lib/theme-transition';
+import { usePortfolioPageBackground } from '@/hooks/usePortfolioPageBackground';
 
 type BlogTheme = 'dark' | 'light';
 
@@ -42,22 +43,22 @@ const readingTime = (text: string) =>
 
 const T = {
   dark: {
-    root: 'bg-[#0d0f0f] text-[#f0f0ee]',
-    surface: 'bg-[#111414]',
-    card: 'bg-[#141818] hover:bg-[#181d1d]',
-    input: 'bg-[#1a1f1f] border-0 text-[#f0f0ee] placeholder:text-white/35 focus-visible:ring-1 focus-visible:ring-white/20 rounded-md',
-    muted: 'text-white/60',
-    subtle: 'text-white/40',
-    badge: 'bg-white/8 text-white/70',
-    btn: 'bg-white/6 hover:bg-white/10 text-white/70 hover:text-white',
-    accentBtn: 'bg-[#d0fffe] text-[#0d1515] hover:bg-[#b8f5f3]',
-    divider: 'bg-white/8',
-    border: 'border-white/10',
-    codeHeader: 'bg-white/[0.04] text-white/55 border-white/10',
-    codeSurface: '#0b0d0d',
-    tableHeader: 'bg-white/[0.05] text-white/80',
-    quote: 'border-[#d0fffe]/45 bg-white/[0.035] text-white/78',
-    prose: 'prose-invert prose-headings:text-[#f0f0ee] prose-p:text-white/78 prose-li:text-white/78 prose-a:text-[#d0fffe] prose-code:text-[#ffd3c4] prose-pre:bg-transparent prose-strong:text-white',
+    root: 'bg-zinc-950 text-zinc-100',
+    surface: 'bg-zinc-950',
+    card: 'bg-zinc-900 hover:bg-zinc-800',
+    input: 'bg-zinc-950 border-0 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-1 focus-visible:ring-zinc-600 rounded-md',
+    muted: 'text-zinc-400',
+    subtle: 'text-zinc-500',
+    badge: 'bg-white/8 text-zinc-300',
+    btn: 'bg-white/6 hover:bg-white/10 text-zinc-300 hover:text-zinc-100',
+    accentBtn: 'bg-[#d0fffe] text-zinc-950 hover:bg-[#b8f5f3]',
+    divider: 'bg-zinc-800',
+    border: 'border-zinc-800',
+    codeHeader: 'bg-zinc-900 text-zinc-400 border-zinc-800',
+    codeSurface: '#09090b',
+    tableHeader: 'bg-zinc-900 text-zinc-200',
+    quote: 'border-[#d0fffe]/45 bg-zinc-900/50 text-zinc-300',
+    prose: 'prose-invert prose-headings:text-zinc-100 prose-p:text-zinc-300 prose-li:text-zinc-300 prose-a:text-[#d0fffe] prose-code:text-[#ffd3fd] prose-pre:bg-transparent prose-strong:text-zinc-100',
   },
   light: {
     root: 'bg-[#f6f5f0] text-[#1a1a1a]',
@@ -95,6 +96,7 @@ const NoiseOverlay = () => (
 const useResumeShellTheme = () => {
   const { settings, updateSettings } = useDesktopStore();
   const isDark = settings.darkMode;
+  usePortfolioPageBackground(isDark);
   const theme: BlogTheme = isDark ? 'dark' : 'light';
   const toggleTheme = useCallback((origin?: { x: number; y: number }) => {
     const nextDark = !settings.darkMode;
@@ -105,17 +107,17 @@ const useResumeShellTheme = () => {
     isDark,
     theme,
     toggleTheme,
-    bg: isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]',
+    bg: 'bg-transparent',
     bgImage: isDark ? '/bgdarkimage.png' : '/bgimage.png',
     text: isDark ? 'text-zinc-100' : 'text-[#1f1a17]',
-    navBg: isDark ? 'bg-black border-zinc-800' : 'bg-[#fffef9] border-[#e6d8cb]',
+    navBg: isDark ? 'bg-black/90 border-zinc-800' : 'bg-[#fffef9]/95 border-[#e6d8cb]',
     mutedText: isDark ? 'text-zinc-400' : 'text-[#5f5248]',
     subtleText: isDark ? 'text-zinc-500' : 'text-[#7d6b5c]',
     cardBg: isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-[#fffef9] border-[#d8c8b9]',
     divider: isDark ? 'border-zinc-800' : 'border-[#e7dacb]',
     gridColumnShell: isDark ? 'border-zinc-800' : 'border-[#d8c8b9]',
     shellBase: isDark
-      ? 'rounded-2xl border border-white/[0.08] bg-black/80 p-6 md:p-9 shadow-[0_24px_80px_-48px_rgba(255,255,255,0.22)] backdrop-blur-xl'
+      ? 'rounded-2xl border border-zinc-800 bg-black/80 p-6 md:p-9 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.08)] backdrop-blur-xl'
       : 'rounded-2xl border border-[#ded4ca] p-6 md:p-9 bg-white/90 shadow-[0_24px_80px_-48px_rgba(67,47,31,0.22)] backdrop-blur-xl',
     labelText: isDark ? 'text-zinc-500' : 'text-[#6f5b4e]',
     filterInactive: isDark
@@ -155,7 +157,7 @@ const BlogChrome = ({ children }: { children: React.ReactNode }) => {
         <div
           className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${
             isDark
-              ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.25)]'
+              ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.08)]'
               : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'
           } backdrop-blur-xl`}
         >
@@ -332,7 +334,7 @@ export const BlogListPage = () => {
               Blogs
             </h1>
             <p className={`mt-4 max-w-xl text-sm leading-relaxed ${shell.mutedText}`}>
-              Thoughts, deep dives, and things I&apos;m learning — documented.
+              Thoughts, deep dives, and things I&apos;m learning - documented.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
