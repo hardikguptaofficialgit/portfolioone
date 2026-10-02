@@ -265,20 +265,22 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                 }
             };
             const loadViews = async () => {
+                const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
                 try {
-                    const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
-                    const res = await fetch('/api/portfolio/views', {
-                        method: seen ? 'GET' : 'POST',
-                    });
-                    if (res.ok) {
-                        const payload = (await res.json()) as { count?: number };
-                        if (typeof payload.count === 'number') {
-                            applyCount(payload.count, !seen);
+                    const {
+                        isExternalPortfolioViewsEnabled,
+                        hitExternalPortfolioViews,
+                        peekExternalPortfolioViews,
+                    } = await import('@/lib/portfolio/external-views');
+                    if (isExternalPortfolioViewsEnabled()) {
+                        const count = seen ? await peekExternalPortfolioViews() : await hitExternalPortfolioViews();
+                        if (typeof count === 'number') {
+                            applyCount(count, !seen);
                             return;
                         }
                     }
                 } catch {
-                    // try fallback
+                    // ignore
                 }
                 await loadStaticFallback();
             };

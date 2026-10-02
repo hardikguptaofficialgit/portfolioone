@@ -3,7 +3,6 @@ import { join } from 'path';
 import { resolveContentDir } from './content-path.js';
 
 const metricsPath = () => join(resolveContentDir(), 'site-metrics.json');
-const KV_KEY = 'portfolio:views';
 
 const readLocalCount = () => {
   try {
@@ -20,60 +19,10 @@ const writeLocalCount = (count: number) => {
   writeFileSync(metricsPath(), JSON.stringify({ portfolioViews: count }, null, 2), 'utf8');
 };
 
-const kvConfigured = () =>
-  Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-
-const kvHeaders = () => ({
-  Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-});
-
-const parseKvNumber = (value: unknown) => {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim()) {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
-  return null;
-};
-
-const kvGetCount = async (): Promise<number | null> => {
-  if (!kvConfigured()) return null;
-  const res = await fetch(`${process.env.KV_REST_API_URL}/get/${KV_KEY}`, { headers: kvHeaders() });
-  if (!res.ok) return null;
-  const payload = (await res.json()) as { result?: unknown };
-  if (payload.result === null || payload.result === undefined) return null;
-  return parseKvNumber(payload.result);
-};
-
-const kvSetCount = async (count: number) => {
-  if (!kvConfigured()) return false;
-  const res = await fetch(`${process.env.KV_REST_API_URL}/set/${KV_KEY}/${count}`, { headers: kvHeaders() });
-  return res.ok;
-};
-
-const kvIncrement = async (): Promise<number | null> => {
-  if (!kvConfigured()) return null;
-  const existing = await kvGetCount();
-  if (existing === null) {
-    const seeded = readLocalCount();
-    if (!(await kvSetCount(seeded))) return null;
-  }
-  const res = await fetch(`${process.env.KV_REST_API_URL}/incr/${KV_KEY}`, { headers: kvHeaders() });
-  if (!res.ok) return null;
-  const payload = (await res.json()) as { result?: unknown };
-  return parseKvNumber(payload.result);
-};
-
-export const getPortfolioViews = async (): Promise<number> => {
-  const fromKv = await kvGetCount();
-  if (fromKv !== null) return fromKv;
-  return readLocalCount();
-};
+/** Local dev only — production should use VITE_PORTFOLIO_VIEWS_URL (Countty) or static JSON. */
+export const getPortfolioViews = async (): Promise<number> => readLocalCount();
 
 export const incrementPortfolioViews = async (): Promise<number> => {
-  const fromKv = await kvIncrement();
-  if (fromKv !== null) return fromKv;
-
   const next = readLocalCount() + 1;
   try {
     writeLocalCount(next);

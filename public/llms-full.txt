@@ -47,7 +47,7 @@ Full-stack web development, TypeScript, React, Node.js, AI/LLM integration, SaaS
 
 ## Achievements
 
-- Adobe University Hackathon 2026: Advanced to the top 400 teams in Round 3.
+- Adobe University Hackathon 2026 (Top 400 out of 26,760 teams): Advanced to the top 400 teams in Round 3.
 - YC Hackathon (Top Applicant): Selected from 2,000+ global applicants by showcasing an app idea that helps users find nearby people to go out to places together.
 - GDG Hackathon - Building Bad (Winner): Winner. Demonstrated end-to-end product execution and cross-team collaboration.
 - Growth Hackathon at The Residency (Participant): Pitched LinkitApp.in during the Growth Hackathon in Bangalore at The Residency, generating leads from nearby restaurants, cafés, and local businesses.

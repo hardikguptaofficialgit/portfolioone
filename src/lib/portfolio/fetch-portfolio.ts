@@ -14,14 +14,7 @@ export async function fetchPortfolioDocument(): Promise<PortfolioDocument> {
     /* static bundle missing */
   }
 
-  try {
-    const res = await fetch('/api/portfolio', { cache: 'no-store' });
-    if (!res.ok) throw new Error('Portfolio API unavailable');
-    const payload = (await res.json()) as { data?: PortfolioDocument };
-    return payload.data ?? defaultPortfolio;
-  } catch {
-    return defaultPortfolio;
-  }
+  return defaultPortfolio;
 }
 
 export async function fetchBlogPostBySlug(slug: string) {
