@@ -20,6 +20,7 @@ const wrapResponse = (res: ServerResponse) => {
   };
 
   apiRes.json = (payload: unknown) => {
+    if (res.writableEnded) return;
     res.statusCode = statusCode;
     if (!res.getHeader('Content-Type')) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -30,6 +31,24 @@ const wrapResponse = (res: ServerResponse) => {
   return apiRes;
 };
 
+const attachQuery = (req: VercelLikeRequest) => {
+  try {
+    const url = new URL(req.url || 'http://localhost/api', 'http://localhost');
+    const fromUrl = Object.fromEntries(url.searchParams.entries());
+    req.query = { ...(req.query || {}), ...fromUrl };
+  } catch {
+    req.query = req.query || {};
+  }
+};
+
 export default async function handler(req: VercelLikeRequest, res: ServerResponse) {
-  await handleApiRequest(req, wrapResponse(res));
+  const apiRes = wrapResponse(res);
+  try {
+    attachQuery(req);
+    await handleApiRequest(req, apiRes);
+  } catch (error) {
+    apiRes.status(500).json({
+      error: error instanceof Error ? error.message : 'API handler failed.',
+    });
+  }
 }

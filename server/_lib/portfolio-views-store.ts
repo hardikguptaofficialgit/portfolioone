@@ -1,13 +1,15 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
+import { resolveContentDir } from './content-path.js';
 
-const localMetricsPath = fileURLToPath(new URL('../../content/site-metrics.json', import.meta.url));
+const metricsPath = () => join(resolveContentDir(), 'site-metrics.json');
 const KV_KEY = 'portfolio:views';
 
 const readLocalCount = () => {
   try {
-    if (!existsSync(localMetricsPath)) return 0;
-    const parsed = JSON.parse(readFileSync(localMetricsPath, 'utf8')) as { portfolioViews?: number };
+    const path = metricsPath();
+    if (!existsSync(path)) return 0;
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as { portfolioViews?: number };
     return typeof parsed.portfolioViews === 'number' ? parsed.portfolioViews : 0;
   } catch {
     return 0;
@@ -15,7 +17,7 @@ const readLocalCount = () => {
 };
 
 const writeLocalCount = (count: number) => {
-  writeFileSync(localMetricsPath, JSON.stringify({ portfolioViews: count }, null, 2), 'utf8');
+  writeFileSync(metricsPath(), JSON.stringify({ portfolioViews: count }, null, 2), 'utf8');
 };
 
 const kvConfigured = () =>

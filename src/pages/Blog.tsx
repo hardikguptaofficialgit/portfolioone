@@ -31,6 +31,7 @@ import { transitionPortfolioTheme } from '@/lib/theme-transition';
 import { useSeo } from '@/hooks/useSeo';
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/seo/site-config';
 import { usePortfolioPageBackground } from '@/hooks/usePortfolioPageBackground';
+import { fetchBlogPostBySlug, fetchBlogPostsList } from '@/lib/portfolio/fetch-portfolio';
 
 type BlogTheme = 'dark' | 'light';
 
@@ -210,19 +211,9 @@ const usePageScroll = () => {
   }, []);
 };
 
-const fetchPosts = async (): Promise<BlogPost[]> => {
-  const response = await fetch('/api/blogs', { cache: 'no-store' });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'Unable to load posts.');
-  return Array.isArray(payload.data) ? payload.data : [];
-};
+const fetchPosts = async (): Promise<BlogPost[]> => fetchBlogPostsList();
 
-const fetchPost = async (slug: string): Promise<BlogPost> => {
-  const response = await fetch(`/api/blogs/${encodeURIComponent(slug)}`, { cache: 'no-store' });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'Unable to load article.');
-  return payload.data;
-};
+const fetchPost = async (slug: string): Promise<BlogPost> => fetchBlogPostBySlug(slug);
 
 const MarkdownCodeBlock = ({ inline, className, children, theme, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || '');

@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/index.ts": {
-      "includeFiles": "{content/**,lib/portfolio/**}"
+      "includeFiles": "content/**"
     }
   },
   "routes": [

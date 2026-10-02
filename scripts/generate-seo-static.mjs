@@ -9,8 +9,32 @@ const siteMetricsDest = path.join(publicDir, 'site-metrics.json');
 if (fs.existsSync(siteMetricsSrc)) {
   fs.copyFileSync(siteMetricsSrc, siteMetricsDest);
 }
-const site = JSON.parse(fs.readFileSync(path.join(root, 'content/site.json'), 'utf8'));
-const blogs = JSON.parse(fs.readFileSync(path.join(root, 'content/blogs.json'), 'utf8'));
+const readContentJson = (file) => JSON.parse(fs.readFileSync(path.join(root, 'content', file), 'utf8'));
+const site = readContentJson('site.json');
+const skills = readContentJson('skills.json');
+const projects = readContentJson('projects.json');
+const experience = readContentJson('experience.json');
+const blogs = readContentJson('blogs.json');
+const photos = readContentJson('photos.json');
+
+const portfolioDocument = {
+  version: site.version ?? 1,
+  profile: site.profile,
+  socialLinks: site.socialLinks,
+  sections: site.sections ?? {},
+  education: site.education,
+  achievements: site.achievements,
+  certifications: site.certifications,
+  skillCategories: skills.skillCategories,
+  skillsFlat: skills.skillsFlat,
+  projects: projects.projects,
+  experience: experience.experience,
+  simplifiedExperience: experience.simplifiedExperience ?? [],
+  blogPosts: blogs.blogPosts ?? [],
+  photoEvents: photos.photoEvents ?? [],
+};
+
+fs.writeFileSync(path.join(publicDir, 'portfolio.json'), JSON.stringify(portfolioDocument));
 
 const SITE_URL = (process.env.VITE_SITE_URL || site.profile?.website || 'https://strykerinside.vercel.app').replace(
   /\/$/,
