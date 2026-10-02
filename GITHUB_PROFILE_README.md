@@ -41,9 +41,9 @@ Learner • Builder • Full Stack Developer
 
 Software engineer focused on **production backends**, **full-stack web apps**, and **AI-integrated systems**. Auth, real-time pipelines, LLM features end-to-end.
 
-- Contextually overthinking human — curious, learning, improving how things work
+- Contextually overthinking human - curious, learning, improving how things work
 - Built **[Linkit](https://linkitapp.in)** and products idea → deployment
-- Building since 9th grade — ship, break, fix (*jugaad*)
+- Building since 9th grade - ship, break, fix (*jugaad*)
 - **YC Hackathon** selectee (top applicants) · **GDG Hackathon** winner
 - B.Tech CSE (AI/ML) @ **KIIT University** (2024–2028)
 
@@ -130,7 +130,7 @@ Bio pages, analytics, forms, payments, **Linkit Studio** (AI motion).
 ### [C25Go](https://campus25go.vercel.app)
 <a href="https://campus25go.vercel.app"><img src="https://strykerinside.vercel.app/images/misc/d4b56894cf.png" alt="C25Go" width="100%" height="160" /></a>
 
-Campus navigation PWA — **15,000+** students, offline-first.
+Campus navigation PWA - **15,000+** students, offline-first.
 
 [![Code](https://img.shields.io/badge/Code-repoc25-27272a?style=flat-square&logo=github)](https://github.com/hardikguptaofficialgit/repoc25)
 
@@ -142,7 +142,7 @@ Campus navigation PWA — **15,000+** students, offline-first.
 ### [NuviBrainz](https://nuvibrainz.vercel.app)
 <a href="https://nuvibrainz.vercel.app"><img src="https://strykerinside.vercel.app/images/misc/a7db69dcc8.png" alt="NuviBrainz" width="100%" height="160" /></a>
 
-JEE prep — adaptive quizzes, AI tutor, doubt solving.
+JEE prep - adaptive quizzes, AI tutor, doubt solving.
 
 </td>
 <td width="50%" valign="top">
@@ -162,7 +162,7 @@ Developer discovery from GitHub signals.
 ### [Stryker Inside](https://strykerinside.vercel.app)
 <a href="https://strykerinside.vercel.app"><img src="https://strykerinside.vercel.app/images/projects/19916e087d.png" alt="Stryker Inside portfolio" width="100%" height="160" /></a>
 
-Windows-style portfolio + resume + blog — open source.
+Windows-style portfolio + resume + blog - open source.
 
 [![Code](https://img.shields.io/badge/Code-portfolioone-27272a?style=flat-square&logo=github)](https://github.com/hardikguptaofficialgit/portfolioone)
 

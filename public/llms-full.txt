@@ -1,6 +1,6 @@
 # Stryker Inside
 
-> Hardik Gupta (Stryker) — Software Engineer. Software engineer focused on production backends, full-stack web apps, and AI-integrated systems. Experience shipping auth, real-time pipelines, and LLM features end-to-end.
+> Hardik Gupta (Stryker) - Software Engineer. Software engineer focused on production backends, full-stack web apps, and AI-integrated systems. Experience shipping auth, real-time pipelines, and LLM features end-to-end.
 
 Canonical site: https://strykerinside.vercel.app
 

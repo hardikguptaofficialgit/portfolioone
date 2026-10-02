@@ -64,7 +64,7 @@ export function SeoManager() {
       return {
         title: `Interactive Desktop | ${SITE_NAME}`,
         description:
-          'Windows-inspired interactive portfolio desktop by Hardik Gupta — apps, widgets, and experiments in the browser.',
+          'Windows-inspired interactive portfolio desktop by Hardik Gupta - apps, widgets, and experiments in the browser.',
         canonicalPath: '/desktop',
       };
     }
@@ -72,7 +72,7 @@ export function SeoManager() {
     if (pathname === '/dooms') {
       return {
         title: `Dooms Waitlist | ${SITE_NAME}`,
-        description: 'Join the waitlist for Dooms — a project by Hardik Gupta.',
+        description: 'Join the waitlist for Dooms - a project by Hardik Gupta.',
         canonicalPath: '/dooms',
         noindex: true,
       };

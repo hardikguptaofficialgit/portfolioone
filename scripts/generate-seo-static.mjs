@@ -78,7 +78,7 @@ ${urls
 
 const llms = `# Stryker Inside
 
-> ${name} (Stryker) — ${profile.title || 'Software Engineer'}. ${summary}
+> ${name} (Stryker) - ${profile.title || 'Software Engineer'}. ${summary}
 
 Canonical site: ${SITE_URL}
 
