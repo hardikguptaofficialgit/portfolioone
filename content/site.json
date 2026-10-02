@@ -95,6 +95,13 @@
     }
   ],
   "achievements": [
+     {
+  "id": "adobe-hackathon",
+  "badge": "Top 400 out of 26,760 teams",
+  "title": "Adobe University Hackathon 2026",
+  "detail": "Advanced to the top 400 teams in Round 3.",
+  "iconKey": "adobe"
+},
     {
       "id": "yc-hackathon",
       "badge": "Top Applicant",

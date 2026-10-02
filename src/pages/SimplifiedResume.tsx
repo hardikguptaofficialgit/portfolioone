@@ -146,16 +146,24 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
     /* ─── achievement icons (static assets) ───────────────────── */
     const achievementIconSrc = {
+        adobe: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNrny_nvp6LARwRDfsB4pTpmSM0hFEVGIvndRbMuBlutvyyocCiH9TZg&s=10',
         yc: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHZEuWg1DSjG7W9DQ1Yl4ti8wj4I2DlGjZvg&s',
         gdg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx1ifvMfrD9VzaphHBYLhM6wUV-YHR0g28Ow&s',
         residency: 'https://cdn.prod.website-files.com/62f41dee5606d80f65b7dcbb/6676ffc8dcc184ba44858820_the_residency_logo.svg',
     } as const;
 
     const achievementIconBg: Record<keyof typeof achievementIconSrc, string> = {
-        yc: '#FB651E', gdg: '#FFFFFF', residency: '#FFFFFF',
+        yc: '#FB651E', gdg: '#FFFFFF', residency: '#FFFFFF', adobe: '#FFFFFF',
     };
 
-    const getAchievementIconKey = (title: string): keyof typeof achievementIconSrc => {
+    const getAchievementIconKey = (
+        title: string,
+        iconKey?: string,
+    ): keyof typeof achievementIconSrc => {
+        if (iconKey && iconKey in achievementIconSrc) {
+            return iconKey as keyof typeof achievementIconSrc;
+        }
+        if (title.includes('Adobe')) return 'adobe';
         if (title.includes('YC')) return 'yc';
         if (title.includes('GDG')) return 'gdg';
         return 'residency';
@@ -900,7 +908,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Achievements &amp; Leadership</SectionLabel>
                                         <div className="space-y-3">
                                             {achievements.map((a, i) => {
-                                                const iconKey = getAchievementIconKey(a.title);
+                                                const iconKey = getAchievementIconKey(a.title, a.iconKey);
                                                 return (
                                                     <StaggerItem key={a.title} index={i}>
                                                         <motion.div
