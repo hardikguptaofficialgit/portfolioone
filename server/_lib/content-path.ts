@@ -6,9 +6,9 @@ const withSlash = (dir: string) => (dir.endsWith('/') ? dir : `${dir}/`);
 
 export const resolveContentDir = (): string => {
   const candidates = [
-    fileURLToPath(new URL('../../content/', import.meta.url)),
     join(process.cwd(), 'content'),
     join(process.cwd(), '..', 'content'),
+    fileURLToPath(new URL('../../content/', import.meta.url)),
   ];
 
   for (const dir of candidates) {

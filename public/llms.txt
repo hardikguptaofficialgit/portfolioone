@@ -8,7 +8,7 @@ Canonical site: https://strykerinside.vercel.app
 
 - Name: Hardik Gupta
 - Also known as: Stryker
-- Location: Bhubaneswar, Odisha, India
+- Location: Jaipur, Rajasthan , India
 - Headline: Learner • Builder • Full Stack Developer
 - Email: hardikgupta8792@gmail.com
 - GitHub: https://github.com/hardikguptaofficialgit

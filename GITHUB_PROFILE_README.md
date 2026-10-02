@@ -20,7 +20,7 @@
 
 Learner • Builder • Full Stack Developer
 
-📍 Bhubaneswar, Odisha, India · [Portfolio](https://strykerinside.vercel.app) · [hardikgupta8792@gmail.com](mailto:hardikgupta8792@gmail.com)
+📍 Jaipur, Rajasthan , India · [Portfolio](https://strykerinside.vercel.app) · [hardikgupta8792@gmail.com](mailto:hardikgupta8792@gmail.com)
 
 [![Download CV](https://img.shields.io/badge/Download_CV-09090b?style=for-the-badge&logo=adobeacrobatreader&logoColor=d0fffe)](https://strykerinside.vercel.app/files/hardikresume.pdf)
 [![Blog](https://img.shields.io/badge/Blog-09090b?style=for-the-badge&logo=devdotto&logoColor=d0fffe)](https://strykerinside.vercel.app/blogs)

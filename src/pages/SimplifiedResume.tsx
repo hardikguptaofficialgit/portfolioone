@@ -503,7 +503,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                     alt="Hardik Gupta"
                                     className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
                                 />
-                                <span className={`font-serif-display leading-none tracking-tight ${shouldUseCompactNav ? 'text-[15px]' : 'text-[17px]'}`}>
+                                <span
+                                    className={`font-serif-display leading-none tracking-tight ${text} ${shouldUseCompactNav ? 'text-[15px]' : 'text-[17px]'}`}
+                                >
                                     stryker.inside
                                 </span>
                             </motion.button>
@@ -597,7 +599,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                             alt="Hardik Gupta"
                                             className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
                                         />
-                                        <span className="font-serif-display text-[17px] leading-none tracking-tight">stryker.inside</span>
+                                        <span className={`font-serif-display text-[17px] leading-none tracking-tight ${text}`}>
+                                            stryker.inside
+                                        </span>
                                     </button>
                                     <div className="flex items-center gap-2">
                                         <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />

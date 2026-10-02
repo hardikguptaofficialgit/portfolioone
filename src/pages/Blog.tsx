@@ -177,7 +177,13 @@ const BlogChrome = ({ children }: { children: React.ReactNode }) => {
                   alt="Hardik Gupta"
                   className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
                 />
-                <span className="font-serif-display text-[17px] leading-none tracking-tight">stryker.inside</span>
+                <span
+                  className={`font-serif-display text-[17px] leading-none tracking-tight ${
+                    isDark ? 'text-zinc-100' : 'text-[#1f1a17]'
+                  }`}
+                >
+                  stryker.inside
+                </span>
               </Link>
               <div className="ml-auto flex items-center gap-2">
                 <span
