@@ -4,8 +4,37 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'public');
-const site = JSON.parse(fs.readFileSync(path.join(root, 'content/site.json'), 'utf8'));
-const blogs = JSON.parse(fs.readFileSync(path.join(root, 'content/blogs.json'), 'utf8'));
+const siteMetricsSrc = path.join(root, 'content/site-metrics.json');
+const siteMetricsDest = path.join(publicDir, 'site-metrics.json');
+if (fs.existsSync(siteMetricsSrc)) {
+  fs.copyFileSync(siteMetricsSrc, siteMetricsDest);
+}
+const readContentJson = (file) => JSON.parse(fs.readFileSync(path.join(root, 'content', file), 'utf8'));
+const site = readContentJson('site.json');
+const skills = readContentJson('skills.json');
+const projects = readContentJson('projects.json');
+const experience = readContentJson('experience.json');
+const blogs = readContentJson('blogs.json');
+const photos = readContentJson('photos.json');
+
+const portfolioDocument = {
+  version: site.version ?? 1,
+  profile: site.profile,
+  socialLinks: site.socialLinks,
+  sections: site.sections ?? {},
+  education: site.education,
+  achievements: site.achievements,
+  certifications: site.certifications,
+  skillCategories: skills.skillCategories,
+  skillsFlat: skills.skillsFlat,
+  projects: projects.projects,
+  experience: experience.experience,
+  simplifiedExperience: experience.simplifiedExperience ?? [],
+  blogPosts: blogs.blogPosts ?? [],
+  photoEvents: photos.photoEvents ?? [],
+};
+
+fs.writeFileSync(path.join(publicDir, 'portfolio.json'), JSON.stringify(portfolioDocument));
 
 const SITE_URL = (process.env.VITE_SITE_URL || site.profile?.website || 'https://strykerinside.vercel.app').replace(
   /\/$/,
@@ -49,7 +78,7 @@ ${urls
 
 const llms = `# Stryker Inside
 
-> ${name} (Stryker) — ${profile.title || 'Software Engineer'}. ${summary}
+> ${name} (Stryker) - ${profile.title || 'Software Engineer'}. ${summary}
 
 Canonical site: ${SITE_URL}
 

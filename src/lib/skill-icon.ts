@@ -1,4 +1,4 @@
-/** Simple Icons slugs — rendered via Iconify CDN. */
+/** Simple Icons slugs - rendered via Iconify CDN. */
 const SKILL_ICON_SLUG: Record<string, string> = {
   TypeScript: 'typescript',
   JavaScript: 'javascript',

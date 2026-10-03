@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+countty-worker/.env
+countty-worker/node_modules
 
 # Editor directories and files
 .vscode/*

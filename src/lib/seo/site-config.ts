@@ -4,7 +4,7 @@ export const SITE_URL = (
 ).replace(/\/$/, '');
 
 export const SITE_NAME = 'Stryker Inside';
-export const SITE_TAGLINE = 'Hardik Gupta — Software Engineer & Builder';
+export const SITE_TAGLINE = 'Hardik Gupta - Software Engineer & Builder';
 export const DEFAULT_DESCRIPTION =
   'Portfolio of Hardik Gupta (Stryker): full-stack software engineer building AI systems, developer tools, and products. Projects, resume, blog, and interactive desktop experience.';
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/logoimage.png`;

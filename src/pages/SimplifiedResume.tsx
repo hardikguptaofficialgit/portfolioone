@@ -146,16 +146,24 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
     /* ─── achievement icons (static assets) ───────────────────── */
     const achievementIconSrc = {
+        adobe: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNrny_nvp6LARwRDfsB4pTpmSM0hFEVGIvndRbMuBlutvyyocCiH9TZg&s=10',
         yc: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHZEuWg1DSjG7W9DQ1Yl4ti8wj4I2DlGjZvg&s',
         gdg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx1ifvMfrD9VzaphHBYLhM6wUV-YHR0g28Ow&s',
         residency: 'https://cdn.prod.website-files.com/62f41dee5606d80f65b7dcbb/6676ffc8dcc184ba44858820_the_residency_logo.svg',
     } as const;
 
     const achievementIconBg: Record<keyof typeof achievementIconSrc, string> = {
-        yc: '#FB651E', gdg: '#FFFFFF', residency: '#FFFFFF',
+        yc: '#FB651E', gdg: '#FFFFFF', residency: '#FFFFFF', adobe: '#FFFFFF',
     };
 
-    const getAchievementIconKey = (title: string): keyof typeof achievementIconSrc => {
+    const getAchievementIconKey = (
+        title: string,
+        iconKey?: string,
+    ): keyof typeof achievementIconSrc => {
+        if (iconKey && iconKey in achievementIconSrc) {
+            return iconKey as keyof typeof achievementIconSrc;
+        }
+        if (title.includes('Adobe')) return 'adobe';
         if (title.includes('YC')) return 'yc';
         if (title.includes('GDG')) return 'gdg';
         return 'residency';
@@ -239,21 +247,42 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
         useEffect(() => {
             let cancelled = false;
-            const loadViews = async () => {
+            const applyCount = (count: number, markSeen: boolean) => {
+                if (cancelled || !Number.isFinite(count)) return;
+                setPortfolioViews(count);
+                if (markSeen) sessionStorage.setItem(PORTFOLIO_VIEW_SESSION_KEY, '1');
+            };
+            const loadStaticFallback = async () => {
                 try {
-                    const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
-                    const res = await fetch(seen ? '/api/portfolio/views' : '/api/portfolio/views', {
-                        method: seen ? 'GET' : 'POST',
-                    });
+                    const res = await fetch('/site-metrics.json', { cache: 'no-store' });
                     if (!res.ok) return;
-                    const payload = (await res.json()) as { count?: number };
-                    if (!cancelled && typeof payload.count === 'number') {
-                        setPortfolioViews(payload.count);
-                        if (!seen) sessionStorage.setItem(PORTFOLIO_VIEW_SESSION_KEY, '1');
+                    const payload = (await res.json()) as { portfolioViews?: number };
+                    if (typeof payload.portfolioViews === 'number') {
+                        applyCount(payload.portfolioViews, false);
                     }
                 } catch {
-                    // ignore analytics failures
+                    // ignore
                 }
+            };
+            const loadViews = async () => {
+                const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
+                try {
+                    const {
+                        isExternalPortfolioViewsEnabled,
+                        hitExternalPortfolioViews,
+                        peekExternalPortfolioViews,
+                    } = await import('@/lib/portfolio/external-views');
+                    if (isExternalPortfolioViewsEnabled()) {
+                        const count = seen ? await peekExternalPortfolioViews() : await hitExternalPortfolioViews();
+                        if (typeof count === 'number') {
+                            applyCount(count, !seen);
+                            return;
+                        }
+                    }
+                } catch {
+                    // ignore
+                }
+                await loadStaticFallback();
             };
             loadViews();
             return () => {
@@ -484,7 +513,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                     alt="Hardik Gupta"
                                     className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
                                 />
-                                <span className={`font-serif-display leading-none tracking-tight ${shouldUseCompactNav ? 'text-[15px]' : 'text-[17px]'}`}>
+                                <span
+                                    className={`font-serif-display leading-none tracking-tight ${text} ${shouldUseCompactNav ? 'text-[15px]' : 'text-[17px]'}`}
+                                >
                                     stryker.inside
                                 </span>
                             </motion.button>
@@ -578,7 +609,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                             alt="Hardik Gupta"
                                             className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
                                         />
-                                        <span className="font-serif-display text-[17px] leading-none tracking-tight">stryker.inside</span>
+                                        <span className={`font-serif-display text-[17px] leading-none tracking-tight ${text}`}>
+                                            stryker.inside
+                                        </span>
                                     </button>
                                     <div className="flex items-center gap-2">
                                         <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
@@ -877,7 +910,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>Achievements &amp; Leadership</SectionLabel>
                                         <div className="space-y-3">
                                             {achievements.map((a, i) => {
-                                                const iconKey = getAchievementIconKey(a.title);
+                                                const iconKey = getAchievementIconKey(a.title, a.iconKey);
                                                 return (
                                                     <StaggerItem key={a.title} index={i}>
                                                         <motion.div

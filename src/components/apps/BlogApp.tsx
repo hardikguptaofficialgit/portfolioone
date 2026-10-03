@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Interfaces, Files } from 'doodle-icons';
 import { format } from 'date-fns';
-import type { BlogPost as PortfolioBlogPost } from '@/content/types';
+import { fetchBlogPostsList } from '@/lib/portfolio/fetch-portfolio';
+
 interface BlogPost {
   id: string;
   title: string;
@@ -27,10 +28,7 @@ export const BlogApp = () => {
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const response = await fetch('/api/blogs', { cache: 'no-store' });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(payload.error || 'Unable to load posts.');
-        const data = Array.isArray(payload.data) ? (payload.data as PortfolioBlogPost[]) : [];
+        const data = await fetchBlogPostsList();
         setPosts(
           data.map((post) => ({
             id: post.id,
@@ -42,7 +40,7 @@ export const BlogApp = () => {
             published_at: post.publishedAt,
             created_at: post.publishedAt,
             views: post.readingTimeMinutes || 1,
-          }))
+          })),
         );
       } catch (error) {
         console.error('Error loading posts:', error);
@@ -58,7 +56,7 @@ export const BlogApp = () => {
     (post) =>
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      post.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())),
   );
 
   const openBlogPost = (slug: string) => {
@@ -78,84 +76,54 @@ export const BlogApp = () => {
           <div className="flex gap-2">
             <Button size="sm" onClick={openBlogPage} className="text-xs h-7">
               <Interfaces.Link className="w-3 h-3 mr-1.5" />
-              View All
+              Open Site
             </Button>
           </div>
         </div>
-        
-        <div className="relative">
-          <Interfaces.Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search posts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-8 text-xs"
-          />
-        </div>
+        <Input
+          placeholder="Search posts..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-8 text-xs bg-zinc-900 border-white/10"
+        />
       </div>
 
-      {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="p-3 space-y-3">
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-3"></div>
-              <p className="text-muted-foreground text-xs">Loading posts...</p>
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <div className="text-center py-8 space-y-3">
-              <Files.FileText className="w-10 h-10 mx-auto text-muted-foreground" />
-              <div>
-                <p className="font-medium text-sm">
-                  {searchQuery ? 'No posts found' : 'No posts published yet'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {searchQuery ? 'Try a different search term' : 'Check back soon!'}
-                </p>
-              </div>
-            </div>
-          ) : (
-            filteredPosts.map((post) => (
+      <ScrollArea className="flex-1 p-3">
+        {loading ? (
+          <div className="text-center text-zinc-500 text-sm py-8">Loading posts...</div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="text-center text-zinc-500 text-sm py-8">No posts found.</div>
+        ) : (
+          <div className="space-y-3">
+            {filteredPosts.map((post) => (
               <Card
                 key={post.id}
-                className="cursor-pointer hover:shadow-md transition-all border-white/10 bg-zinc-900/60 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+                className="bg-zinc-900/50 border-white/10 hover:border-white/20 cursor-pointer transition-colors"
                 onClick={() => openBlogPost(post.slug)}
               >
-                <CardContent className="p-3 space-y-2.5">
-                  <div>
-                    <h3 className="font-bold text-sm mb-1.5 line-clamp-2">
-                      {post.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                  </div>
-
-                  {post.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {post.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0.5">
-                          {tag}
-                        </Badge>
-                      ))}
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm text-white truncate">{post.title}</h3>
+                      <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{post.excerpt}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-[10px] text-zinc-500">
+                          {format(new Date(post.published_at), 'MMM d, yyyy')}
+                        </span>
+                        {post.tags.slice(0, 2).map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-[9px] px-1.5 py-0">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Interfaces.Calendar className="w-2.5 h-2.5" />
-                      {format(new Date(post.published_at || post.created_at), 'MMM d, yyyy')}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Interfaces.Hide className="w-2.5 h-2.5" />
-                      {post.views} views
-                    </div>
+                    <Files.File className="w-4 h-4 text-zinc-500 shrink-0" />
                   </div>
                 </CardContent>
               </Card>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </ScrollArea>
     </div>
   );

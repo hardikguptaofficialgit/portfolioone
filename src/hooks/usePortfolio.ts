@@ -1,19 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { defaultPortfolio, getActiveProjects, getFeaturedProjects } from '@/content/defaults';
 import type { PortfolioDocument } from '@/content/types';
+import { fetchPortfolioDocument } from '@/lib/portfolio/fetch-portfolio';
 
 export const portfolioQueryKey = ['portfolio'] as const;
 
-const fetchPortfolio = async (): Promise<PortfolioDocument> => {
-  try {
-    const res = await fetch('/api/portfolio', { cache: 'no-store' });
-    if (!res.ok) throw new Error('Portfolio API unavailable');
-    const payload = (await res.json()) as { data?: PortfolioDocument };
-    return payload.data ?? defaultPortfolio;
-  } catch {
-    return defaultPortfolio;
-  }
-};
+const fetchPortfolio = async (): Promise<PortfolioDocument> => fetchPortfolioDocument();
 
 export const usePortfolio = () => {
   const query = useQuery({

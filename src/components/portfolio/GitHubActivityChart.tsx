@@ -228,6 +228,7 @@ export function GitHubActivityChart({
         longest streak {contribError ? '-' : `${longestStreak} days`}
       </p>
 
+      {snakeState !== 'ready' && (
       <div className={cn('space-y-3 border-t pt-4', isDark ? 'border-zinc-800' : 'border-[#e6d8cb]')}>
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -279,6 +280,7 @@ export function GitHubActivityChart({
           </>
         )}
       </div>
+      )}
 
       {snakeState === 'ready' && (
         <a
@@ -291,7 +293,7 @@ export function GitHubActivityChart({
           )}
         >
           <p className={cn('mb-3 text-xs uppercase tracking-widest', isDark ? 'text-zinc-400' : 'text-[#6b5c4f]')}>
-            Contribution snake
+            Contribution graph
           </p>
           <img
             src={snakeSrc}

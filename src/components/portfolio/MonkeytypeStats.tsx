@@ -2,11 +2,27 @@ import { useEffect, useState } from 'react';
 
 type ModeStat = { seconds: number; wpm: number; acc: number };
 
-type StatsPayload = {
-  ok: true;
-  profileUrl: string;
-  modes: ModeStat[];
-};
+const PROFILE_URL = 'https://monkeytype.com/profile/stryker_inside';
+const MONKEYTYPE_USER = 'stryker_inside';
+
+function pickPersonalBests(data: {
+  personalBests?: { time?: Record<string, { wpm?: number; acc?: number }[]> };
+}) {
+  const time = data.personalBests?.time ?? {};
+  const modes: ModeStat[] = [];
+
+  for (const key of ['15', '30', '60', '120']) {
+    const entry = time[key]?.[0];
+    if (!entry || typeof entry.wpm !== 'number') continue;
+    modes.push({
+      seconds: Number(key),
+      wpm: Math.round(entry.wpm),
+      acc: typeof entry.acc === 'number' ? Math.round(entry.acc) : 0,
+    });
+  }
+
+  return modes;
+}
 
 export function MonkeytypeStats({
   isDark,
@@ -25,14 +41,13 @@ export function MonkeytypeStats({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/monkeytype-stats', { cache: 'no-store' });
+        const res = await fetch(`https://api.monkeytype.com/users/${MONKEYTYPE_USER}/profile`);
         if (!res.ok) return;
-        const data = (await res.json()) as StatsPayload;
-        if (!cancelled && data.ok && Array.isArray(data.modes)) {
-          setModes(data.modes);
-        }
+        const json = (await res.json()) as { data?: unknown };
+        const picked = pickPersonalBests((json.data ?? {}) as Parameters<typeof pickPersonalBests>[0]);
+        if (!cancelled && picked.length) setModes(picked);
       } catch {
-        /* ignore - link still works */
+        /* CORS or network — link still works */
       }
     })();
     return () => {
@@ -45,7 +60,7 @@ export function MonkeytypeStats({
   return (
     <div className={`px-4 md:px-6 py-5 border-t ${divider}`}>
       <a
-        href="https://monkeytype.com/profile/stryker_inside"
+        href={PROFILE_URL}
         target="_blank"
         rel="noopener noreferrer"
         className={`group mx-auto flex max-w-md flex-col items-center gap-2 rounded-xl border px-4 py-3 transition-colors sm:flex-row sm:justify-between sm:gap-4 ${
