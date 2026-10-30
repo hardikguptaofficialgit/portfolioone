@@ -110,18 +110,17 @@ const useResumeShellTheme = () => {
     isDark,
     theme,
     toggleTheme,
-    bg: 'bg-transparent',
-    bgImage: isDark ? '/bgdarkimage.png' : '/bgimage.png',
+    bg: isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]',
     text: isDark ? 'text-zinc-100' : 'text-[#1f1a17]',
-    navBg: isDark ? 'bg-black/90 border-zinc-800' : 'bg-[#fffef9]/95 border-[#e6d8cb]',
+    navBg: isDark ? 'bg-[#0c0c0e] border-zinc-800/80' : 'bg-[#fffef9] border-[#ded4ca]',
     mutedText: isDark ? 'text-zinc-400' : 'text-[#5f5248]',
     subtleText: isDark ? 'text-zinc-500' : 'text-[#7d6b5c]',
-    cardBg: isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-[#fffef9] border-[#d8c8b9]',
+    cardBg: isDark ? 'bg-[#101014] border-zinc-800/80' : 'bg-[#faf8f4] border-[#ded4ca]',
     divider: isDark ? 'border-zinc-800' : 'border-[#e7dacb]',
-    gridColumnShell: isDark ? 'border-zinc-800' : 'border-[#d8c8b9]',
+    gridColumnShell: isDark ? 'border-zinc-800/80' : 'border-[#ded4ca]',
     shellBase: isDark
-      ? 'rounded-2xl border border-zinc-800 bg-black/80 p-6 md:p-9 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.08)] backdrop-blur-xl'
-      : 'rounded-2xl border border-[#ded4ca] p-6 md:p-9 bg-white/90 shadow-[0_24px_80px_-48px_rgba(67,47,31,0.22)] backdrop-blur-xl',
+      ? 'rounded-2xl border border-zinc-800/80 bg-[#0c0c0e] p-6 md:p-9'
+      : 'rounded-2xl border border-[#ded4ca] bg-[#fffef9] p-6 md:p-9',
     labelText: isDark ? 'text-zinc-500' : 'text-[#6f5b4e]',
     filterInactive: isDark
       ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
@@ -138,33 +137,20 @@ const useResumeShellTheme = () => {
 
 const BlogChrome = ({ children }: { children: React.ReactNode }) => {
   const shell = useResumeShellTheme();
-  const { isDark, toggleTheme, bg, bgImage, text, navBg, divider, gridColumnShell } = shell;
+  const { isDark, toggleTheme, bg, text, navBg, divider, gridColumnShell } = shell;
 
   return (
     <div
       className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27]`}
-      style={{
-        backgroundImage: `url('${bgImage}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
     >
       <NoiseOverlay />
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`}
-      />
-      <div aria-hidden className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'}`} />
       <div className="relative z-10 w-full px-3 md:px-6 pt-4 md:pt-6 pb-16">
         <div
-          className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${
-            isDark
-              ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.08)]'
-              : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'
-          } backdrop-blur-xl`}
+          className={`max-w-4xl mx-auto overflow-hidden rounded-2xl border ${gridColumnShell} ${
+            isDark ? 'bg-[#0a0a0c]' : 'bg-[#fffef9]'
+          }`}
         >
-          <header className={`sticky top-0 z-40 border-b ${divider} ${navBg} backdrop-blur-xl bg-opacity-90`}>
+          <header className={`sticky top-0 z-40 border-b ${divider} ${navBg}`}>
             <div className="flex items-center gap-3 px-4 md:px-5 py-3">
               <Link
                 to="/"
@@ -357,7 +343,7 @@ export const BlogListPage = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className={`h-max rounded-sm border p-4 lg:sticky lg:top-24 ${shell.cardBg}`}>
+          <aside className={`h-max rounded-xl border p-4 lg:sticky lg:top-24 ${shell.cardBg}`}>
             <div className="relative">
               <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${shell.subtleText}`} />
               <Input
@@ -437,7 +423,7 @@ export const BlogListPage = () => {
                 <motion.article initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <Link
                     to={`/blogs/${featuredPost.slug}`}
-                    className={`group block border rounded-sm p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
+                    className={`group block border rounded-xl p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
                   >
                     <p className={`mb-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>Featured</p>
                     <h2 className="text-lg font-bold leading-snug group-hover:underline underline-offset-4">{featuredPost.title}</h2>
@@ -468,7 +454,7 @@ export const BlogListPage = () => {
                   <motion.article key={post.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }}>
                     <Link
                       to={`/blogs/${post.slug}`}
-                      className={`group block border rounded-sm p-4 md:p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
+                      className={`group block border rounded-xl p-4 md:p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
                     >
                       <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
                         <span className="inline-flex items-center gap-1">
@@ -725,7 +711,7 @@ export const BlogPostPage = () => {
               </Link>
             </div>
 
-            <section className={`mt-8 rounded-sm border p-5 md:p-6 ${shell.cardBg}`}>
+            <section className={`mt-8 rounded-xl border p-5 md:p-6 ${shell.cardBg}`}>
               <AskAIPanel
                 prompt={aiPrompt}
                 darkMode={theme === 'dark'}

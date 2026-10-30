@@ -5,7 +5,7 @@ const PAGE_BG = {
   light: '#fffef9',
 } as const;
 
-/** Keeps html/body color in sync with portfolio shell when page uses transparent + fixed bg image. */
+/** Keeps html/body color in sync with portfolio shell page background. */
 export function usePortfolioPageBackground(isDark: boolean) {
   useEffect(() => {
     const html = document.documentElement;

@@ -16,8 +16,8 @@ All colors MUST be HSL.
     --desktop-accent: 217 91% 60%;
     --desktop-accent-glow: 217 91% 70%;
 
-    --glass-bg: 240 5% 8%;
-    --glass-border: 240 4% 18%;
+    --glass-bg: 240 5% 7%;
+    --glass-border: 240 4% 20%;
     --glass-text: 210 40% 98%;
     --glass-text-muted: 240 5% 65%;
 
@@ -29,14 +29,14 @@ All colors MUST be HSL.
     --window-border: 240 4% 16%;
     --window-titlebar: 240 6% 5%;
 
-    --widget-bg: 240 5% 9%;
-    --widget-border: 240 4% 18%;
+    --widget-bg: 240 5% 7%;
+    --widget-border: 240 4% 20%;
 
     /* Standard Shadcn Colors */
     --background: 240 6% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 240 5% 7%;
+    --card: 240 5% 8%;
     --card-foreground: 210 40% 98%;
 
     --popover: 240 6% 5%;
@@ -57,11 +57,11 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
+    --border: 240 4% 20%;
+    --input: 240 4% 20%;
     --ring: 217 91% 60%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
     /* Animations */
     --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -154,19 +154,16 @@ All colors MUST be HSL.
 
   /* Claymorphism Design Utilities */
   .clay-card {
-    background: rgba(0, 0, 0, 0.8);
-    border: none;
-    box-shadow: 
-      0 4px 12px rgba(0, 0, 0, 0.4),
-      inset 0 1px 2px rgba(255, 255, 255, 0.05);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border) / 0.85);
+    border-radius: var(--radius);
+    box-shadow: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
 
   .clay-card:hover {
-    background: rgba(0, 0, 0, 0.9);
-    box-shadow: 
-      0 6px 16px rgba(0, 0, 0, 0.5),
-      inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    background: hsl(var(--card) / 0.92);
+    border-color: hsl(var(--border));
   }
 
   .clay-button {
@@ -199,15 +196,15 @@ All colors MUST be HSL.
 /* Glass Effect Utility */
 @layer utilities {
   .glass-panel {
-    background: hsl(var(--glass-bg) / 0.7);
-    backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--glass-border) / 0.3);
+    background: hsl(var(--glass-bg));
+    border: 1px solid hsl(var(--glass-border) / 0.75);
+    box-shadow: none;
   }
 
   .glass-strong {
-    background: hsl(var(--glass-bg) / 0.9);
-    backdrop-filter: blur(30px);
-    border: 1px solid hsl(var(--glass-border) / 0.5);
+    background: hsl(var(--glass-bg));
+    border: 1px solid hsl(var(--glass-border) / 0.85);
+    box-shadow: none;
   }
 
   .taskbar-glass {

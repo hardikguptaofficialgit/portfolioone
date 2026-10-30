@@ -51,7 +51,7 @@ export const Clock = () => {
       animate={{ scale: 1, opacity: 1 }}
       // Adding a subtle "breathing/floating" animation to the container
 
-      className="glass-panel rounded-2xl p-6 w-72 cursor-default select-none shadow-xl relative overflow-hidden"
+      className="glass-panel rounded-2xl p-6 w-72 cursor-default select-none relative overflow-hidden"
     >
       {/* Optional: Subtle background shine effect */}
       <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />

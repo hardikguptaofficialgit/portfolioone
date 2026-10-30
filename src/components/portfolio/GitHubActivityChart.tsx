@@ -80,8 +80,8 @@ function StatCard({
   return (
     <div
       className={cn(
-        'rounded-sm border px-4 py-3.5 min-w-0',
-        isDark ? 'border-zinc-800 bg-black/40' : 'border-[#e6d8cb] bg-white/80',
+        'rounded-xl border px-4 py-3.5 min-w-0',
+        isDark ? 'border-zinc-800/80 bg-[#101014]' : 'border-[#ded4ca] bg-[#faf8f4]',
       )}
     >
       <p className={cn('text-[10px] font-semibold uppercase tracking-[0.16em]', isDark ? 'text-zinc-500' : 'text-[#9a8a7d]')}>
@@ -192,8 +192,8 @@ export function GitHubActivityChart({
   const reposDisplay = repoCount ?? publicRepos;
   const starsDisplay = totalStars;
   const shellClass = cn(
-    'border rounded-sm overflow-hidden',
-    isDark ? 'border-zinc-800 bg-zinc-950/60' : 'border-[#d8c8b9] bg-white/90',
+    'border rounded-xl overflow-hidden',
+    isDark ? 'border-zinc-800/80 bg-[#101014]' : 'border-[#ded4ca] bg-[#faf8f4]',
     className,
   );
 

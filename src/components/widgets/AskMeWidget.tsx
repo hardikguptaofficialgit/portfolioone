@@ -13,8 +13,8 @@ export const AskMeWidget = () => {
   return (
     <div
       className={cn(
-        'w-72 rounded-2xl border p-4 backdrop-blur-md',
-        settings.darkMode ? 'border-zinc-800 bg-zinc-950/75' : 'border-zinc-200 bg-white/80'
+        'w-72 rounded-2xl border p-4',
+        settings.darkMode ? 'border-zinc-800/80 bg-[#0c0c0e]' : 'border-[#ded4ca] bg-[#fffef9]'
       )}
     >
       <AskAIPanel

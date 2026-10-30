@@ -22,8 +22,8 @@ export const BlogWidget = () => {
     <div
       onClick={handleClick}
       className={cn(
-        'w-64 cursor-pointer rounded-xl p-5',
-        settings.darkMode ? 'bg-zinc-900' : 'bg-[#fffddb]'
+        'w-64 cursor-pointer rounded-2xl border p-5',
+        settings.darkMode ? 'border-zinc-800/80 bg-[#0c0c0e]' : 'border-[#ded4ca] bg-[#fffef9]'
       )}
     >
       <div className="mb-4 flex items-center justify-between">

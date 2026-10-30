@@ -439,14 +439,13 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
         // ── theme-aware classes
         const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
-        const bgImage = isDark ? '/bgdarkimage.png' : '/bgimage.png';
         const text = isDark ? 'text-zinc-100' : 'text-[#1f1a17]';
-        const navBg = isDark ? 'bg-black border-zinc-800' : 'bg-[#fffef9] border-[#e6d8cb]';
+        const navBg = isDark ? 'bg-[#0c0c0e] border-zinc-800/80' : 'bg-[#fffef9] border-[#ded4ca]';
         const mutedText = isDark ? 'text-zinc-400' : 'text-[#5f5248]';
         const subtleText = isDark ? 'text-zinc-500' : 'text-[#7d6b5c]';
         const cardBg = isDark
-            ? 'bg-zinc-950 border-zinc-800'
-            : 'bg-[#fffef9] border-[#d8c8b9]';
+            ? 'bg-[#101014] border-zinc-800/80'
+            : 'bg-[#faf8f4] border-[#ded4ca]';
         const accent = isDark ? 'text-[#d0fffe]' : 'text-[#7b3e77]';
         const accentBorder = isDark ? 'border-[#d0fffe]/40 text-[#d0fffe]' : 'border-[#d39ad0] text-[#7b3e77]';
         const accentHover = isDark ? 'hover:bg-[#d0fffe] hover:text-black' : 'hover:bg-[#ffd3fd] hover:text-[#3f2a3d]';
@@ -457,9 +456,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         const filterInactive = isDark ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700' : 'text-[#7b6b5e] border-[#d9cabd] hover:text-[#3a312b] hover:border-[#bfaea0]';
         const labelText = isDark ? 'text-zinc-500' : 'text-[#6f5b4e]';
         const shellBase = isDark
-            ? 'rounded-2xl border border-white/[0.08] bg-black/80 p-6 md:p-9 shadow-[0_24px_80px_-48px_rgba(255,255,255,0.22)] backdrop-blur-xl'
-            : 'rounded-2xl border border-[#ded4ca] p-6 md:p-9 bg-white/90 shadow-[0_24px_80px_-48px_rgba(67,47,31,0.22)] backdrop-blur-xl';
-        const gridColumnShell = isDark ? 'border-zinc-800' : 'border-[#d8c8b9]';
+            ? 'rounded-2xl border border-zinc-800/80 bg-[#0c0c0e] p-6 md:p-9'
+            : 'rounded-2xl border border-[#ded4ca] bg-[#fffef9] p-6 md:p-9';
+        const gridColumnShell = isDark ? 'border-zinc-800/80' : 'border-[#ded4ca]';
         const aboutBullets =
             sections.simplifiedAboutBullets?.length
                 ? sections.simplifiedAboutBullets
@@ -492,7 +491,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                         <motion.div
                             layout
                             transition={NAV_SPRING}
-                            className={`hidden lg:flex border backdrop-blur-xl shadow-lg ${navBg} ${
+                            className={`hidden lg:flex border ${navBg} ${
                                 shouldUseCompactNav
                                     ? 'w-[11.5rem] flex-col rounded-2xl p-2.5 items-stretch'
                                     : 'mx-auto max-w-4xl items-center justify-between gap-3 rounded-2xl px-4 md:px-5 py-2.5 md:py-3'
@@ -597,7 +596,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                         </motion.div>
 
                         <div className="lg:hidden px-0">
-                            <div className={`border backdrop-blur-xl shadow-lg rounded-2xl px-4 py-3 ${navBg}`}>
+                            <div className={`border rounded-2xl px-4 py-3 ${navBg}`}>
                                 <div className="flex items-center justify-between gap-3">
                                     <button
                                         type="button"
@@ -639,8 +638,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -6 }}
                                     transition={{ duration: 0.18, ease: EASE_SMOOTH }}
-                                    className={`lg:hidden overflow-hidden border backdrop-blur-xl mt-2 rounded-xl shadow-lg ${
-                                        isDark ? 'border-zinc-800 bg-black/90' : 'border-[#e6d8cb] bg-[#fffef9]/95'
+                                    className={`lg:hidden overflow-hidden border mt-2 rounded-xl ${
+                                        isDark ? 'border-zinc-800/80 bg-[#0c0c0e]' : 'border-[#ded4ca] bg-[#fffef9]'
                                     } px-3 pb-3 pt-2`}
                                 >
                                     <div className="grid grid-cols-2 gap-2">
@@ -677,25 +676,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
                 <div
                     className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color] duration-500`}
-                    style={{
-                        backgroundImage: bgImage ? `url('${bgImage}')` : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundAttachment: 'fixed',
-                    }}
                 >
                     <NoiseOverlay />
-                    <div
-                        aria-hidden
-                        className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`}
-                    />
-                    <div
-                        aria-hidden
-                        className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'} transition-colors duration-500`}
-                    />
-
                     <div className="relative z-10 w-full px-3 md:px-6 pt-[5.5rem] lg:pt-28 pb-16">
-                        <div className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${isDark ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.25)]' : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'} backdrop-blur-xl`}>
+                        <div className={`max-w-4xl mx-auto overflow-hidden rounded-2xl border ${gridColumnShell} ${isDark ? 'bg-[#0a0a0c]' : 'bg-[#fffef9]'}`}>
                             <div className={`relative border-b ${divider} p-2 md:p-3`}>
                                 <div className={`relative overflow-hidden rounded-2xl border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
                                     <img
@@ -715,7 +699,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                         >
 
                             {/* ══ RESUME ══ */}
-                            <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-24 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/80' : 'bg-white/90'}`}>
+                            <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-24 border-b ${divider} ${shellBase}`}>
 
                                 {/* Header */}
                                 <header className={`space-y-6 pb-8 border-b ${divider}`}>
@@ -843,7 +827,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                             <div className="space-y-3">
                                                 {education.map((edu, i) => (
                                                     <StaggerItem key={edu.id} index={i}>
-                                                        <div className={`border ${cardBg} rounded-sm p-5`}>
+                                                        <div className={`border ${cardBg} rounded-xl p-5`}>
                                                             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                                                                 <div>
                                                                     <h3 className="text-base font-bold">{edu.institution}</h3>
@@ -914,7 +898,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                                 return (
                                                     <StaggerItem key={a.title} index={i}>
                                                         <motion.div
-                                                            className={`flex items-start gap-4 border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+                                                            className={`flex items-start gap-4 border ${cardBg} rounded-xl p-5 transition-all duration-300`}
                                                         >
                                                             <div className={`w-10 h-10 rounded-lg border ${divider} flex items-center justify-center shrink-0 overflow-hidden`}
                                                                 style={{ backgroundColor: achievementIconBg[iconKey] }}>
@@ -938,7 +922,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
                             {/* ══ PROJECTS ══ */}
                             <RevealSection>
-                                <section id="projects" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#f9fffe]/90'}`}>
+                                <section id="projects" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedProjectsIntro?.title || 'Projects'}
@@ -974,7 +958,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
                             {/* ══ GITHUB ══ */}
                             <RevealSection>
-                                <section id="github" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fbfff8]/90'}`}>
+                                <section id="github" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedGithubIntro?.title || 'GitHub'}
@@ -1019,7 +1003,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                             <StaggerItem key={repo.id} index={i}>
                                                 <motion.a
                                                     href={repo.html_url} target="_blank" rel="noopener noreferrer"
-                                                    className={`group block border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+                                                    className={`group block border ${cardBg} rounded-xl p-5 transition-all duration-300`}
                                                 >
                                                     <div className="flex items-start justify-between gap-2 mb-3">
                                                         <h3 className="text-sm font-bold group-hover:underline underline-offset-4 truncate">{repo.name}</h3>
@@ -1054,7 +1038,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
                             {/* ══ PHOTOS ══ */}
                             <RevealSection>
-                                <section id="photos" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fffaf6]/90'}`}>
+                                <section id="photos" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedPhotosIntro?.title || 'Photos'}
@@ -1104,7 +1088,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
                             {/* ══ BLOG ══ */}
                             <RevealSection>
-                                <section id="blog" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fcfaff]/90'}`}>
+                                <section id="blog" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedBlogIntro?.title || 'Blog'}
@@ -1129,7 +1113,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                                 <StaggerItem key={article.id} index={index}>
                                                     <RouterLink
                                                         to={`/blogs/${article.slug}`}
-                                                        className={`group block border ${cardBg} rounded-sm p-4 md:p-5 transition-colors hover:border-zinc-600`}
+                                                        className={`group block border ${cardBg} rounded-xl p-4 md:p-5 transition-colors hover:border-zinc-600`}
                                                     >
                                                         <div className="min-w-0 flex flex-col justify-center">
                                                             <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${subtleText}`}>
@@ -1195,7 +1179,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                 >
                                     ← Switch to Interactive
                                 </RouterLink>
-                                <div className={`flex flex-wrap items-center justify-center gap-4 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
+                                <div className={`flex flex-wrap items-center justify-center gap-4 rounded-2xl px-4 py-2.5 border ${isDark ? 'bg-[#0c0c0e] border-zinc-800/80' : 'bg-[#fffef9] border-[#ded4ca]'}`}>
                                     {socialLinks.map((link) => (
                                         <motion.a
                                             key={link.id}
@@ -1259,7 +1243,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                     onClick={e => e.stopPropagation()}
                                 >
                                     <div className="absolute z-10" style={{ left: `${projectControlsPos.x}px`, top: `${projectControlsPos.y}px` }}>
-                                        <div className={`flex items-center gap-2 rounded-xl border ${isDark ? 'border-white/15 bg-black' : 'border-black/10 bg-white'} p-2 shadow-lg`}>
+                                        <div className={`flex items-center gap-2 rounded-xl border ${isDark ? 'border-zinc-800/80 bg-[#0c0c0e]' : 'border-[#ded4ca] bg-[#fffef9]'} p-2`}>
                                             <button onPointerDown={handleProjectControlsPointerDown} onPointerMove={handleProjectControlsPointerMove} onPointerUp={handleProjectControlsPointerUp} onPointerCancel={handleProjectControlsPointerUp}
                                                 className={`flex h-8 w-8 items-center justify-center rounded-lg border cursor-grab active:cursor-grabbing ${isDark ? 'border-white/15 text-zinc-100 hover:bg-white/10' : 'border-black/10 text-zinc-900 hover:bg-zinc-200'} transition-colors`} title="Drag controls">
                                                 <Pin size={13} />
@@ -1453,7 +1437,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
     }
     const ExpCard = ({ roleTitle, org, logoUrl, url, totalDuration, badge, roles, bullets, cardBg, divider, mutedText, subtleText }: ExpCardProps) => (
         <motion.div
-            className={`border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+            className={`border ${cardBg} rounded-xl p-5 transition-all duration-300`}
         >
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-2.5">
                 <div className="flex gap-3 min-w-0">
@@ -1524,11 +1508,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
             .map((part) => part.trim())
             .filter(Boolean)
             .map((part) => `#${part.replace(/^#/, '')}`);
-        const surface = isDark
-            ? 'bg-[#09090b] shadow-[0_18px_44px_rgba(0,0,0,0.28)]'
-            : 'bg-[#fffef9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
+        const surface = isDark ? 'bg-[#101014]' : 'bg-[#faf8f4]';
         return (
-            <article className={`group flex h-full w-full flex-col ${surface} rounded-sm overflow-hidden text-left border ${isDark ? 'border-zinc-800' : 'border-[#d8c8b9]'}`}>
+            <article className={`group flex h-full w-full flex-col ${surface} rounded-xl overflow-hidden text-left border ${isDark ? 'border-zinc-800/80' : 'border-[#ded4ca]'}`}>
                 <div className="relative h-44 w-full bg-black overflow-hidden shrink-0">
                     {hasVisual ? (
                         <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">

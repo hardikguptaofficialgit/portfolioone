@@ -89,7 +89,7 @@ export const WeatherWidget = () => {
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      className="glass-panel rounded-2xl p-6 w-72 backdrop-blur-md bg-white/10 border border-white/20 shadow-xl"
+      className="glass-panel rounded-2xl p-6 w-72"
     >
       <div className="flex items-center justify-between">
         <div>
