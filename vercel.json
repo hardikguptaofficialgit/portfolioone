@@ -19,6 +19,10 @@
       "handle": "filesystem"
     },
     {
+      "src": "/betterview/?",
+      "dest": "/betterview/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
