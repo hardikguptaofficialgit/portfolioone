@@ -25,6 +25,7 @@ Canonical site: https://strykerinside.vercel.app
 ## Blog posts
 
 - Inside the Engineering of Linkit: https://strykerinside.vercel.app/blogs/inside-the-engineering-of-linkit-3g2n
+- Inside the Engineering of Linkit: https://strykerinside.vercel.app/blogs/inside-the-engineering-of-linkit-3g2n
 - How SigNoz Helped Me Debug Linkit Before 200+ Creators Noticed the Problem: https://strykerinside.vercel.app/blogs/how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl
 - Bloom Filters for AI Agents: The Small Cache Trick That Saved My Retrieval Pipeline: https://strykerinside.vercel.app/blogs/bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4
 
