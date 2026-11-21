@@ -583,6 +583,35 @@ img { display: block; }
 .modal-item-title { font-size: 14px; font-weight: 600; }
 .modal-item-sub { font-size: 12px; color: var(--text-muted); }
 
+/* ---------- Download chooser ---------- */
+.download-modal-content { max-width: 560px; padding: 26px; }
+.download-modal-head { display: flex; align-items: flex-start; gap: 14px; padding-right: 42px; margin-bottom: 22px; }
+.download-modal-logo { width: 44px; height: 44px; flex: 0 0 auto; object-fit: contain; border: 1px solid var(--border-strong); border-radius: 13px; padding: 7px; background: #080808; }
+.download-modal-kicker { color: var(--text-subtle); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin: 1px 0 4px; }
+.download-modal-title { color: #fff; font-size: 21px; line-height: 1.2; letter-spacing: -.04em; font-weight: 700; margin: 0 0 5px; }
+.download-modal-sub { color: var(--text-muted); font-size: 12.5px; line-height: 1.55; }
+.download-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.download-option { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 17px; border: 1px solid var(--border-strong); border-radius: 13px; background: #0c0c0c; text-align: left; }
+.download-option.is-recommended { background: #f5f5f5; color: #080808; border-color: #f5f5f5; }
+.download-option-icon { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 10px; margin-bottom: 15px; }
+.download-option.is-recommended .download-option-icon { border-color: #ccc; }
+.download-option-tag { color: var(--text-subtle); font-size: 9px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; margin-bottom: 5px; }
+.download-option.is-recommended .download-option-tag { color: #555; }
+.download-option h4 { font-size: 14px; line-height: 1.3; margin: 0 0 6px; font-weight: 700; }
+.download-option p { min-height: 54px; color: var(--text-muted); font-size: 11.5px; line-height: 1.5; margin: 0 0 14px; }
+.download-option.is-recommended p { color: #555; }
+.download-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 38px; padding: 0 11px; border: 1px solid #444; border-radius: 8px; background: transparent; color: #fff; font-size: 11.5px; font-weight: 700; transition: background .15s ease,color .15s ease,border-color .15s ease; }
+.download-option.is-recommended .download-action { color: #fff; background: #080808; border-color: #080808; }
+.download-action:hover { background: #fff; border-color: #fff; color: #000; }
+.download-option.is-recommended .download-action:hover { background: #333; border-color: #333; color: #fff; }
+.download-modal-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-subtle); font-size: 10.5px; }
+.download-modal-foot a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
+.manual-steps { margin-top: 13px; padding: 13px 14px; border: 1px solid var(--border); border-radius: 10px; background: #080808; }
+.manual-steps summary { cursor: pointer; color: #fff; font-size: 11.5px; font-weight: 600; }
+.manual-steps ol { margin: 10px 0 0 17px; padding: 0; color: var(--text-muted); font-size: 11px; line-height: 1.65; }
+.modal-backdrop.is-open .download-modal-content { transform: translateY(0); }
+@media (max-width: 540px) { .download-modal-content { padding: 22px 17px; } .download-options { grid-template-columns: 1fr; } .download-option { display: grid; grid-template-columns: 34px 1fr; column-gap: 12px; padding: 14px; } .download-option-icon { grid-row: 1 / span 3; margin: 0; } .download-option p { min-height: 0; margin-bottom: 11px; } .download-action { grid-column: 1 / -1; } .download-modal-foot { align-items: flex-start; flex-direction: column; } }
+
 /* ---------- Footer ---------- */
 .site-footer { border-top: 1px solid var(--border); }
 
@@ -785,14 +814,14 @@ img { display: block; }
       </p>
 
       <div class="hero-ctas">
-        <a href="https://github.com/hardikguptaofficialgit/betterview/releases" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+        <button type="button" class="btn btn-primary btn-lg" id="open-download-btn" aria-haspopup="dialog" aria-controls="download-modal">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
           <span>Get BetterView free</span>
-        </a>
+        </button>
         <button class="btn btn-outline btn-lg open-support-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -1210,6 +1239,48 @@ img { display: block; }
 
 </div>
 
+<!-- Download modal -->
+<div id="download-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="download-modal-title">
+  <section class="modal-content download-modal-content">
+    <button class="modal-close-btn" id="download-modal-close" type="button" aria-label="Close download options">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="download-modal-head">
+      <img class="download-modal-logo" src="/betterview/assets/icon-dark-128.png" alt="BetterView logo" width="44" height="44">
+      <div>
+        <div class="download-modal-kicker">Free · Open source</div>
+        <h2 class="download-modal-title" id="download-modal-title">Get BetterView</h2>
+        <p class="download-modal-sub">Choose the setup that works best for your browser.</p>
+      </div>
+    </div>
+    <div class="download-options">
+      <article class="download-option is-recommended">
+        <span class="download-option-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4M8 10l2 2 5-5"/></svg></span>
+        <div class="download-option-tag">Recommended · Windows</div>
+        <h4>Automatic setup</h4>
+        <p>Download the Windows installer. It detects your browser and guides you through installation.</p>
+        <a class="download-action" href="/betterview/downloads/BetterView-Setup.exe" download="BetterView-Setup.exe">Download installer <span aria-hidden="true">↓</span></a>
+      </article>
+      <article class="download-option">
+        <span class="download-option-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6M8 15h8m-8 3h8"/></svg></span>
+        <div class="download-option-tag">Manual install</div>
+        <h4>Extension ZIP</h4>
+        <p>Download the extension package and load its extracted folder in your browser.</p>
+        <a class="download-action" href="/betterview/downloads/betterview-ai-v0.1.0.zip" download="betterview-ai-v0.1.0.zip">Download ZIP <span aria-hidden="true">↓</span></a>
+      </article>
+    </div>
+    <details class="manual-steps">
+      <summary>How to install the ZIP manually</summary>
+      <ol>
+        <li>Extract the downloaded ZIP to a folder you can keep.</li>
+        <li>Open <strong>chrome://extensions</strong>, <strong>brave://extensions</strong> or <strong>edge://extensions</strong>.</li>
+        <li>Turn on <strong>Developer mode</strong>, choose <strong>Load unpacked</strong>, then select the extracted BetterView folder containing <strong>manifest.json</strong>.</li>
+      </ol>
+    </details>
+    <div class="download-modal-foot"><span>Chrome · Brave · Microsoft Edge</span><a href="https://github.com/hardikguptaofficialgit/betterview/releases" target="_blank" rel="noopener noreferrer">All releases ↗</a></div>
+  </section>
+</div>
+
 <!-- Support modal -->
 <div id="support-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
   <div class="modal-content">
@@ -1320,6 +1391,39 @@ img { display: block; }
   }
 
   // 3. Support modal
+  const downloadModal = document.getElementById('download-modal');
+  const downloadOpenBtn = document.getElementById('open-download-btn');
+  const downloadCloseBtn = document.getElementById('download-modal-close');
+  let downloadPreviousFocus = null;
+  let downloadPreviousOverflow = '';
+
+  function openDownloadModal() {
+    if (!downloadModal || downloadModal.classList.contains('is-open')) return;
+    downloadPreviousFocus = document.activeElement;
+    downloadPreviousOverflow = document.body.style.overflow;
+    downloadModal.classList.add('is-open');
+    downloadModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (downloadCloseBtn) downloadCloseBtn.focus();
+  }
+
+  function closeDownloadModal() {
+    if (!downloadModal || !downloadModal.classList.contains('is-open')) return;
+    downloadModal.classList.remove('is-open');
+    downloadModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = downloadPreviousOverflow;
+    if (downloadPreviousFocus && typeof downloadPreviousFocus.focus === 'function') downloadPreviousFocus.focus();
+  }
+
+  if (downloadOpenBtn) downloadOpenBtn.addEventListener('click', openDownloadModal);
+  if (downloadCloseBtn) downloadCloseBtn.addEventListener('click', closeDownloadModal);
+  if (downloadModal) {
+    downloadModal.addEventListener('click', event => {
+      if (event.target === downloadModal) closeDownloadModal();
+    });
+  }
+
+  // 4. Support modal
   const modal = document.getElementById('support-modal');
   const closeBtn = document.getElementById('modal-close-btn');
   let previousBodyOverflow = '';
@@ -1352,6 +1456,10 @@ img { display: block; }
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && downloadModal && downloadModal.classList.contains('is-open')) {
+      closeDownloadModal();
+      return;
+    }
     if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
   });
 })();
