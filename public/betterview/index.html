@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BetterView AI — Intelligent UI for your AI assistants</title>
+  <meta name="description" content="Make AI answers easier to explore. BetterView turns conversations into clear, interactive cards, diagrams, quizzes and more.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="assets/icon-dark-128.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+/* ==========================================================================
+   BetterView AI — Black & White Landing Page
+   Monochrome. Gradient borders only. No glow, no shadows.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --page: #050505;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #121212;
+  --surface-3: #1a1a1a;
+
+  --border: #1f1f1f;
+  --border-strong: #333333;
+
+  --text: #ffffff;
+  --text-muted: #a3a3a3;
+  --text-subtle: #6e6e6e;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-frame: 28px;
+
+  --gutter: clamp(16px, 3vw, 32px);
+  --maxw: 960px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 24px;
+  font-family: var(--font-sans);
+  background: var(--page);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--page);
+  padding: 10px;
+  overflow-x: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+img { display: block; }
+::selection { background: #fff; color: #000; }
+
+/* ---------- Main window frame ---------- */
+.frame {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-frame);
+  overflow: clip;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.btn svg { flex-shrink: 0; }
+.btn-lg { height: 40px; padding: 0 18px; font-size: 13.5px; }
+
+.btn-primary { background: #fff; color: #000; border-color: #fff; }
+.btn-primary:hover { background: #d9d9d9; border-color: #d9d9d9; }
+
+.btn-outline { background: transparent; color: #fff; border-color: var(--border-strong); }
+.btn-outline:hover { background: #fff; color: #000; border-color: #fff; }
+
+.btn:focus-visible, .nav-link:focus-visible, .demo-tab-btn:focus-visible,
+.sim-quiz-opt:focus-visible, .modal-close-btn:focus-visible, .footer-link:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ---------- Header ---------- */
+.site-header { border-bottom: 1px solid var(--border); }
+
+.header-inner {
+  height: 58px;
+  padding: 0 var(--gutter);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.03em;
+  justify-self: start;
+}
+.logo-img { width: 28px; height: 28px; object-fit: contain; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+.nav-link { transition: color .15s ease; }
+.nav-link:hover { color: #fff; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: end;
+}
+
+/* ---------- Hero ---------- */
+.hero-section {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 56px) var(--gutter) 36px;
+  text-align: center;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 4px 4px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.hero-pill-badge {
+  background: #fff;
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+.hero-title {
+  font-size: clamp(32px, 5.2vw, 54px);
+  font-weight: 750;
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  color: #fff;
+  margin-bottom: 16px;
+}
+.hero-title-soft {
+  background: linear-gradient(90deg, #ffffff 0%, #6e6e6e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.hero-desc {
+  max-width: 520px;
+  margin: 0 auto 24px;
+  font-size: clamp(14px, 1.4vw, 15.5px);
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.hero-ctas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  font-size: 12.5px;
+  color: var(--text-subtle);
+}
+.hero-meta-item { display: inline-flex; align-items: center; gap: 8px; }
+.hero-meta-item svg { color: #d0d0d0; }
+
+/* ---------- Demo window ---------- */
+.demo-section {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter) clamp(44px, 6vw, 64px);
+}
+
+.demo-frame {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.demo-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.demo-dots { display: flex; gap: 7px; justify-self: start; }
+.demo-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #4a4a4a; }
+
+.demo-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+}
+.demo-tab-btn {
+  height: 30px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: 7px;
+  transition: background-color .15s ease, color .15s ease;
+}
+.demo-tab-btn:hover { color: #fff; }
+.demo-tab-btn.is-active { background: #fff; color: #000; font-weight: 600; }
+
+.demo-live { justify-self: end; font-size: 12px; color: var(--text-subtle); }
+
+.demo-body { padding: clamp(14px, 3vw, 28px); }
+
+.sim-card {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+
+.sim-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sim-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sim-header-left svg { flex-shrink: 0; color: #fff; }
+.sim-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.sim-title { font-size: 14.5px; font-weight: 600; color: #fff; }
+.sim-badge {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.btn-sm { height: 28px; padding: 0 12px; font-size: 11.5px; border-radius: 8px; }
+
+/* Quiz */
+.sim-quiz-q { font-size: 14.5px; font-weight: 600; line-height: 1.5; margin-bottom: 16px; color: #fff; }
+.sim-quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.sim-quiz-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: #d4d4d4;
+  font-size: 13.5px;
+  text-align: left;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.sim-quiz-opt:hover:not(:disabled) { background: var(--surface-3); border-color: #fff; color: #fff; }
+.sim-quiz-opt:disabled { cursor: default; }
+.sim-quiz-letter {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  color: #d4d4d4;
+}
+.sim-quiz-opt.is-correct { background: #fff; border-color: #fff; color: #000; }
+.sim-quiz-opt.is-correct .sim-quiz-letter { background: #000; border-color: #000; color: #fff; }
+.sim-quiz-opt.is-incorrect { border-style: dashed; border-color: #8a8a8a; color: #8a8a8a; text-decoration: line-through; }
+.sim-quiz-opt.is-incorrect .sim-quiz-letter { border-style: dashed; color: #8a8a8a; }
+.sim-quiz-opt:disabled:not(.is-correct):not(.is-incorrect) { opacity: .45; }
+
+.sim-quiz-explain {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.sim-quiz-explain svg { flex-shrink: 0; margin-top: 2px; color: #fff; }
+.sim-quiz-explain strong { color: #fff; }
+
+/* Stats */
+.sim-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.sim-stat-box { padding: 16px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); }
+.sim-stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.sim-stat-val { font-size: 28px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #fff; }
+.sim-stat-delta { margin-top: 8px; font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+
+/* Flow */
+.sim-flow-chain { display: flex; align-items: stretch; justify-content: center; gap: 10px; padding: 12px 0 4px; }
+.sim-flow-node {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 14px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #fff;
+}
+.sim-flow-node small { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 500; color: var(--text-subtle); }
+.sim-flow-node.is-final { background: #fff; border-color: #fff; color: #000; }
+.sim-flow-node.is-final small { color: #555; }
+.sim-flow-arrow { display: flex; align-items: center; color: var(--text-subtle); font-size: 16px; }
+
+/* Compare table */
+.sim-table-wrap { overflow-x: auto; }
+.sim-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sim-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-strong);
+}
+.sim-table td { padding: 14px 12px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+.sim-table tr:last-child td { border-bottom: none; }
+.sim-table td:first-child { font-weight: 600; color: #fff; }
+.sim-table td.is-win { color: #fff; }
+
+/* ---------- Sections ---------- */
+.section {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter) clamp(44px, 6vw, 64px);
+}
+
+.section-head { text-align: center; margin-bottom: 28px; }
+.section-tag {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.section-title {
+  font-size: clamp(24px, 3.4vw, 34px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  color: #fff;
+}
+.section-desc { max-width: 480px; margin: 12px auto 0; font-size: 14px; line-height: 1.65; color: var(--text-muted); }
+
+/* Feature cards: 6 cards, 3 x 2 */
+.features-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  min-height: 168px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.feature-card:hover { border-color: #fff; background: var(--surface-2); }
+.feature-icon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: #fff;
+}
+.feature-title { margin: 20px 0 6px; font-size: 14.5px; font-weight: 650; letter-spacing: -0.02em; color: #fff; }
+.feature-body { font-size: 12.5px; line-height: 1.6; color: var(--text-muted); }
+
+/* Component types: 12 pills, 4 x 3 */
+.types-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.type-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 500;
+  color: #d4d4d4;
+  transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+}
+.type-pill svg { flex-shrink: 0; color: #8a8a8a; transition: color .2s ease; }
+.type-pill:hover { border-color: #fff; background: var(--surface-2); color: #fff; }
+.type-pill:hover svg { color: #fff; }
+
+/* Steps */
+.steps-container { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.step-item {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: border-color .2s ease;
+}
+.step-item:hover { border-color: #fff; }
+.step-num {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+}
+.step-title { margin-bottom: 6px; font-size: 14.5px; font-weight: 650; letter-spacing: -0.02em; color: #fff; }
+.step-desc { font-size: 12.5px; line-height: 1.6; color: var(--text-muted); }
+
+/* Support */
+.support-card {
+  padding: clamp(30px, 4.5vw, 44px) var(--gutter);
+  text-align: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+}
+.support-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #000;
+}
+.support-title { margin-bottom: 10px; font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.045em; color: #fff; }
+.support-body { max-width: 480px; margin: 0 auto 22px; font-size: 13.5px; line-height: 1.65; color: var(--text-muted); }
+.support-options { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .88);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.modal-backdrop.is-open { opacity: 1; pointer-events: auto; }
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  padding: 28px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  transform: translateY(8px);
+  transition: transform .2s ease;
+}
+.modal-backdrop.is-open .modal-content { transform: translateY(0); }
+.modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition: background-color .15s ease, color .15s ease;
+}
+.modal-close-btn:hover { background: #fff; color: #000; }
+.modal-head { text-align: center; margin-bottom: 24px; }
+.modal-head .support-icon { width: 48px; height: 48px; margin-bottom: 14px; }
+.modal-title { margin-bottom: 6px; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; color: #fff; }
+.modal-sub { font-size: 14px; line-height: 1.6; color: var(--text-muted); }
+.modal-list { display: flex; flex-direction: column; gap: 10px; }
+.modal-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.modal-item:hover { background: #fff; color: #000; border-color: #fff; }
+.modal-item:hover .modal-item-sub { color: #444; }
+.modal-item-title { font-size: 14px; font-weight: 600; }
+.modal-item-sub { font-size: 12px; color: var(--text-muted); }
+
+/* ---------- Footer ---------- */
+.site-footer { border-top: 1px solid var(--border); }
+
+.footer-top {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 22px var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+.footer-left { display: flex; align-items: center; gap: 10px; }
+.footer-links { display: flex; align-items: center; gap: 24px; }
+.footer-link { transition: color .15s ease; }
+.footer-link:hover { color: #fff; }
+
+.marquee {
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  padding: clamp(20px, 3.5vw, 36px) 0;
+  user-select: none;
+}
+.marquee-track { display: flex; width: max-content; animation: marquee 32s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-group { display: flex; align-items: center; flex-shrink: 0; }
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(10px, 1.6vw, 22px);
+  padding-right: clamp(28px, 4vw, 64px);
+  font-size: clamp(48px, 9vw, 120px);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: #fff;
+  white-space: nowrap;
+}
+.marquee-item img { width: .8em; height: .8em; object-fit: contain; }
+.marquee-item.is-outline { color: transparent; -webkit-text-stroke: 1.5px #fff; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.footer-bottom {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter) 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--text-subtle);
+}
+
+/* ---------- Gradient borders (monochrome) ---------- */
+@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+:root {
+  --grad-border: linear-gradient(150deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.07) 38%, rgba(255,255,255,.07) 62%, rgba(255,255,255,.4) 100%);
+  --grad-border-hover: linear-gradient(150deg, #ffffff 0%, rgba(255,255,255,.25) 45%, #ffffff 100%);
+}
+
+.frame, .hero-pill, .feature-card, .type-pill, .step-item, .sim-card, .sim-stat-box,
+.sim-flow-node, .modal-item, .demo-tabs, .modal-content, .btn-outline {
+  border-color: transparent;
+  background: linear-gradient(var(--fill, var(--surface)), var(--fill, var(--surface))) padding-box, var(--grad-border) border-box;
+}
+.frame, .hero-pill, .sim-card, .demo-tabs, .btn-outline { --fill: var(--bg); }
+
+.sim-flow-node.is-final { background: #fff; }
+
+.feature-card:hover, .type-pill:hover, .step-item:hover {
+  border-color: transparent;
+  background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box, var(--grad-border-hover) border-box;
+}
+.modal-item:hover { background: #fff; border-color: #fff; }
+.btn-outline:hover { background: #fff; border-color: #fff; }
+
+/* Rotating white sweep on the two big cards */
+.demo-frame, .support-card {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    conic-gradient(from var(--angle), rgba(255,255,255,.08) 0%, #ffffff 12%, rgba(255,255,255,.08) 30%, rgba(255,255,255,.08) 62%, #ffffff 78%, rgba(255,255,255,.08) 100%) border-box;
+  animation: spin-border 7s linear infinite;
+}
+@keyframes spin-border { to { --angle: 360deg; } }
+
+/* ---------- Entrance motion ---------- */
+@keyframes rise-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.hero-pill, .hero-title, .hero-desc, .hero-ctas, .hero-meta { animation: rise-in .6s ease both; }
+.hero-title { animation-delay: .06s; }
+.hero-desc { animation-delay: .12s; }
+.hero-ctas { animation-delay: .18s; }
+.hero-meta { animation-delay: .24s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  .marquee-track { animation: none; }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .nav-links { gap: 18px; }
+  .features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .types-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 820px) {
+  .header-inner { grid-template-columns: 1fr auto; }
+  .nav-links { display: none; }
+  .steps-container { grid-template-columns: 1fr; }
+  .step-num { margin-bottom: 24px; }
+  .sim-stats-grid { grid-template-columns: 1fr; }
+  .sim-flow-chain { flex-direction: column; }
+  .sim-flow-arrow { justify-content: center; transform: rotate(90deg); }
+  .demo-header { grid-template-columns: 1fr; justify-items: center; }
+  .demo-dots, .demo-live { display: none; }
+  .demo-tabs { width: 100%; }
+  .demo-tab-btn { flex: 1 1 0; padding: 0 6px; font-size: 12px; }
+}
+
+@media (max-width: 600px) {
+  body { padding: 8px; }
+  .frame { border-radius: 22px; }
+  .header-inner { height: 64px; }
+  .header-actions .btn-outline { display: none; }
+  .hero-ctas .btn { flex: 1 1 100%; }
+  .features-grid { grid-template-columns: 1fr; }
+  .feature-card { min-height: 0; }
+  .feature-icon { margin-bottom: 0; }
+  .types-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .type-pill { padding: 0 14px; font-size: 12.5px; }
+  .sim-card { padding: 16px; }
+  .sim-header { flex-wrap: wrap; }
+  .demo-tabs { flex-wrap: wrap; }
+  .demo-tab-btn { flex: 1 1 45%; height: 32px; }
+  .support-options .btn { flex: 1 1 100%; }
+  .footer-top, .footer-bottom { justify-content: center; text-align: center; }
+  .footer-left { justify-content: center; }
+}
+  </style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#" class="logo-wrap" aria-label="BetterView AI Home">
+        <img src="assets/mark-white.png" alt="" class="logo-img" width="28" height="28">
+        <span>BetterView AI</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#demo" class="nav-link">Interactive Demo</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#components" class="nav-link">Components</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#support" class="nav-link">Support</a>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://github.com/hardikguptaofficialgit/betterview" target="_blank" rel="noopener noreferrer" class="btn btn-outline" title="GitHub Repository">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span>Star</span>
+        </a>
+        <button class="btn btn-primary open-support-btn" aria-label="Open support options">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <span>Support Me</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero-section">
+      <div class="hero-pill">
+        <span class="hero-pill-badge">NEW</span>
+        <span>A clearer way to experience AI</span>
+      </div>
+
+      <h1 class="hero-title">
+        Intelligent UI for<br>
+        <span class="hero-title-soft">your AI assistants.</span>
+      </h1>
+
+      <p class="hero-desc">
+        Your AI can do more than send a wall of text. BetterView turns its answers into interactive experiences that are easier to understand, explore, and remember.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="https://github.com/hardikguptaofficialgit/betterview/releases" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Get BetterView free</span>
+        </a>
+        <button class="btn btn-outline btn-lg open-support-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <span>Support Me</span>
+        </button>
+        <a href="https://github.com/hardikguptaofficialgit/betterview" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
+          <span>View on GitHub</span>
+        </a>
+      </div>
+
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Your conversations stay yours</span>
+        </div>
+        <div class="hero-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          <span>Made to feel effortless</span>
+        </div>
+        <div class="hero-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Save and share your visuals</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Demo -->
+    <section class="demo-section" id="demo">
+      <div class="demo-frame">
+        <div class="demo-header">
+          <div class="demo-dots" aria-hidden="true">
+            <span class="demo-dot"></span>
+            <span class="demo-dot"></span>
+            <span class="demo-dot"></span>
+          </div>
+
+          <div class="demo-tabs" role="tablist">
+            <button class="demo-tab-btn is-active" data-tab="quiz" role="tab">Interactive Quiz</button>
+            <button class="demo-tab-btn" data-tab="flow" role="tab">Flow Diagram</button>
+            <button class="demo-tab-btn" data-tab="stats" role="tab">Metric Cards</button>
+            <button class="demo-tab-btn" data-tab="compare" role="tab">Comparison</button>
+          </div>
+
+          <div class="demo-live">Live Preview</div>
+        </div>
+
+        <div class="demo-body">
+          <!-- Quiz -->
+          <div class="demo-panel" id="panel-quiz">
+            <div class="sim-card">
+              <div class="sim-header">
+                <div class="sim-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  <span class="sim-title">Distributed Systems Architecture Quiz</span>
+                </div>
+                <div class="sim-header-right">
+                  <span class="sim-badge" id="quiz-score-badge">Score: 0 / 1</span>
+                  <button id="quiz-reset-btn" class="btn btn-outline btn-sm">Reset</button>
+                </div>
+              </div>
+
+              <div class="sim-quiz-q" id="quiz-question-text">
+                In high-throughput distributed systems, which approach guarantees unique ordered 64-bit IDs without database coordination?
+              </div>
+
+              <div class="sim-quiz-options" id="quiz-options-container">
+                <button class="sim-quiz-opt" data-opt="0">
+                  <span class="sim-quiz-letter">A</span>
+                  <span>Central relational auto-increment primary key with connection pool</span>
+                </button>
+                <button class="sim-quiz-opt" data-opt="1" data-correct="true">
+                  <span class="sim-quiz-letter">B</span>
+                  <span>Twitter Snowflake algorithm (timestamp + worker ID + sequence bits)</span>
+                </button>
+                <button class="sim-quiz-opt" data-opt="2">
+                  <span class="sim-quiz-letter">C</span>
+                  <span>Random UUID v4 string generation and truncation</span>
+                </button>
+                <button class="sim-quiz-opt" data-opt="3">
+                  <span class="sim-quiz-letter">D</span>
+                  <span>Redis INCR atomic counter over single master instance</span>
+                </button>
+              </div>
+
+              <div class="sim-quiz-explain" id="quiz-explain-box" style="display: none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <div id="quiz-explain-text"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flow -->
+          <div class="demo-panel" id="panel-flow" style="display: none;">
+            <div class="sim-card">
+              <div class="sim-header">
+                <div class="sim-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                  <span class="sim-title">Event-Driven Authentication Flow</span>
+                </div>
+                <span class="sim-badge">4 Stages</span>
+              </div>
+
+              <div class="sim-flow-chain">
+                <div class="sim-flow-node"><small>Client</small>OAuth Login</div>
+                <span class="sim-flow-arrow" aria-hidden="true">→</span>
+                <div class="sim-flow-node"><small>Gateway</small>Validate JWT</div>
+                <span class="sim-flow-arrow" aria-hidden="true">→</span>
+                <div class="sim-flow-node"><small>Service</small>Hydrate Session</div>
+                <span class="sim-flow-arrow" aria-hidden="true">→</span>
+                <div class="sim-flow-node is-final"><small>Response</small>200 OK</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="demo-panel" id="panel-stats" style="display: none;">
+            <div class="sim-card">
+              <div class="sim-header">
+                <div class="sim-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                  <span class="sim-title">Edge Cache Performance</span>
+                </div>
+                <span class="sim-badge">Live Telemetry</span>
+              </div>
+
+              <div class="sim-stats-grid">
+                <div class="sim-stat-box">
+                  <div class="sim-stat-label">P99 Latency</div>
+                  <div class="sim-stat-val">14 ms</div>
+                  <div class="sim-stat-delta">↓ 42% vs origin</div>
+                </div>
+                <div class="sim-stat-box">
+                  <div class="sim-stat-label">Cache Hit Ratio</div>
+                  <div class="sim-stat-val">99.4%</div>
+                  <div class="sim-stat-delta">↑ 1.2% this week</div>
+                </div>
+                <div class="sim-stat-box">
+                  <div class="sim-stat-label">Throughput</div>
+                  <div class="sim-stat-val">42.8k</div>
+                  <div class="sim-stat-delta">req/sec sustained</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compare -->
+          <div class="demo-panel" id="panel-compare" style="display: none;">
+            <div class="sim-card">
+              <div class="sim-header">
+                <div class="sim-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2" y="3" width="20" height="18" rx="2"></rect>
+                    <line x1="12" y1="3" x2="12" y2="21"></line>
+                  </svg>
+                  <span class="sim-title">Architecture Decision Matrix</span>
+                </div>
+                <span class="sim-badge">Side-by-Side</span>
+              </div>
+
+              <div class="sim-table-wrap">
+                <table class="sim-table">
+                  <thead>
+                    <tr><th>Attribute</th><th>Snowflake ID</th><th>UUID v4</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Size / Type</td>
+                      <td class="is-win">64-bit BigInt (fast index)</td>
+                      <td>128-bit String (heavier)</td>
+                    </tr>
+                    <tr>
+                      <td>Time Ordering</td>
+                      <td class="is-win">K-Sorted by creation time</td>
+                      <td>Completely random</td>
+                    </tr>
+                    <tr>
+                      <td>Coordination</td>
+                      <td class="is-win">Zero DB locks (Worker ID)</td>
+                      <td class="is-win">Zero coordination</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="section-head">
+        <div class="section-tag">A better way to see the answer</div>
+        <h2 class="section-title">Big ideas deserve better visuals.</h2>
+        <p class="section-desc">Turn everyday AI conversations into something you can actually interact with. It feels natural, looks clean, and takes almost no effort.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </div>
+          <h3 class="feature-title">Answers that come alive</h3>
+          <p class="feature-body">Explore ideas through diagrams, quizzes, timelines, charts, and more. The right format for every kind of answer.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <h3 class="feature-title">Fits right into your chat</h3>
+          <p class="feature-body">Your visuals appear alongside the conversation, so you keep your flow and focus on what matters.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h3 class="feature-title">Private by nature</h3>
+          <p class="feature-body">Your conversations stay in your browser. No accounts to create, no tracking, and no data sent to us.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          </div>
+          <h3 class="feature-title">Keep the good stuff</h3>
+          <p class="feature-body">Save your favorite visuals as crisp images and bring them into notes, presentations, or wherever ideas go next.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          </div>
+          <h3 class="feature-title">Works with your usual flow</h3>
+          <p class="feature-body">Keep asking questions the way you always do. BetterView turns the useful answers into something you can explore.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 11 15 16 9"></polyline></svg>
+          </div>
+          <h3 class="feature-title">Thoughtfully simple</h3>
+          <p class="feature-body">Clean layouts, clear labels, and familiar interactions make every visual feel easy from the first click.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Components -->
+    <section class="section" id="components">
+      <div class="section-head">
+        <div class="section-tag">A format for every thought</div>
+        <h2 class="section-title">See the whole picture.</h2>
+      </div>
+
+      <div class="types-grid">
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Quiz Card</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Flow Diagram</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <span>Data Table</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+          <span>Compare Grid</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Metric Stats</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+          <span>Timeline</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Process Stepper</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Callout Box</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+          <span>Tabs Switcher</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>Mermaid Chart</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>KaTeX Math</span>
+        </div>
+        <div class="type-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>Code Block</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section" id="how-it-works">
+      <div class="section-head">
+        <div class="section-tag">As easy as it should be</div>
+        <h2 class="section-title">Three steps. A whole new view.</h2>
+      </div>
+
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <h3 class="step-title">Add to Chrome</h3>
+          <p class="step-desc">Add BetterView to Chrome in a few clicks. It is free and ready when you are.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <h3 class="step-title">Chat Normally</h3>
+          <p class="step-desc">Have a normal conversation with Gemini or Grok. Ask, learn, brainstorm, and follow your curiosity.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <h3 class="step-title">Instant Magic</h3>
+          <p class="step-desc">Watch useful answers become interactive visuals, right inside the conversation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Support -->
+    <section class="section" id="support">
+      <div class="support-card">
+        <div class="support-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
+        <h2 class="support-title">Support BetterView AI</h2>
+        <p class="support-body">
+          BetterView is 100% free, open-source, and privacy-respecting. If this tool saves you time, improves your AI workflow, or helps you learn faster, your support directly fuels new features, bug fixes, and continuous maintenance.
+        </p>
+
+        <div class="support-options">
+          <a href="https://ko-fi.com/strykerbuilds" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+            <span>Support on Ko-fi</span>
+          </a>
+          <a href="https://github.com/sponsors/hardikguptaofficialgit" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            <span>GitHub Sponsor</span>
+          </a>
+          <a href="https://github.com/hardikguptaofficialgit/betterview" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <span>Star on GitHub</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <img src="assets/mark-white.png" alt="" width="20" height="20">
+        <span>Free &amp; open source under the MIT License.</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/hardikguptaofficialgit/betterview" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+        <a href="https://github.com/hardikguptaofficialgit/betterview/issues" target="_blank" rel="noopener noreferrer" class="footer-link">Report Issue</a>
+        <a href="#support" class="footer-link">Support</a>
+      </div>
+    </div>
+
+    <!-- Marquee: two identical groups for a seamless loop -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <div class="marquee-group">
+          <span class="marquee-item"><img src="assets/mark-white.png" alt="">BetterView</span>
+          <span class="marquee-item is-outline"><img src="assets/mark-white.png" alt="">BetterView</span>
+          <span class="marquee-item"><img src="assets/mark-white.png" alt="">BetterView</span>
+          <span class="marquee-item is-outline"><img src="assets/mark-white.png" alt="">BetterView</span>
+        </div>
+        <div class="marquee-group">
+          <span class="marquee-item"><img src="assets/mark-white.png" alt="">BetterView</span>
+          <span class="marquee-item is-outline"><img src="assets/mark-white.png" alt="">BetterView</span>
+          <span class="marquee-item"><img src="assets/mark-white.png" alt="">BetterView</span>
+          <span class="marquee-item is-outline"><img src="assets/mark-white.png" alt="">BetterView</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>BetterView AI &copy; 2026</span>
+      <span>Built by Hardik Gupta</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Support modal -->
+<div id="support-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+  <div class="modal-content">
+    <button class="modal-close-btn" id="modal-close-btn" aria-label="Close dialog">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+
+    <div class="modal-head">
+      <div class="support-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </div>
+      <h3 id="modal-title" class="modal-title">Support the Creator</h3>
+      <p class="modal-sub">Every bit of support helps keep BetterView AI free, updated, and high quality for everyone.</p>
+    </div>
+
+    <div class="modal-list">
+      <a href="https://ko-fi.com/strykerbuilds" target="_blank" rel="noopener noreferrer" class="modal-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+        <div>
+          <div class="modal-item-title">Support on Ko-fi</div>
+          <div class="modal-item-sub">Buy me a coffee or leave a contribution</div>
+        </div>
+      </a>
+      <a href="https://github.com/sponsors/hardikguptaofficialgit" target="_blank" rel="noopener noreferrer" class="modal-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        <div>
+          <div class="modal-item-title">GitHub Sponsors</div>
+          <div class="modal-item-sub">Recurring monthly or custom pledge</div>
+        </div>
+      </a>
+      <a href="https://github.com/hardikguptaofficialgit/betterview" target="_blank" rel="noopener noreferrer" class="modal-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <div>
+          <div class="modal-item-title">Give a GitHub Star</div>
+          <div class="modal-item-sub">Free &amp; helps boost project visibility</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 1. Demo tab switcher
+  const tabButtons = document.querySelectorAll('.demo-tab-btn');
+  const panels = {
+    quiz: document.getElementById('panel-quiz'),
+    flow: document.getElementById('panel-flow'),
+    stats: document.getElementById('panel-stats'),
+    compare: document.getElementById('panel-compare'),
+  };
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      if (!tab || !panels[tab]) return;
+      tabButtons.forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      Object.values(panels).forEach(p => { if (p) p.style.display = 'none'; });
+      panels[tab].style.display = 'block';
+    });
+  });
+
+  // 2. Playable quiz
+  const optionsEl = document.getElementById('quiz-options-container');
+  const explainBox = document.getElementById('quiz-explain-box');
+  const explainText = document.getElementById('quiz-explain-text');
+  const scoreBadge = document.getElementById('quiz-score-badge');
+  const resetBtn = document.getElementById('quiz-reset-btn');
+  let answered = false;
+
+  if (optionsEl) {
+    optionsEl.addEventListener('click', (e) => {
+      const optBtn = e.target.closest('.sim-quiz-opt');
+      if (!optBtn || answered) return;
+      answered = true;
+
+      const isCorrect = optBtn.dataset.correct === 'true';
+      optionsEl.querySelectorAll('.sim-quiz-opt').forEach(opt => {
+        opt.setAttribute('disabled', 'true');
+        if (opt.dataset.correct === 'true') opt.classList.add('is-correct');
+      });
+
+      if (isCorrect) {
+        scoreBadge.textContent = 'Score: 1 / 1 (100%)';
+        explainText.innerHTML = '<strong>Correct.</strong> Twitter Snowflake generates up to 4,096 IDs per millisecond per worker without database coordination, and IDs stay k-sorted by creation time.';
+      } else {
+        optBtn.classList.add('is-incorrect');
+        scoreBadge.textContent = 'Score: 0 / 1';
+        explainText.innerHTML = '<strong>Not quite.</strong> Snowflake builds 64-bit k-ordered IDs from a timestamp (41 bits), worker ID (10 bits) and sequence (12 bits), with no central database bottleneck.';
+      }
+      explainBox.style.display = 'flex';
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      answered = false;
+      optionsEl.querySelectorAll('.sim-quiz-opt').forEach(opt => {
+        opt.removeAttribute('disabled');
+        opt.classList.remove('is-correct', 'is-incorrect');
+      });
+      explainBox.style.display = 'none';
+      scoreBadge.textContent = 'Score: 0 / 1';
+    });
+  }
+
+  // 3. Support modal
+  const modal = document.getElementById('support-modal');
+  const closeBtn = document.getElementById('modal-close-btn');
+  let previousBodyOverflow = '';
+  let previousBodyPaddingRight = '';
+
+  function openModal() {
+    if (!modal || modal.classList.contains('is-open')) return;
+    previousBodyOverflow = document.body.style.overflow;
+    previousBodyPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollbarWidth > 0) {
+      const currentPadding = parseFloat(getComputedStyle(document.body).paddingRight) || 0;
+      document.body.style.paddingRight = `${currentPadding + scrollbarWidth}px`;
+    }
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    if (!modal || !modal.classList.contains('is-open')) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = previousBodyOverflow;
+    document.body.style.paddingRight = previousBodyPaddingRight;
+  }
+
+  document.querySelectorAll('.open-support-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
+  });
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+  });
+})();
+</script>
+</body>
+</html>
