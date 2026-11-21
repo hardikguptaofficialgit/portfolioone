@@ -50,7 +50,7 @@ const x = site.socialLinks?.find((l) => l.id === 'twitter')?.url || '';
 
 const posts = (blogs.blogPosts || []).filter((p) => !p.archived);
 
-const staticPaths = ['/', '/blogs', '/desktop'];
+const staticPaths = ['/', '/resume', '/projects', '/github', '/photos', '/writing', '/blogs', '/desktop'];
 
 const urls = [
   ...staticPaths.map((p) => ({ loc: `${SITE_URL}${p === '/' ? '' : p}`, changefreq: 'weekly', priority: p === '/' ? '1.0' : '0.8' })),
@@ -95,7 +95,12 @@ Canonical site: ${SITE_URL}
 
 ## Primary pages
 
-- Home (portfolio, resume, projects): ${SITE_URL}/
+- Home (about): ${SITE_URL}/
+- Experience and resume: ${SITE_URL}/resume
+- Projects: ${SITE_URL}/projects
+- GitHub: ${SITE_URL}/github
+- Photos: ${SITE_URL}/photos
+- Writing: ${SITE_URL}/writing
 - Technical blog index: ${SITE_URL}/blogs
 - Interactive desktop experience: ${SITE_URL}/desktop
 - Resume PDF: ${SITE_URL}/files/hardikresume.pdf

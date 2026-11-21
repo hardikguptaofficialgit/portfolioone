@@ -47,7 +47,7 @@ export function MonkeytypeStats({
         const picked = pickPersonalBests((json.data ?? {}) as Parameters<typeof pickPersonalBests>[0]);
         if (!cancelled && picked.length) setModes(picked);
       } catch {
-        /* CORS or network — link still works */
+        /* CORS or network  -  link still works */
       }
     })();
     return () => {

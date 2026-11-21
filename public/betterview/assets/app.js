@@ -1,5 +1,5 @@
 /**
- * BetterView AI — Landing Page Client Logic
+ * BetterView AI  -  Landing Page Client Logic
  */
 
 (function () {

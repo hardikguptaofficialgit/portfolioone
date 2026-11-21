@@ -1,6 +1,6 @@
 /**
  * Optional hosted view counter (e.g. Cloudflare Countty).
- * Set VITE_PORTFOLIO_VIEWS_URL to your worker base URL — no Vercel API or KV.
+ * Set VITE_PORTFOLIO_VIEWS_URL to your worker base URL  -  no Vercel API or KV.
  *
  * Countty: `npx countty init` → deploy → `npx countty create <slug>`
  * Docs: https://github.com/wellwelwel/countty
@@ -41,8 +41,8 @@ async function fetchViews(endpoint: 'views' | 'peek'): Promise<number | null> {
   }
 }
 
-/** First visit in session — increment on host (Countty `/views`). */
+/** First visit in session  -  increment on host (Countty `/views`). */
 export const hitExternalPortfolioViews = () => fetchViews('views');
 
-/** Repeat visit in session — read only (Countty `/peek`). */
+/** Repeat visit in session  -  read only (Countty `/peek`). */
 export const peekExternalPortfolioViews = () => fetchViews('peek');

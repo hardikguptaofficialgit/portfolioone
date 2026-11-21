@@ -17,7 +17,12 @@ Canonical site: https://strykerinside.vercel.app
 
 ## Primary pages
 
-- Home (portfolio, resume, projects): https://strykerinside.vercel.app/
+- Home (about): https://strykerinside.vercel.app/
+- Experience and resume: https://strykerinside.vercel.app/resume
+- Projects: https://strykerinside.vercel.app/projects
+- GitHub: https://strykerinside.vercel.app/github
+- Photos: https://strykerinside.vercel.app/photos
+- Writing: https://strykerinside.vercel.app/writing
 - Technical blog index: https://strykerinside.vercel.app/blogs
 - Interactive desktop experience: https://strykerinside.vercel.app/desktop
 - Resume PDF: https://strykerinside.vercel.app/files/hardikresume.pdf
@@ -43,7 +48,7 @@ Full-stack web development, TypeScript, React, Node.js, AI/LLM integration, SaaS
 - Contextually Overthinking Human - always curious ,  learning, and usually thinking about how things could work better.
 - Software engineer building AI systems, developer tools, and products from idea to deployment.
 - Built LinkitApp.in and StayLokal.app, along with a bunch of other things along the way.
-- Started building in 9th grade; still learning, shipping, breaking things, and figuring them out - aka 'jugaad'.
+- Started building  in 9th grade; still learning, shipping, breaking things, and figuring them out - aka 'jugaad'.
 
 ## Achievements
 

@@ -17,7 +17,12 @@ Canonical site: https://strykerinside.vercel.app
 
 ## Primary pages
 
-- Home (portfolio, resume, projects): https://strykerinside.vercel.app/
+- Home (about): https://strykerinside.vercel.app/
+- Experience and resume: https://strykerinside.vercel.app/resume
+- Projects: https://strykerinside.vercel.app/projects
+- GitHub: https://strykerinside.vercel.app/github
+- Photos: https://strykerinside.vercel.app/photos
+- Writing: https://strykerinside.vercel.app/writing
 - Technical blog index: https://strykerinside.vercel.app/blogs
 - Interactive desktop experience: https://strykerinside.vercel.app/desktop
 - Resume PDF: https://strykerinside.vercel.app/files/hardikresume.pdf

@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
-    import { Link as RouterLink } from 'react-router-dom';
+    import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
     import { motion, AnimatePresence, useInView } from 'framer-motion';
     import {
         ChevronRight, X, ChevronLeft,
         Maximize2, Pin, Github, Linkedin, Instagram,
         Link as LinkIcon, Star, GitFork, Download, ArrowUpRight, Clock,
-        Menu,
-        MapPin, Calendar, Eye
+        Home, BriefcaseBusiness, FolderKanban, Images, BookOpen, Mail, Sun, Moon,
+        MapPin, Calendar, Eye, Globe, Code2
     } from 'lucide-react';
     import { GitHubActivityChart } from '@/components/portfolio/GitHubActivityChart';
-    import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
     import { MonkeytypeStats } from '@/components/portfolio/MonkeytypeStats';
     import { SkillIcon } from '@/components/portfolio/SkillIcon';
     import { transitionPortfolioTheme } from '@/lib/theme-transition';
@@ -25,19 +24,79 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
     const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
     const NAV_SPRING = { type: 'spring', stiffness: 140, damping: 20 } as const;
-    /* ─── Noise SVG overlay (CSS) ─────────────────────────────── */
-    const NoiseOverlay = () => (
-        <div
-            aria-hidden
-            className="pointer-events-none fixed inset-0 z-[5] opacity-[0.035]"
-            style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'repeat',
-                backgroundSize: '128px 128px',
-                mixBlendMode: 'overlay',
-            }}
-        />
-    );
+    const getTextLength = (node: React.ReactNode): number => {
+        if (typeof node === 'string' || typeof node === 'number') return String(node).length;
+        if (Array.isArray(node)) return node.reduce((total, child) => total + getTextLength(child), 0);
+        if (React.isValidElement<{ label?: string }>(node) && typeof node.type === 'function' && node.type.name === 'HoverPreviewLink') return node.props.label?.length ?? 0;
+        if (React.isValidElement<{ children?: React.ReactNode }>(node)) return getTextLength(node.props.children);
+        return 0;
+    };
+
+    const revealTypedContent = (node: React.ReactNode, limit: { remaining: number }): React.ReactNode => {
+        if (typeof node === 'string' || typeof node === 'number') {
+            const value = String(node);
+            const visible = value.slice(0, limit.remaining);
+            limit.remaining = Math.max(0, limit.remaining - value.length);
+            return visible;
+        }
+        if (Array.isArray(node)) return node.map((child, index) => <React.Fragment key={index}>{revealTypedContent(child, limit)}</React.Fragment>);
+        if (React.isValidElement<{ label?: string }>(node) && typeof node.type === 'function' && node.type.name === 'HoverPreviewLink') {
+            const label = node.props.label ?? '';
+            const visibleLabel = label.slice(0, limit.remaining);
+            limit.remaining = Math.max(0, limit.remaining - label.length);
+            if (visibleLabel.length < label.length) return <span>{visibleLabel}</span>;
+            return React.cloneElement(node, { label: visibleLabel });
+        }
+        if (React.isValidElement<{ children?: React.ReactNode }>(node) && node.props.children !== undefined) {
+            return React.cloneElement(node, undefined, revealTypedContent(node.props.children, limit));
+        }
+        return node;
+    };
+
+    const TypewriterContent = ({ children, onComplete }: { children: React.ReactNode; onComplete?: () => void }) => {
+        const fullLength = getTextLength(children);
+        const [visibleCount, setVisibleCount] = useState(0);
+
+        useEffect(() => {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                setVisibleCount(fullLength);
+                return;
+            }
+            setVisibleCount(0);
+            let count = 0;
+            let lastTick = 0;
+            let elapsed = 0;
+            let frame = 0;
+            const type = (now: number) => {
+                if (lastTick) elapsed += Math.min(now - lastTick, 50);
+                lastTick = now;
+                if (elapsed >= 22) {
+                    // A steady ~45 characters/second keeps the typing fluid without jumping.
+                    const chars = Math.floor(elapsed / 22);
+                    count = Math.min(fullLength, count + chars);
+                    elapsed %= 22;
+                    setVisibleCount(count);
+                }
+                if (count < fullLength) frame = window.requestAnimationFrame(type);
+            };
+            frame = window.requestAnimationFrame(type);
+            return () => window.cancelAnimationFrame(frame);
+        }, [fullLength]);
+
+        useEffect(() => {
+            if (visibleCount >= fullLength) onComplete?.();
+        }, [visibleCount, fullLength, onComplete]);
+
+        const limit = { remaining: visibleCount };
+        const typedContent = revealTypedContent(children, limit);
+        return (
+            <div className="relative w-full">
+                {/* Keep the final layout in flow from the first frame, so nothing jumps as text appears. */}
+                <div aria-hidden="true" className="invisible pointer-events-none flow-root">{children}</div>
+                <div className="absolute inset-0" aria-live="off">{typedContent}</div>
+            </div>
+        );
+    };
 
 
 
@@ -81,6 +140,47 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
             <path d="M18.901 2H21.98l-6.723 7.684L23.3 22h-6.297l-4.93-7.476L5.53 22H2.45l7.192-8.226L1.7 2h6.457l4.456 6.765L18.901 2Zm-1.104 18.1h1.706L7.23 3.805H5.4L17.797 20.1Z" />
         </svg>
     );
+
+    const HoverPreviewLink = ({ href, label, description, icon, isDark }: {
+        href: string;
+        label: string;
+        description: string;
+        icon: React.ReactNode;
+        isDark: boolean;
+    }) => {
+        const hostname = new URL(href).hostname.replace(/^www\./, '');
+        return (
+            <span className="group/link relative inline-flex align-baseline">
+                <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 whitespace-nowrap font-semibold underline decoration-current/40 underline-offset-4 transition-colors hover:decoration-current"
+                    aria-label={`${label}, opens ${hostname} in a new tab`}
+                >
+                    <span className="inline-flex items-center">{icon}</span>
+                    {label}
+                    <ArrowUpRight size={11} className="opacity-60" aria-hidden="true" />
+                </a>
+                <span className={`pointer-events-none invisible absolute bottom-full left-0 z-[80] mb-2 w-64 translate-y-1 rounded-xl border p-3 opacity-0 shadow-2xl transition-all duration-150 group-hover/link:visible group-hover/link:translate-y-0 group-hover/link:opacity-100 group-focus-within/link:visible group-focus-within/link:translate-y-0 group-focus-within/link:opacity-100 ${isDark ? 'border-white/15 bg-[#171719] text-zinc-100 shadow-black/50' : 'border-[#e7dacb] bg-white text-[#1f1a17] shadow-black/15'}`}>
+                    <span className="flex items-center gap-2.5">
+                        <img
+                            src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`}
+                            alt=""
+                            className={`h-8 w-8 rounded-lg border p-1 ${isDark ? 'border-white/10 bg-white' : 'border-black/5 bg-[#f8f5f0]'}`}
+                            loading="lazy"
+                        />
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-bold">{label}</span>
+                            <span className={`mt-0.5 block truncate text-[10px] ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{hostname}</span>
+                        </span>
+                        <ArrowUpRight size={14} className={isDark ? 'text-zinc-400' : 'text-zinc-500'} />
+                    </span>
+                    <span className={`mt-2 block text-[11px] leading-relaxed ${isDark ? 'text-zinc-300' : 'text-[#6b5c4f]'}`}>{description}</span>
+                </span>
+            </span>
+        );
+    };
 
     /* ─── Tech Icons ──────────────────────────────────────────── */
     const TechIcon = ({ name }: { name: string }) => {
@@ -170,12 +270,14 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
     };
 
     const navItems = [
-        { id: 'resume', label: 'Resume' },
-        { id: 'projects', label: 'Projects' },
-        { id: 'github', label: 'GitHub' },
-        { id: 'photos', label: 'Photos' },
-        { id: 'blog', label: 'Blog' },
-        { id: 'contact', label: 'Contact', isAction: true },
+        { id: 'home', label: 'Home', path: '/', icon: Home },
+        { id: 'resume', label: 'Experience', path: '/resume', icon: BriefcaseBusiness },
+        { id: 'projects', label: 'Projects', path: '/projects', icon: FolderKanban },
+        { id: 'github', label: 'GitHub', path: '/github', icon: Github },
+        { id: 'photos', label: 'Photos', path: '/photos', icon: Images },
+        { id: 'writing', label: 'Writing', path: '/writing', icon: BookOpen },
+        { id: 'contact', label: 'Contact', icon: Mail, isAction: true },
+        { id: 'theme', label: 'Theme', icon: Sun, isAction: true },
     ];
 
     const LAUNCH_MODAL_DISMISSED_KEY = 'portfolio_launch_modal_dismissed_v1';
@@ -190,6 +292,16 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
     type ResumeProject = Project & { img?: string | null };
 
     const SimplifiedResume = () => {
+        const location = useLocation();
+        const navigate = useNavigate();
+        const currentPage = ({
+            '/': 'home',
+            '/resume': 'resume',
+            '/projects': 'projects',
+            '/github': 'github',
+            '/photos': 'photos',
+            '/writing': 'writing',
+        } as Record<string, string>)[location.pathname] ?? 'home';
         const { settings, updateSettings } = useDesktopStore();
         const { profile, projects, skillCategories, achievements, simplifiedExperience, education, photoEvents, blogPosts, sections, socialLinks, isLoading } = usePortfolio();
         const githubUsername = profile.githubUsername || 'hardikguptaofficialgit';
@@ -201,12 +313,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
             ...p,
             img: p.imageUrl ?? null,
         }));
-        const [activeSection, setActiveSection] = useState('resume');
-        const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-        const [isNavCompact, setIsNavCompact] = useState(false);
-        const [isDesktopView, setIsDesktopView] = useState(
-            () => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true),
-        );
         const [projectsVisibleCount, setProjectsVisibleCount] = useState(PROJECTS_PAGE_SIZE);
         const [reposVisibleCount, setReposVisibleCount] = useState(REPOS_PAGE_SIZE);
         const [blogsVisibleCount, setBlogsVisibleCount] = useState(BLOG_PAGE_SIZE);
@@ -222,6 +328,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
         const [isDraggingProjectControls, setIsDraggingProjectControls] = useState(false);
         const [portfolioViews, setPortfolioViews] = useState<number | null>(null);
+        const [homeIntroTyped, setHomeIntroTyped] = useState(false);
+        const handleHomeIntroComplete = useCallback(() => setHomeIntroTyped(true), []);
         const [showLaunchModal, setShowLaunchModal] = useState(
             () => typeof window !== 'undefined' ? sessionStorage.getItem(LAUNCH_MODAL_DISMISSED_KEY) !== '1' : true,
         );
@@ -229,21 +337,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
         const theme: Theme = settings.darkMode ? 'dark' : 'light';
         const isDark = theme === 'dark';
-        const shouldUseCompactNav = isDesktopView && isNavCompact;
 
         useEffect(() => {
-            const onScroll = () => setIsNavCompact(window.scrollY > 56);
-            onScroll();
-            window.addEventListener('scroll', onScroll, { passive: true });
-            return () => window.removeEventListener('scroll', onScroll);
-        }, []);
+            window.scrollTo({ top: 0, behavior: 'auto' });
+        }, [location.pathname]);
 
-        useEffect(() => {
-            const onResize = () => setIsDesktopView(window.innerWidth >= 1024);
-            onResize();
-            window.addEventListener('resize', onResize);
-            return () => window.removeEventListener('resize', onResize);
-        }, []);
 
         useEffect(() => {
             let cancelled = false;
@@ -335,27 +433,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
             setReposVisibleCount(REPOS_PAGE_SIZE);
         }, [filterMode, searchQuery]);
 
-        useEffect(() => {
-            const ids = ['resume', 'projects', 'github', 'photos', 'blog'];
-            const sections = ids.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-            if (!sections.length) return;
-            const vis = new Map<string, number>();
-            const obs = new IntersectionObserver(entries => {
-                entries.forEach(e => vis.set(e.target.id, e.intersectionRatio));
-                let best = activeSection, bestR = -1;
-                vis.forEach((r, id) => { if (r > bestR) { bestR = r; best = id; } });
-                if (best && best !== activeSection) setActiveSection(best);
-            }, { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] });
-            sections.forEach(s => obs.observe(s));
-            return () => obs.disconnect();
-        }, [activeSection]);
-
-        const scrollTo = (id: string) => {
-            setActiveSection(id);
-            setIsMobileNavOpen(false);
-            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-        };
-
         const dismissLaunchModal = useCallback(() => {
             sessionStorage.setItem(LAUNCH_MODAL_DISMISSED_KEY, '1');
             setShowLaunchModal(false);
@@ -439,14 +516,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 
         // ── theme-aware classes
         const bg = isDark ? 'bg-[#09090b]' : 'bg-[#fffef9]';
-        const bgImage = isDark ? '/bgdarkimage.png' : '/bgimage.png';
         const text = isDark ? 'text-zinc-100' : 'text-[#1f1a17]';
-        const navBg = isDark ? 'bg-black border-zinc-800' : 'bg-[#fffef9] border-[#e6d8cb]';
         const mutedText = isDark ? 'text-zinc-400' : 'text-[#5f5248]';
         const subtleText = isDark ? 'text-zinc-500' : 'text-[#7d6b5c]';
-        const cardBg = isDark
-            ? 'bg-zinc-950 border-zinc-800'
-            : 'bg-[#fffef9] border-[#d8c8b9]';
+        const cardBg = 'bg-transparent border-transparent';
         const accent = isDark ? 'text-[#d0fffe]' : 'text-[#7b3e77]';
         const accentBorder = isDark ? 'border-[#d0fffe]/40 text-[#d0fffe]' : 'border-[#d39ad0] text-[#7b3e77]';
         const accentHover = isDark ? 'hover:bg-[#d0fffe] hover:text-black' : 'hover:bg-[#ffd3fd] hover:text-[#3f2a3d]';
@@ -456,10 +529,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         const filterActive = isDark ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'bg-[#ffd3fd] text-[#4f2d4c] border-[#dba5d7]';
         const filterInactive = isDark ? 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700' : 'text-[#7b6b5e] border-[#d9cabd] hover:text-[#3a312b] hover:border-[#bfaea0]';
         const labelText = isDark ? 'text-zinc-500' : 'text-[#6f5b4e]';
-        const shellBase = isDark
-            ? 'rounded-2xl border border-white/[0.08] bg-black/80 p-6 md:p-9 shadow-[0_24px_80px_-48px_rgba(255,255,255,0.22)] backdrop-blur-xl'
-            : 'rounded-2xl border border-[#ded4ca] p-6 md:p-9 bg-white/90 shadow-[0_24px_80px_-48px_rgba(67,47,31,0.22)] backdrop-blur-xl';
-        const gridColumnShell = isDark ? 'border-zinc-800' : 'border-[#d8c8b9]';
+        const shellBase = 'py-12 md:py-16';
         const aboutBullets =
             sections.simplifiedAboutBullets?.length
                 ? sections.simplifiedAboutBullets
@@ -481,232 +551,53 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         return (
             <>
                     <motion.nav
-                        layout={isDesktopView && !shouldUseCompactNav}
-                        transition={NAV_SPRING}
-                        className={`fixed z-50 ${
-                            shouldUseCompactNav
-                                ? 'top-5 left-[max(1rem,env(safe-area-inset-left,0px))] md:left-5 lg:left-6'
-                                : 'top-3 left-0 right-0 px-3 md:px-6'
-                        }`}
+                        aria-label="Main navigation"
+                        className="fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto w-fit max-w-[calc(100%-1rem)]"
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.65, ease: EASE_SMOOTH, delay: 0.2 }}
                     >
-                        <motion.div
-                            layout
-                            transition={NAV_SPRING}
-                            className={`hidden lg:flex border backdrop-blur-xl shadow-lg ${navBg} ${
-                                shouldUseCompactNav
-                                    ? 'w-[11.5rem] flex-col rounded-2xl p-2.5 items-stretch'
-                                    : 'mx-auto max-w-4xl items-center justify-between gap-3 rounded-2xl px-4 md:px-5 py-2.5 md:py-3'
-                            }`}
-                        >
-                            <motion.button
-                                type="button"
-                                layout
-                                layoutId="nav-logo"
-                                transition={NAV_SPRING}
-                                onClick={() => scrollTo('resume')}
-                                className={`flex items-center gap-2.5 shrink-0 rounded-xl px-1 py-1 transition-colors ${
-                                    isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.035]'
-                                }`}
-                            >
-                                <img
-                                    src="/logoimage.png"
-                                    alt="Hardik Gupta"
-                                    className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
-                                />
-                                <span
-                                    className={`font-serif-display leading-none tracking-tight ${text} ${shouldUseCompactNav ? 'text-[15px]' : 'text-[17px]'}`}
-                                >
-                                    stryker.inside
-                                </span>
-                            </motion.button>
-
-                            <motion.div
-                                layout
-                                transition={NAV_SPRING}
-                                className={`flex ${
-                                    shouldUseCompactNav ? 'w-full flex-col gap-1.5 mt-3' : 'items-center gap-0.5 ml-auto'
-                                }`}
-                            >
-                                {navItems.map((item) => (
+                        <div className={`no-scrollbar flex max-w-full items-center justify-start gap-0.5 overflow-x-auto rounded-full border p-1 shadow-[0_12px_40px_rgba(0,0,0,0.2)] backdrop-blur-2xl sm:justify-center sm:gap-1 sm:p-1.5 ${isDark ? 'border-white/[0.12] bg-[#151518]/95 shadow-black/40' : 'border-black/[0.08] bg-white/95 shadow-black/15'}`}>
+                            {navItems.map((item) => {
+                                const Icon = item.id === 'theme' ? (isDark ? Sun : Moon) : item.icon;
+                                const active = currentPage === item.id && !item.isAction;
+                                return (
                                     <motion.button
                                         key={item.id}
                                         type="button"
-                                        layout
-                                        transition={NAV_SPRING}
-                                        onClick={() => {
-                                            if (item.id === 'contact') {
-                                                window.location.href = 'mailto:hardikgupta8792@gmail.com';
-                                            } else {
-                                                scrollTo(item.id);
-                                            }
+                                        whileHover={{ y: -4 }}
+                                        whileTap={{ scale: 0.92 }}
+                                        onClick={(event) => {
+                                            if (item.id === 'contact') window.location.href = 'mailto:hardikgupta8792@gmail.com';
+                                            else if (item.id === 'theme') toggleTheme({ x: event.clientX, y: event.clientY });
+                                            else if (item.path) navigate(item.path);
                                         }}
-                                        className={`relative rounded-lg font-semibold transition-colors ${
-                                            shouldUseCompactNav
-                                                ? `w-full text-left px-3 py-2 text-[11px] uppercase tracking-[0.12em] ${
-                                                      activeSection === item.id && !item.isAction
-                                                          ? isDark ? 'text-zinc-100' : 'text-zinc-900'
-                                                          : isDark
-                                                            ? 'text-zinc-500 hover:text-zinc-200'
-                                                            : 'text-zinc-600 hover:text-zinc-900'
-                                                  }`
-                                                : `px-3.5 py-2 text-[12px] uppercase tracking-[0.14em] ${
-                                                      activeSection === item.id && !item.isAction
-                                                          ? isDark ? 'text-zinc-100' : 'text-zinc-900'
-                                                          : isDark
-                                                            ? 'text-zinc-500 hover:text-zinc-300'
-                                                            : 'text-zinc-600 hover:text-zinc-800'
-                                                  }`
-                                        }`}
+                                        aria-label={item.id === 'theme' ? `${isDark ? 'Switch to light' : 'Switch to dark'} theme` : item.label}
+                                        aria-current={active ? 'location' : undefined}
+                                        className={`group relative flex min-w-[48px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-full px-2 py-2 transition-[color,background-color,transform] duration-300 sm:min-w-[72px] sm:px-3 sm:py-2 ${active ? (isDark ? 'text-white' : 'text-zinc-950') : (isDark ? 'text-zinc-400 hover:bg-white/[0.07] hover:text-white' : 'text-zinc-500 hover:bg-black/[0.045] hover:text-zinc-950')}`}
                                     >
-                                        {activeSection === item.id && !item.isAction && (
-                                            <motion.span
-                                                layoutId={shouldUseCompactNav ? 'compact-nav-item-active' : 'nav-item-active'}
-                                                transition={NAV_SPRING}
-                                                className={`absolute inset-0 rounded-lg ${
-                                                    isDark ? 'bg-white/[0.08]' : 'bg-black/[0.06]'
-                                                }`}
-                                            />
-                                        )}
-                                        <span className="relative z-10">{item.label}</span>
+                                        {active && <motion.span layoutId="bottom-nav-active" className={`absolute inset-0 rounded-full ${isDark ? 'bg-white/[0.13]' : 'bg-black/[0.065]'}`} transition={NAV_SPRING} />}
+                                        <Icon size={18} strokeWidth={active ? 2.25 : 1.8} className="relative z-10 transition-transform duration-300 group-hover:scale-110" />
+                                        <span className="relative z-10 whitespace-nowrap text-[9px] font-semibold tracking-[0.01em]">{item.label}</span>
                                     </motion.button>
-                                ))}
-                            </motion.div>
-
-                            <motion.div
-                                layout
-                                transition={NAV_SPRING}
-                                className={`flex items-center ${
-                                    shouldUseCompactNav
-                                        ? `w-full mt-2.5 pt-2.5 border-t ${divider} justify-between gap-2`
-                                        : 'gap-2 shrink-0'
-                                }`}
-                            >
-                                <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
-                                {!shouldUseCompactNav && (
-                                    <RouterLink
-                                        to="/desktop"
-                                        onClick={markDesktopDirectEntry}
-                                        className={`hidden xl:inline-flex text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${subtleText} ${
-                                            isDark ? 'hover:text-zinc-200' : 'hover:text-zinc-900'
-                                        }`}
-                                    >
-                                        Interactive
-                                    </RouterLink>
-                                )}
-                            </motion.div>
-                        </motion.div>
-
-                        <div className="lg:hidden px-0">
-                            <div className={`border backdrop-blur-xl shadow-lg rounded-2xl px-4 py-3 ${navBg}`}>
-                                <div className="flex items-center justify-between gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => scrollTo('resume')}
-                                        className="flex items-center gap-2.5 shrink-0"
-                                    >
-                                        <img
-                                            src="/logoimage.png"
-                                            alt="Hardik Gupta"
-                                            className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
-                                        />
-                                        <span className={`font-serif-display text-[17px] leading-none tracking-tight ${text}`}>
-                                            stryker.inside
-                                        </span>
-                                    </button>
-                                    <div className="flex items-center gap-2">
-                                        <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsMobileNavOpen((v) => !v)}
-                                            className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
-                                                isDark
-                                                    ? 'border-zinc-700 bg-zinc-900/80 text-zinc-200 hover:bg-zinc-800'
-                                                    : 'border-[#d8c8b9] bg-white/80 text-zinc-700 hover:bg-[#f7f2ec]'
-                                            }`}
-                                            aria-label="Open menu"
-                                        >
-                                            <Menu size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                                );
+                            })}
                         </div>
-
-                        <AnimatePresence initial={false}>
-                            {isMobileNavOpen && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -6 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -6 }}
-                                    transition={{ duration: 0.18, ease: EASE_SMOOTH }}
-                                    className={`lg:hidden overflow-hidden border backdrop-blur-xl mt-2 rounded-xl shadow-lg ${
-                                        isDark ? 'border-zinc-800 bg-black/90' : 'border-[#e6d8cb] bg-[#fffef9]/95'
-                                    } px-3 pb-3 pt-2`}
-                                >
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {navItems.map((item) => (
-                                            <button
-                                                key={item.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    if (item.id === 'contact') {
-                                                        window.location.href = 'mailto:hardikgupta8792@gmail.com';
-                                                    } else {
-                                                        scrollTo(item.id);
-                                                    }
-                                                    setIsMobileNavOpen(false);
-                                                }}
-                                                className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] rounded-lg border transition-colors ${
-                                                    activeSection === item.id && !item.isAction
-                                                        ? isDark
-                                                            ? 'text-zinc-100 bg-white/[0.08] border-zinc-700'
-                                                            : 'text-zinc-900 bg-black/[0.06] border-zinc-400'
-                                                        : isDark
-                                                          ? 'text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900/80'
-                                                          : 'text-zinc-600 border-[#e3d2c4] hover:text-zinc-900 hover:bg-black/[0.03]'
-                                                }`}
-                                            >
-                                                {item.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
                     </motion.nav>
 
                 <div
-                    className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color] duration-500`}
+                    className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto bg-transparent ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27] transition-[background-color,color] duration-500`}
                     style={{
-                        backgroundImage: bgImage ? `url('${bgImage}')` : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        backgroundColor: isDark ? '#09090b' : '#faf8f5',
+                        backgroundImage: isDark
+                            ? 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)'
+                            : 'linear-gradient(rgba(55,42,32,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(55,42,32,0.035) 1px, transparent 1px)',
+                        backgroundSize: '44px 44px',
+                        backgroundPosition: 'center center',
                         backgroundAttachment: 'fixed',
                     }}
                 >
-                    <NoiseOverlay />
-                    <div
-                        aria-hidden
-                        className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`}
-                    />
-                    <div
-                        aria-hidden
-                        className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'} transition-colors duration-500`}
-                    />
-
-                    <div className="relative z-10 w-full px-3 md:px-6 pt-[5.5rem] lg:pt-28 pb-16">
-                        <div className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${isDark ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.25)]' : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'} backdrop-blur-xl`}>
-                            <div className={`relative border-b ${divider} p-2 md:p-3`}>
-                                <div className={`relative overflow-hidden rounded-2xl border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-                                    <img
-                                        src="/banner.jpg"
-                                        alt=""
-                                        className="h-40 md:h-52 w-full object-cover object-center block"
-                                    />
-                                    <div className={`pointer-events-none absolute inset-0 ${isDark ? 'bg-gradient-to-t from-black/35 via-transparent to-transparent' : 'bg-gradient-to-t from-white/20 via-transparent to-transparent'}`} />
-                                </div>
-                            </div>
-
+                    <div className="relative z-10 mx-auto w-full max-w-5xl px-5 pb-32 pt-3 sm:px-10 sm:pt-4 md:pb-36 md:pt-5">
                         <motion.div
                             variants={containerVariants}
                             initial="hidden"
@@ -714,8 +605,63 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                             className="space-y-0"
                         >
 
-                            {/* ══ RESUME ══ */}
-                            <motion.section variants={childVariants} id="resume" className={`space-y-12 scroll-mt-24 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/80' : 'bg-white/90'}`}>
+                                <motion.section
+                                    key="home"
+                                    variants={childVariants}
+                                    aria-hidden={currentPage !== 'home'}
+                                    className={`${currentPage === 'home' ? 'flex' : 'hidden'} min-h-[calc(100vh-7rem)] flex-col justify-center py-3 md:py-5`}
+                                >
+                                    <div className="mx-auto grid w-full max-w-5xl items-center gap-8 md:grid-cols-[minmax(210px,0.72fr)_minmax(0,1.6fr)] md:gap-12">
+                                        <div className="relative mx-auto w-[min(62vw,250px)] md:w-full md:max-w-[290px]">
+                                            <div className={`absolute -inset-3 rounded-[42%_58%_63%_37%/43%_38%_62%_57%] border ${isDark ? 'border-white/15' : 'border-black/15'}`} />
+                                            <img src="/hardik-portrait.png" alt={`${profile.name || 'Hardik'} portrait`} className={`relative aspect-square w-full rounded-[48%_52%_43%_57%/45%_42%_58%_55%] border object-cover object-center ${isDark ? 'border-white/10' : 'border-black/10'}`} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EASE_SMOOTH, delay: 0.25 }}>
+                                                <h1 className="font-serif-display text-4xl leading-[1.08] tracking-tight lowercase sm:text-5xl md:text-6xl">
+                                                    hey, i’m {profile.name?.split(' ')[0]?.toLowerCase() || 'hardik'}.
+                                                </h1>
+                                                <p className={`mt-2 font-serif-display text-xl sm:text-2xl ${accent}`}>
+                                                    online, i go by stryker.
+                                                </p>
+                                            </motion.div>
+                                            <TypewriterContent onComplete={handleHomeIntroComplete}>
+                                                <article className={`mt-5 max-w-2xl space-y-3 text-[13px] leading-[1.8] sm:text-sm ${mutedText}`}>
+                                                    <p className={`text-sm leading-[1.75] sm:text-base ${text}`}>
+                                                        i am a cs ug at kiit university, and i&apos;ve been building things since 9th grade.
+                                                    </p>
+                                                    <p>
+                                                        my interest in tech started with a web development class during covid. i was fascinated by how a few lines of code could turn an idea into something real. that curiosity gradually pulled me away from olympiad preparation (nsejs, where i cleared the first stage, and ntse) and into programming.
+                                                    </p>
+                                                    <p>
+                                                        i started with html, css, and javascript, building small web apps, exploring different codebases, and spending hours scrolling <HoverPreviewLink href="https://stackoverflow.com/" label="stack overflow" description="the developer q&a community that helped me learn, debug, and understand how things work." icon={<Code2 size={12} />} isDark={isDark} /> (basically my instagram back then). one of my first major projects was an examination management system for my mother&apos;s school, built using php. that&apos;s when coding became more than just learning, it became a way to solve real problems.
+                                                    </p>
+                                                    <p>
+                                                        in my first year of college, i started building products around jee preparation, including <HoverPreviewLink href="https://nuvibrainz.vercel.app/" label="nuvibrainz" description="an early product exploring tools and resources for jee preparation." icon={<Globe size={12} />} isDark={isDark} />, followed by projects like <HoverPreviewLink href="https://linkitapp.in/" label="linkitapp.in" description="a product i built and launched to help people bring their links together." icon={<LinkIcon size={12} />} isDark={isDark} /> and <HoverPreviewLink href="https://staylokal.app/" label="staylokal.app" description="a privacy-first product focused on useful file tools that run on your device." icon={<Globe size={12} />} isDark={isDark} />. i&apos;ve also participated in hackathons, won some, learned from others, and explored everything from full-stack development and backend systems to ai-powered experiences.
+                                                    </p>
+                                                    <p>
+                                                        i&apos;m driven by curiosity and the ambition to build things people actually use, for my country and the world. you can explore many of the things i&apos;ve built in the <RouterLink to="/projects" className={`font-semibold underline decoration-current/40 underline-offset-4 ${accent}`}>projects section <ArrowUpRight size={11} className="inline" /></RouterLink>.
+                                                    </p>
+                                                </article>
+                                            </TypewriterContent>
+                                        </div>
+                                    </div>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={homeIntroTyped ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+                                        transition={{ duration: 0.75, ease: EASE_SMOOTH }}
+                                        className={`mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-t ${divider} pt-6 text-sm`}
+                                        aria-hidden={!homeIntroTyped}
+                                    >
+                                        <RouterLink tabIndex={homeIntroTyped ? 0 : -1} to="/resume" className={`font-semibold ${accent} hover:opacity-75 transition-opacity`}>Explore my experience <ArrowUpRight size={14} className="inline" /></RouterLink>
+                                        <RouterLink tabIndex={homeIntroTyped ? 0 : -1} to="/projects" className={`${mutedText} hover:${text} transition-colors`}>Selected projects <ArrowUpRight size={14} className="inline" /></RouterLink>
+                                        <a tabIndex={homeIntroTyped ? 0 : -1} href="mailto:hardikgupta8792@gmail.com" className={`${mutedText} hover:${text} transition-colors`}>Get in touch <ArrowUpRight size={14} className="inline" /></a>
+                                    </motion.div>
+                                </motion.section>
+
+                            {/* ══ EXPERIENCE / RESUME ══ */}
+                            {currentPage === 'resume' && (
+                            <motion.section key="resume" variants={childVariants} id="resume" className="space-y-8 scroll-mt-20 pb-10 pt-2 md:pb-12">
 
                                 {/* Header */}
                                 <header className={`space-y-6 pb-8 border-b ${divider}`}>
@@ -788,20 +734,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                     </div>
                                 </header>
 
-                                <RevealSection>
-                                    <div className="space-y-4">
-                                        <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>About</SectionLabel>
-                                        <ul className={`space-y-2.5 text-sm ${mutedText} leading-relaxed max-w-3xl`}>
-                                            {aboutBullets.map((line) => (
-                                                <li key={line} className="flex gap-2.5 items-start">
-                                                    <span className={`${subtleText} mt-0.5 shrink-0`}>–</span>
-                                                    <span>{line}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </RevealSection>
-
                                 {/* Experience */}
                                 <RevealSection delay={0.05}>
                                     <div className="space-y-5">
@@ -843,7 +775,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                             <div className="space-y-3">
                                                 {education.map((edu, i) => (
                                                     <StaggerItem key={edu.id} index={i}>
-                                                        <div className={`border ${cardBg} rounded-sm p-5`}>
+                                                <div className="py-4">
                                                             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                                                                 <div>
                                                                     <h3 className="text-base font-bold">{edu.institution}</h3>
@@ -914,7 +846,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                                 return (
                                                     <StaggerItem key={a.title} index={i}>
                                                         <motion.div
-                                                            className={`flex items-start gap-4 border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+                                                            className="flex items-start gap-4 py-4 transition-all duration-300"
                                                         >
                                                             <div className={`w-10 h-10 rounded-lg border ${divider} flex items-center justify-center shrink-0 overflow-hidden`}
                                                                 style={{ backgroundColor: achievementIconBg[iconKey] }}>
@@ -935,10 +867,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                     </div>
                                 </RevealSection>
                             </motion.section>
+                            )}
 
                             {/* ══ PROJECTS ══ */}
-                            <RevealSection>
-                                <section id="projects" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#f9fffe]/90'}`}>
+                            {currentPage === 'projects' && <RevealSection>
+                                <section id="projects" className={`space-y-7 scroll-mt-32 ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedProjectsIntro?.title || 'Projects'}
@@ -970,11 +903,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                         </button>
                                     )}
                                 </section>
-                            </RevealSection>
+                            </RevealSection>}
 
                             {/* ══ GITHUB ══ */}
-                            <RevealSection>
-                                <section id="github" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fbfff8]/90'}`}>
+                            {currentPage === 'github' && <RevealSection>
+                                <section id="github" className={`space-y-7 scroll-mt-32 ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedGithubIntro?.title || 'GitHub'}
@@ -1019,7 +952,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                             <StaggerItem key={repo.id} index={i}>
                                                 <motion.a
                                                     href={repo.html_url} target="_blank" rel="noopener noreferrer"
-                                                    className={`group block border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+                                                    className={`group block border-b ${divider} py-5 transition-all duration-300`}
                                                 >
                                                     <div className="flex items-start justify-between gap-2 mb-3">
                                                         <h3 className="text-sm font-bold group-hover:underline underline-offset-4 truncate">{repo.name}</h3>
@@ -1050,11 +983,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                         </button>
                                     )}
                                 </section>
-                            </RevealSection>
+                            </RevealSection>}
 
                             {/* ══ PHOTOS ══ */}
-                            <RevealSection>
-                                <section id="photos" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fffaf6]/90'}`}>
+                            {currentPage === 'photos' && <RevealSection>
+                                <section id="photos" className={`space-y-7 scroll-mt-32 ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedPhotosIntro?.title || 'Photos'}
@@ -1070,8 +1003,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                                     onClick={() => openGallery(ev)}
                                                     className="group cursor-pointer space-y-3"
                                                 >
-                                                    <div className={`relative aspect-video ${isDark ? 'bg-zinc-900' : 'bg-white'} p-2 rounded-xl overflow-hidden border ${divider}`}>
-                                                        <div className="relative w-full h-full rounded-lg overflow-hidden bg-zinc-900">
+                                                    <div className={`relative aspect-video ${isDark ? 'bg-zinc-900' : 'bg-[#f1eee9]'} overflow-hidden`}>
+                                                        <div className="relative w-full h-full overflow-hidden">
                                                             <img src={ev.images[0]} alt={ev.title}
                                                                 className="absolute inset-0 h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
                                                             <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end z-10 pointer-events-none">
@@ -1100,11 +1033,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                         ))}
                                     </div>
                                 </section>
-                            </RevealSection>
+                            </RevealSection>}
 
                             {/* ══ BLOG ══ */}
-                            <RevealSection>
-                                <section id="blog" className={`space-y-7 scroll-mt-32 border-b ${divider} ${shellBase} ${isDark ? 'bg-black/75' : 'bg-[#fcfaff]/90'}`}>
+                            {currentPage === 'writing' && <RevealSection>
+                                <section id="blog" className={`space-y-7 scroll-mt-32 ${shellBase}`}>
                                     <div className={`flex items-end justify-between border-b ${divider} pb-4`}>
                                         <SectionLabel isDark={isDark} divider={divider} labelText={labelText}>
                                             {sections.simplifiedBlogIntro?.title || 'Blog'}
@@ -1129,7 +1062,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                                 <StaggerItem key={article.id} index={index}>
                                                     <RouterLink
                                                         to={`/blogs/${article.slug}`}
-                                                        className={`group block border ${cardBg} rounded-sm p-4 md:p-5 transition-colors hover:border-zinc-600`}
+                                                        className={`group block border-b ${divider} py-5 transition-colors`}
                                                     >
                                                         <div className="min-w-0 flex flex-col justify-center">
                                                             <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${subtleText}`}>
@@ -1165,23 +1098,23 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                         </div>
                                     )}
                                 </section>
-                            </RevealSection>
+                            </RevealSection>}
 
                         </motion.div>
 
-                        <MonkeytypeStats
+                        {currentPage === 'resume' && <MonkeytypeStats
                             isDark={isDark}
                             divider={divider}
                             mutedText={mutedText}
                             subtleText={subtleText}
-                        />
+                        />}
 
                         <motion.footer
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8 }}
-                            className={`pt-8 pb-6 border-t ${divider} px-4 md:px-6 space-y-6`}
+                            initial={false}
+                            animate={{ opacity: currentPage !== 'home' || homeIntroTyped ? 1 : 0, y: currentPage !== 'home' || homeIntroTyped ? 0 : 14 }}
+                            transition={{ duration: 0.8, ease: EASE_SMOOTH }}
+                            aria-hidden={currentPage === 'home' && !homeIntroTyped}
+                            className={`pt-8 pb-6 border-t ${divider} px-4 md:px-6 space-y-6 ${currentPage === 'home' && !homeIntroTyped ? 'pointer-events-none' : ''}`}
                         >
                             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                                 <RouterLink
@@ -1195,7 +1128,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                 >
                                     ← Switch to Interactive
                                 </RouterLink>
-                                <div className={`flex flex-wrap items-center justify-center gap-4 rounded-full px-4 py-2.5 border ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-[#d8c8b9]'}`}>
+                                        <div className="flex flex-wrap items-center justify-center gap-5 px-2 py-2">
                                     {socialLinks.map((link) => (
                                         <motion.a
                                             key={link.id}
@@ -1237,7 +1170,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                 </a>
                             </p>
                         </motion.footer>
-                        </div>
                     </div>
 
                     {/* ══ PROJECT LIGHTBOX ══ */}
@@ -1453,7 +1385,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
     }
     const ExpCard = ({ roleTitle, org, logoUrl, url, totalDuration, badge, roles, bullets, cardBg, divider, mutedText, subtleText }: ExpCardProps) => (
         <motion.div
-            className={`border ${cardBg} rounded-sm p-5 transition-all duration-300`}
+            className="py-5 transition-all duration-300"
         >
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-2.5">
                 <div className="flex gap-3 min-w-0">
@@ -1524,12 +1456,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
             .map((part) => part.trim())
             .filter(Boolean)
             .map((part) => `#${part.replace(/^#/, '')}`);
-        const surface = isDark
-            ? 'bg-[#09090b] shadow-[0_18px_44px_rgba(0,0,0,0.28)]'
-            : 'bg-[#fffef9] shadow-[4px_4px_0_0_rgba(80,58,41,0.12)]';
+        const surface = 'bg-transparent';
         return (
-            <article className={`group flex h-full w-full flex-col ${surface} rounded-sm overflow-hidden text-left border ${isDark ? 'border-zinc-800' : 'border-[#d8c8b9]'}`}>
-                <div className="relative h-44 w-full bg-black overflow-hidden shrink-0">
+            <article className={`group flex h-full w-full flex-col ${surface} overflow-hidden text-left`}>
+                <div className={`relative h-44 w-full overflow-hidden shrink-0 ${isDark ? 'bg-zinc-900' : 'bg-[#f1eee9]'}`}>
                     {hasVisual ? (
                         <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4">
                             <img src={p.img} alt={p.name} className="max-h-[82%] max-w-[88%] object-contain"
@@ -1541,7 +1471,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                         </div>
                     )}
                 </div>
-                <div className="flex min-h-[330px] flex-1 flex-col p-5">
+                <div className="flex min-h-[300px] flex-1 flex-col py-5">
                     <div className="space-y-1">
                         <h3 className="text-xl font-bold leading-tight">{p.name}</h3>
                     </div>

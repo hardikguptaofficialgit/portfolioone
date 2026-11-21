@@ -22,6 +22,11 @@ const App = () => (
         <SeoManager />
         <Routes>
           <Route path="/" element={<SimplifiedResume />} />
+          <Route path="/resume" element={<SimplifiedResume />} />
+          <Route path="/projects" element={<SimplifiedResume />} />
+          <Route path="/github" element={<SimplifiedResume />} />
+          <Route path="/photos" element={<SimplifiedResume />} />
+          <Route path="/writing" element={<SimplifiedResume />} />
           <Route path="/desktop" element={<Index />} />
           <Route path="/simplified" element={<Navigate to="/" replace />} />
           <Route path="/blogs" element={<BlogListPage />} />

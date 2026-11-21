@@ -19,7 +19,7 @@ const writeLocalCount = (count: number) => {
   writeFileSync(metricsPath(), JSON.stringify({ portfolioViews: count }, null, 2), 'utf8');
 };
 
-/** Local dev only — production should use VITE_PORTFOLIO_VIEWS_URL (Countty) or static JSON. */
+/** Local dev only  -  production should use VITE_PORTFOLIO_VIEWS_URL (Countty) or static JSON. */
 export const getPortfolioViews = async (): Promise<number> => readLocalCount();
 
 export const incrementPortfolioViews = async (): Promise<number> => {
