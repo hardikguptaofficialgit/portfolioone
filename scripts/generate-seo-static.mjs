@@ -11,11 +11,20 @@ if (fs.existsSync(siteMetricsSrc)) {
   fs.copyFileSync(siteMetricsSrc, siteMetricsDest);
 }
 const readContentJson = (file) => JSON.parse(fs.readFileSync(path.join(root, 'content', file), 'utf8'));
-const readMarkdownCollection = (directory, { excludeWritings = false } = {}) => {
+const readMarkdownCollection = (directory, { excludeWritings = false, optional = false } = {}) => {
+  // Git does not track empty directories, so optional collections (like Writings)
+  // may not exist in a clean Linux/Vercel checkout.
+  if (!fs.existsSync(directory)) {
+    if (optional) return [];
+    throw new Error(`Markdown content directory not found: ${path.relative(root, directory)}`);
+  }
+  if (!fs.statSync(directory).isDirectory()) {
+    throw new Error(`Markdown content path is not a directory: ${path.relative(root, directory)}`);
+  }
   const walk = (folder) => fs.readdirSync(folder, { withFileTypes: true }).flatMap((entry) => {
     if (entry.name.startsWith('.') || entry.name === 'Templates') return [];
     const fullPath = path.join(folder, entry.name);
-    if (excludeWritings && path.relative(directory, fullPath).split(path.sep).includes('Writings')) return [];
+    if (excludeWritings && path.relative(directory, fullPath).split(path.sep).some((part) => part.toLowerCase() === 'writings')) return [];
     if (entry.isDirectory()) return walk(fullPath);
     if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.md')) return [];
     const source = fs.readFileSync(fullPath, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
@@ -43,7 +52,7 @@ const projects = readContentJson('projects.json');
 const experience = readContentJson('experience.json');
 const photos = readContentJson('photos.json');
 const blogs = readMarkdownCollection(path.join(root, 'content', 'blogs'), { excludeWritings: true });
-const writings = readMarkdownCollection(path.join(root, 'content', 'blogs', 'Writings'));
+const writings = readMarkdownCollection(path.join(root, 'content', 'blogs', 'Writings'), { optional: true });
 
 const portfolioDocument = {
   version: site.version ?? 1,
