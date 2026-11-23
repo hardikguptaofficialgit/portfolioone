@@ -41,6 +41,7 @@ export function SeoManager() {
     if (pathname.startsWith('/blogs/') && pathname !== '/blogs/') {
       return null;
     }
+    if (pathname.startsWith('/writings/')) return null;
 
     if (pathname === '/') {
       return {
@@ -57,6 +58,22 @@ export function SeoManager() {
         description:
           'Technical writing by Hardik Gupta on full-stack engineering, AI agents, observability, SaaS architecture, and shipping products.',
         canonicalPath: '/blogs',
+      };
+    }
+
+    if (pathname === '/writings') {
+      return {
+        title: `Writings | ${SITE_NAME}`,
+        description: 'Personal reflections, stories, observations, and ideas by Hardik Gupta.',
+        canonicalPath: '/writings',
+      };
+    }
+
+    if (pathname === '/writing') {
+      return {
+        title: `Writing | ${SITE_NAME}`,
+        description: 'Technical blogs and personal writings by Hardik Gupta.',
+        canonicalPath: '/writing',
       };
     }
 

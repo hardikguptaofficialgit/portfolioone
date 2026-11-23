@@ -1,6 +1,6 @@
 # StrykerOS Portfolio
 
-Windows-inspired portfolio site with JSON-backed content and local blog publishing.
+Windows-inspired portfolio site with structured portfolio content and Markdown-first publishing.
 
 ## Quick start
 
@@ -24,7 +24,7 @@ npm run dev
 | `content/skills.json` | Skill categories and flat list |
 | `content/projects.json` | Projects |
 | `content/experience.json` | Timeline + simplified resume experience |
-| `content/blogs.json` | Blog posts |
+| `content/blogs/` | Obsidian vault containing blog posts as Markdown |
 | `content/photos.json` | Photo gallery events |
 | `content/site-metrics.json` | Portfolio view counter (API writes locally) |
 | `content/dooms-waitlist.json` | Dooms waitlist entries (API writes locally) |
@@ -33,7 +33,7 @@ Static images live under `public/images/`.
 
 ## Blog posts
 
-Edit `content/blogs.json` → `blogPosts` array. Each post’s **`body` is Markdown** (GFM) inside a JSON string. See **[content/BLOGS.md](content/BLOGS.md)** and copy **`content/blog-post.template.json`** for a starter object.
+Open **`content/blogs/`** as an Obsidian vault. Write technical articles in the vault root and personal pieces in `Writings/`. Both collections are loaded directly from Markdown; there are no blog or writing JSON files. Pasted Obsidian images are saved to `public/images/blogs/` and work in published posts. The portfolio's **Writing** menu opens the Blogs and Writings collections. See **[content/BLOGS.md](content/BLOGS.md)** for setup and frontmatter fields.
 
 ## Environment
 

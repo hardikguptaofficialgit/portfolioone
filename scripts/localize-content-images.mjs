@@ -14,7 +14,6 @@ const CONTENT_FILES = [
   'skills.json',
   'projects.json',
   'experience.json',
-  'blogs.json',
   'photos.json',
 ];
 

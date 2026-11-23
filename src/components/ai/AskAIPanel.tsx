@@ -93,6 +93,41 @@ export const AskAIPanel = ({
 
   const isBlog = variant === 'blog';
 
+  if (isBlog) {
+    return (
+      <div className={cn('flex flex-wrap items-center justify-between gap-x-5 gap-y-3', className)}>
+        <div>
+          <h3 className={cn('text-xs font-medium', darkMode ? 'text-zinc-200' : 'text-zinc-800')}>{title}</h3>
+          <p className={cn('mt-0.5 text-[10px]', darkMode ? 'text-zinc-500' : 'text-zinc-500')}>{subtitle}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {providers.map((provider) => (
+            <a
+              key={provider.id}
+              href={getAIProviderHref(provider, prompt)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Discuss with ${provider.label}`}
+              title={provider.label}
+              className={cn('inline-flex h-7 w-7 items-center justify-center rounded-full transition-opacity hover:opacity-60', darkMode ? 'text-zinc-300' : 'text-zinc-700')}
+            >
+              <ProviderIcon provider={provider} size={17} />
+            </a>
+          ))}
+          {showExtraProviders && (
+            <button
+              type="button"
+              onClick={() => setShowExtra((value) => !value)}
+              className={cn('text-[10px] transition-colors', darkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-800')}
+            >
+              {showExtra ? 'Less' : 'More'}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
       <div className="mb-3 flex items-start justify-between gap-3">

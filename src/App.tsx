@@ -10,6 +10,7 @@ import { BlogListPage, BlogPostPage } from "./pages/Blog";
 import DoomsWaitlist from "./pages/DoomsWaitlist";
 import NotFound from "./pages/NotFound";
 import { SeoManager } from "@/components/seo/SeoManager";
+import WritingHub from "./pages/WritingHub";
 
 const queryClient = new QueryClient();
 
@@ -26,11 +27,13 @@ const App = () => (
           <Route path="/projects" element={<SimplifiedResume />} />
           <Route path="/github" element={<SimplifiedResume />} />
           <Route path="/photos" element={<SimplifiedResume />} />
-          <Route path="/writing" element={<SimplifiedResume />} />
+          <Route path="/writing" element={<WritingHub />} />
           <Route path="/desktop" element={<Index />} />
           <Route path="/simplified" element={<Navigate to="/" replace />} />
           <Route path="/blogs" element={<BlogListPage />} />
           <Route path="/blogs/:slug" element={<BlogPostPage />} />
+          <Route path="/writings" element={<BlogListPage />} />
+          <Route path="/writings/:slug" element={<BlogPostPage />} />
           <Route path="/blog" element={<Navigate to="/blogs" replace />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/admin" element={<Navigate to="/" replace />} />

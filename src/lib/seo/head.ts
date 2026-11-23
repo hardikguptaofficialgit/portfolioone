@@ -69,8 +69,8 @@ export function applySeo(input: SeoInput, siteUrl: string) {
   upsertMeta('name', 'twitter:title', input.title);
   upsertMeta('name', 'twitter:description', input.description);
   upsertMeta('name', 'twitter:image', input.ogImage || `${siteUrl}/logoimage.png`);
-  upsertMeta('name', 'twitter:site', '@stryker_inside');
-  upsertMeta('name', 'twitter:creator', '@stryker_inside');
+  upsertMeta('name', 'twitter:site', '@strykerin');
+  upsertMeta('name', 'twitter:creator', '@strykerin');
 
   upsertJsonLd(input.jsonLd);
 }

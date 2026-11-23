@@ -2,7 +2,6 @@ import site from '../../content/site.json';
 import skills from '../../content/skills.json';
 import projects from '../../content/projects.json';
 import experience from '../../content/experience.json';
-import blogs from '../../content/blogs.json';
 import photos from '../../content/photos.json';
 import type { PortfolioDocument } from './types';
 import { mergePortfolioContent } from './merge-content';
@@ -12,7 +11,6 @@ const parsed = mergePortfolioContent({
   skills,
   projects,
   experience,
-  blogs,
   photos,
 });
 

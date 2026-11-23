@@ -2,10 +2,18 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { defaultPortfolio, getActiveProjects, getFeaturedProjects } from '@/content/defaults';
 import type { PortfolioDocument } from '@/content/types';
 import { fetchPortfolioDocument } from '@/lib/portfolio/fetch-portfolio';
+import { fetchBlogPostsList } from '@/lib/portfolio/fetch-portfolio';
 
 export const portfolioQueryKey = ['portfolio'] as const;
 
-const fetchPortfolio = async (): Promise<PortfolioDocument> => fetchPortfolioDocument();
+const fetchPortfolio = async (): Promise<PortfolioDocument> => {
+  const [doc, blogPosts, writingPosts] = await Promise.all([
+    fetchPortfolioDocument(),
+    fetchBlogPostsList('blogs'),
+    fetchBlogPostsList('writings'),
+  ]);
+  return { ...doc, blogPosts, writingPosts };
+};
 
 export const usePortfolio = () => {
   const query = useQuery({
@@ -29,7 +37,7 @@ export const usePortfolio = () => {
       .filter((post) => !post.archived)
       .sort((a, b) => {
         const sort = (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
-        return sort || +new Date(b.publishedAt) - +new Date(a.publishedAt);
+        return sort || a.title.localeCompare(b.title);
       }),
     experience: [...doc.experience].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999)),
     simplifiedExperience: doc.simplifiedExperience ?? [],

@@ -1,18 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { format } from 'date-fns';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  Calendar,
   Check,
   Clock,
-  ExternalLink,
-  Flame,
   Copy,
   RefreshCw,
   Search,
   Share2,
-  Tag,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { buildBlogPostPrompt } from '../../lib/ai/providers';
@@ -35,8 +30,8 @@ import { fetchBlogPostBySlug, fetchBlogPostsList } from '@/lib/portfolio/fetch-p
 
 type BlogTheme = 'dark' | 'light';
 
-const buildPostUrl = (slug: string) => {
-  const path = `/blogs/${slug}`;
+const buildPostUrl = (slug: string, collection: 'blogs' | 'writings' = 'blogs') => {
+  const path = `/${collection}/${slug}`;
   if (typeof window === 'undefined') return path;
   return new URL(path, window.location.origin).toString();
 };
@@ -136,70 +131,37 @@ const useResumeShellTheme = () => {
   };
 };
 
-const BlogChrome = ({ children }: { children: React.ReactNode }) => {
+const BlogChrome = ({ children, sectionTitle = 'Blogs' }: { children: React.ReactNode; sectionTitle?: string }) => {
   const shell = useResumeShellTheme();
-  const { isDark, toggleTheme, bg, bgImage, text, navBg, divider, gridColumnShell } = shell;
+  const navigate = useNavigate();
+  const { isDark, toggleTheme, text, divider } = shell;
 
   return (
-    <div
-      className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto ${bg} ${text} font-sans antialiased selection:bg-[#ffd3fd] selection:text-[#271b27]`}
-      style={{
-        backgroundImage: `url('${bgImage}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
-      <NoiseOverlay />
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute inset-0 z-[1] ${isDark ? 'bg-black/48' : 'bg-white/36'} transition-colors duration-500`}
-      />
-      <div aria-hidden className={`pointer-events-none absolute inset-0 z-[2] ${isDark ? 'bg-black/15' : 'bg-white/18'}`} />
-      <div className="relative z-10 w-full px-3 md:px-6 pt-4 md:pt-6 pb-16">
-        <div
-          className={`max-w-4xl mx-auto overflow-hidden rounded-3xl border ${gridColumnShell} ${
-            isDark
-              ? 'bg-black/45 shadow-[0_40px_120px_-70px_rgba(255,255,255,0.08)]'
-              : 'bg-white/60 shadow-[0_40px_120px_-70px_rgba(67,47,31,0.28)]'
-          } backdrop-blur-xl`}
-        >
-          <header className={`sticky top-0 z-40 border-b ${divider} ${navBg} backdrop-blur-xl bg-opacity-90`}>
-            <div className="flex items-center gap-3 px-4 md:px-5 py-3">
-              <Link
-                to="/"
-                className={`flex items-center gap-2.5 shrink-0 rounded-xl px-1.5 py-1 transition-colors ${
-                  isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.035]'
-                }`}
-              >
-                <img
-                  src="/logoimage.png"
-                  alt="Hardik Gupta"
-                  className={`h-8 w-8 rounded-lg object-cover ring-1 ${isDark ? 'ring-white/10' : 'ring-black/10'}`}
-                />
-                <span
-                  className={`font-serif-display text-[17px] leading-none tracking-tight ${
-                    isDark ? 'text-zinc-100' : 'text-[#1f1a17]'
-                  }`}
-                >
-                  stryker.inside
-                </span>
-              </Link>
-              <div className="ml-auto flex items-center gap-2">
-                <span
-                  className={`text-[13px] font-medium px-3 py-2 rounded-lg ${
-                    isDark ? 'text-white bg-white/[0.07]' : 'text-zinc-900 bg-black/[0.045]'
-                  }`}
-                >
-                  Blogs
-                </span>
-                <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
-              </div>
-            </div>
-          </header>
-          {children}
+    <div className={`min-h-screen w-full overflow-x-hidden ${isDark ? 'bg-[#09090b]' : 'bg-[#faf9f6]'} ${text} font-sans antialiased selection:bg-[#d0fffe] selection:text-zinc-950`}>
+      <header className={`sticky top-0 z-40 border-b ${divider} ${isDark ? 'bg-[#09090b]/95' : 'bg-[#faf9f6]/95'} backdrop-blur-sm`}>
+        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-70" aria-label="Back to portfolio">
+              <img src="/logoimage.png" alt="Hardik Gupta" className="h-7 w-7 rounded-full object-cover" />
+              <span className="font-serif-display text-lg tracking-tight">stryker.inside</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className={`text-sm ${shell.mutedText}`}>{sectionTitle}</span>
+            <PixelThemeToggle isDark={isDark} onToggle={toggleTheme} />
+          </div>
         </div>
-      </div>
+      </header>
+      <main className="mx-auto max-w-3xl px-5 pb-24 pt-12 md:pt-16">
+        <button
+          type="button"
+          onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
+          className={`mb-8 inline-flex items-center gap-2 text-sm transition-opacity hover:opacity-60 ${shell.mutedText}`}
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+        {children}
+      </main>
     </div>
   );
 };
@@ -217,9 +179,9 @@ const usePageScroll = () => {
   }, []);
 };
 
-const fetchPosts = async (): Promise<BlogPost[]> => fetchBlogPostsList();
+const fetchPosts = async (collection: 'blogs' | 'writings'): Promise<BlogPost[]> => fetchBlogPostsList(collection);
 
-const fetchPost = async (slug: string): Promise<BlogPost> => fetchBlogPostBySlug(slug);
+const fetchPost = async (slug: string, collection: 'blogs' | 'writings'): Promise<BlogPost> => fetchBlogPostBySlug(slug, collection);
 
 const MarkdownCodeBlock = ({ inline, className, children, theme, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || '');
@@ -227,6 +189,10 @@ const MarkdownCodeBlock = ({ inline, className, children, theme, ...props }: any
   const [copied, setCopied] = useState(false);
   const isBlock = Boolean(match) || code.includes('\n');
   const C = T[theme as BlogTheme];
+
+  if (match?.[1]?.toLowerCase() === 'mermaid' && !inline) {
+    return <MermaidDiagram source={code} darkMode={theme === 'dark'} />;
+  }
 
   if (inline || !isBlock) {
     return (
@@ -276,8 +242,37 @@ const MarkdownCodeBlock = ({ inline, className, children, theme, ...props }: any
   );
 };
 
+const MermaidDiagram = ({ source, darkMode }: { source: string; darkMode: boolean }) => {
+  const [svg, setSvg] = useState('');
+  const [failed, setFailed] = useState(false);
+  const reactId = useId();
+  const id = `mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+
+  useEffect(() => {
+    let active = true;
+    import('mermaid').then(({ default: mermaid }) => {
+      mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: darkMode ? 'dark' : 'neutral' });
+      return mermaid.render(id, source);
+    }).then(({ svg: rendered }) => {
+      if (active) { setSvg(rendered); setFailed(false); }
+    }).catch(() => { if (active) setFailed(true); });
+    return () => { active = false; };
+  }, [darkMode, id, source]);
+
+  if (failed) return <pre className="my-5 overflow-x-auto rounded-lg border p-4 text-xs"><code>{source}</code></pre>;
+  return (
+    <div className={`not-prose my-7 overflow-x-auto rounded-xl border p-4 md:p-6 ${darkMode ? 'border-zinc-800 bg-zinc-900/60' : 'border-black/10 bg-white/80'}`}>
+      {svg ? <div className="mx-auto min-w-[520px] [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full" dangerouslySetInnerHTML={{ __html: svg }} /> : <p className="text-center text-xs opacity-50">Rendering diagram…</p>}
+    </div>
+  );
+};
+
 export const BlogListPage = () => {
   usePageScroll();
+  const { pathname } = useLocation();
+  const collection = pathname.startsWith('/writings') ? 'writings' : 'blogs';
+  const collectionPath = `/${collection}`;
+  const isWritings = collection === 'writings';
   const shell = useResumeShellTheme();
   const { theme } = shell;
   const C = T[theme];
@@ -286,14 +281,17 @@ export const BlogListPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('all');
-  const [sort, setSort] = useState<'latest' | 'popular'>('latest');
+  const [sort, setSort] = useState<'featured' | 'popular'>('featured');
 
   useEffect(() => {
-    fetchPosts()
+    setLoading(true);
+    setError(null);
+    setPosts([]);
+    fetchPosts(collection)
       .then(setPosts)
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load posts.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [collection]);
 
   const tagStats = useMemo(() => {
     const map = new Map<string, number>();
@@ -316,116 +314,52 @@ export const BlogListPage = () => {
       if (sort === 'popular') {
         return Number(b.featured === true) - Number(a.featured === true) || (b.readingTimeMinutes || 0) - (a.readingTimeMinutes || 0);
       }
-      return +new Date(b.publishedAt) - +new Date(a.publishedAt);
+      return Number(b.featured === true) - Number(a.featured === true) || (a.sortOrder ?? 999) - (b.sortOrder ?? 999) || a.title.localeCompare(b.title);
     });
   }, [activeTag, posts, search, sort]);
 
   const featuredPost = filteredPosts[0];
   const remainingPosts = filteredPosts.slice(1);
-  const devToUrl = posts.find((post) => post.sourceUrl)?.sourceUrl || 'https://dev.to/strykerinside';
-
   return (
-    <BlogChrome>
-      <div className={`border-b ${shell.divider} px-4 md:px-6 py-8 md:py-10 ${shell.shellBase} mx-3 md:mx-6 mt-4 mb-6`}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between border-b border-inherit pb-6 mb-6">
+    <BlogChrome sectionTitle={isWritings ? 'Writings' : 'Blogs'}>
+      <section>
+        <div className="mb-10 flex items-start justify-between gap-5">
           <div>
-            <h1 className={`font-serif-display text-2xl md:text-3xl ${shell.labelText} border-b ${shell.divider} pb-3`}>
-              Blogs
-            </h1>
-            <p className={`mt-4 max-w-xl text-sm leading-relaxed ${shell.mutedText}`}>
-              Thoughts, deep dives, and things I&apos;m learning - documented.
+            <p className={`mb-3 text-xs font-medium uppercase tracking-[0.18em] ${shell.subtleText}`}>{isWritings ? 'Personal' : 'Engineering'}</p>
+            <h1 className="font-serif-display text-4xl tracking-tight md:text-5xl">{isWritings ? 'Writings' : 'Blogs'}</h1>
+            <p className={`mt-4 max-w-xl text-sm leading-7 ${shell.mutedText}`}>
+              {isWritings ? 'Personal notes, reflections, stories, and ideas.' : 'Technical deep dives, engineering notes, and things I learn while building.'}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 pt-1">
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-sm border ${shell.filterInactive}`}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${shell.btn}`}
               aria-label="Reload posts"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
-            <a
-              href={devToUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex h-9 items-center gap-1.5 rounded-sm px-3 text-xs font-semibold uppercase tracking-wider ${shell.accentBtn}`}
-            >
-              DEV.to <ExternalLink className="h-3.5 w-3.5" />
-            </a>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className={`h-max rounded-sm border p-4 lg:sticky lg:top-24 ${shell.cardBg}`}>
-            <div className="relative">
-              <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${shell.subtleText}`} />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search posts..."
-                className={`h-9 pl-9 text-sm border rounded-sm ${shell.inputBg}`}
-              />
-            </div>
-            <p className={`mt-2 text-xs ${shell.subtleText}`}>{filteredPosts.length} of {posts.length} posts</p>
+        <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className={`absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 ${shell.subtleText}`} />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className={`h-10 rounded-none border-0 border-b pl-7 text-sm shadow-none focus-visible:ring-0 ${shell.divider} ${isWritings ? shell.inputBg : shell.inputBg}`} />
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-xs ${shell.subtleText}`}>{filteredPosts.length} posts</span>
+            <button type="button" onClick={() => setSort('featured')} className={`text-xs transition-colors ${sort === 'featured' ? shell.text : shell.subtleText}`}>Featured</button>
+            <button type="button" onClick={() => setSort('popular')} className={`text-xs transition-colors ${sort === 'popular' ? shell.text : shell.subtleText}`}>Popular</button>
+          </div>
+        </div>
+        {tagStats.length > 0 && <div className="mb-7 flex flex-wrap gap-2">
+          <button type="button" onClick={() => setActiveTag('all')} className={`rounded-full px-3 py-1.5 text-xs transition-colors ${activeTag === 'all' ? (isWritings ? 'bg-white/10 text-white' : 'bg-black/8 text-black') : shell.mutedText}`}>All</button>
+          {tagStats.map(([tag]) => <button key={tag} type="button" onClick={() => setActiveTag(tag)} className={`rounded-full px-3 py-1.5 text-xs transition-colors ${activeTag === tag ? (isWritings ? 'bg-white/10 text-white' : 'bg-black/8 text-black') : shell.mutedText}`}>#{tag}</button>)}
+        </div>}
 
-            <div className="mt-6">
-              <p className={`mb-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>Sort by</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSort('latest')}
-                  className={`inline-flex items-center justify-center gap-1 rounded-sm border px-2 py-2 text-xs font-semibold transition-colors ${
-                    sort === 'latest' ? shell.filterActive : shell.filterInactive
-                  }`}
-                >
-                  <Clock className="h-3.5 w-3.5" /> Latest
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSort('popular')}
-                  className={`inline-flex items-center justify-center gap-1 rounded-sm border px-2 py-2 text-xs font-semibold transition-colors ${
-                    sort === 'popular' ? shell.filterActive : shell.filterInactive
-                  }`}
-                >
-                  <Flame className="h-3.5 w-3.5" /> Popular
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <p className={`mb-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
-                <Tag className="h-3.5 w-3.5" /> Tags
-              </p>
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveTag('all')}
-                  className={`flex items-center justify-between rounded-sm border px-2 py-1.5 text-left text-xs transition-colors ${
-                    activeTag === 'all' ? shell.filterActive : shell.filterInactive
-                  }`}
-                >
-                  <span>All posts</span>
-                  <span className="opacity-70">{posts.length}</span>
-                </button>
-                {tagStats.map(([tag, count]) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => setActiveTag(tag)}
-                    className={`flex items-center justify-between rounded-sm border px-2 py-1.5 text-left text-xs transition-colors ${
-                      activeTag === tag ? shell.filterActive : shell.filterInactive
-                    }`}
-                  >
-                    <span>#{tag}</span>
-                    <span className="opacity-70">{count}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </aside>
-
-          <main className="space-y-3 min-w-0">
+        <div className={`divide-y ${shell.divider}`}>
             {loading && <p className={`py-4 text-sm ${shell.mutedText}`}>Loading posts...</p>}
             {error && <p className="py-4 text-sm text-rose-400">{error}</p>}
             {!loading && !error && filteredPosts.length === 0 && (
@@ -433,74 +367,51 @@ export const BlogListPage = () => {
             )}
 
             {featuredPost && (
-              <div className="space-y-3">
-                <motion.article initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div>
+                <motion.article initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b-0">
                   <Link
-                    to={`/blogs/${featuredPost.slug}`}
-                    className={`group block border rounded-sm p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
+                    to={`${collectionPath}/${featuredPost.slug}`}
+                    className="group block py-5 transition-opacity hover:opacity-75"
                   >
-                    <p className={`mb-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>Featured</p>
-                    <h2 className="text-lg font-bold leading-snug group-hover:underline underline-offset-4">{featuredPost.title}</h2>
-                    <p className={`mt-2 line-clamp-3 text-sm leading-relaxed ${shell.mutedText}`}>
+                    <p className={`mb-2 text-[11px] uppercase tracking-[0.16em] ${shell.subtleText}`}>Featured</p>
+                    <h2 className="font-serif-display text-2xl leading-snug md:text-3xl">{featuredPost.title}</h2>
+                    <p className={`mt-3 line-clamp-3 max-w-2xl text-sm leading-7 ${shell.mutedText}`}>
                       {featuredPost.excerpt || 'No description.'}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {featuredPost.tags.slice(0, 4).map((tag) => (
-                        <span key={tag} className={`rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-wider ${shell.badge} ${shell.divider}`}>
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div className={`mt-3 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(new Date(featuredPost.publishedAt), 'MMM d, yyyy')}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {featuredPost.readingTimeMinutes || readingTime(featuredPost.body || featuredPost.excerpt)} min read
-                      </span>
-                    </div>
+                    <span className={`mt-3 inline-flex items-center gap-1.5 text-xs ${shell.subtleText}`}><Clock className="h-3.5 w-3.5" /> {featuredPost.readingTimeMinutes || readingTime(featuredPost.body || featuredPost.excerpt)} min read</span>
                   </Link>
                 </motion.article>
 
                 {remainingPosts.map((post, index) => (
-                  <motion.article key={post.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }}>
+                  <motion.article key={post.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }} className={`border-t ${shell.divider}`}>
                     <Link
-                      to={`/blogs/${post.slug}`}
-                      className={`group block border rounded-sm p-4 md:p-5 transition-colors hover:border-zinc-600 ${shell.cardBg}`}
+                      to={`${collectionPath}/${post.slug}`}
+                      className="group block py-5 transition-opacity hover:opacity-75"
                     >
-                      <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
-                        <span className="inline-flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {format(new Date(post.publishedAt), 'MMM d, yyyy')}
-                        </span>
-                        <span>·</span>
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min read
-                        </span>
-                      </div>
-                      <h2 className="mt-2 text-lg font-bold leading-snug line-clamp-2 group-hover:underline underline-offset-4">
+                      <h2 className="font-serif-display text-xl leading-snug md:text-2xl">
                         {post.title}
                       </h2>
-                      <p className={`mt-1.5 text-sm leading-relaxed line-clamp-2 md:line-clamp-3 ${shell.mutedText}`}>
+                      <p className={`mt-2 max-w-2xl text-sm leading-7 line-clamp-2 ${shell.mutedText}`}>
                         {post.excerpt || 'No description.'}
                       </p>
+                      <span className={`mt-2 inline-flex items-center gap-1.5 text-xs ${shell.subtleText}`}><Clock className="h-3.5 w-3.5" /> {post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min read</span>
                     </Link>
                   </motion.article>
                 ))}
               </div>
             )}
-          </main>
         </div>
-      </div>
+      </section>
     </BlogChrome>
   );
 };
 
 export const BlogPostPage = () => {
   usePageScroll();
+  const { pathname } = useLocation();
+  const collection = pathname.startsWith('/writings/') ? 'writings' : 'blogs';
+  const collectionPath = `/${collection}`;
+  const isWritings = collection === 'writings';
   const shell = useResumeShellTheme();
   const { theme } = shell;
   const C = T[theme];
@@ -510,8 +421,8 @@ export const BlogPostPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const aiPrompt = useMemo(
-    () => (post ? buildBlogPostPrompt(post, buildPostUrl(post.slug)) : ''),
-    [post]
+    () => (post ? buildBlogPostPrompt(post, buildPostUrl(post.slug, collection)) : ''),
+    [post, collection]
   );
 
   const postSeo = useMemo(() => {
@@ -525,7 +436,7 @@ export const BlogPostPage = () => {
     return {
       title: `${post.title} | ${SITE_NAME}`,
       description,
-      canonicalPath: `/blogs/${post.slug}`,
+      canonicalPath: `${collectionPath}/${post.slug}`,
       ogType: 'article' as const,
       ogImage,
       jsonLd: {
@@ -533,13 +444,12 @@ export const BlogPostPage = () => {
         '@type': 'BlogPosting',
         headline: post.title,
         description,
-        datePublished: post.publishedAt,
         author: { '@type': 'Person', name: 'Hardik Gupta', url: SITE_URL },
-        mainEntityOfPage: `${SITE_URL}/blogs/${post.slug}`,
+        mainEntityOfPage: `${SITE_URL}${collectionPath}/${post.slug}`,
         image: ogImage,
       },
     };
-  }, [post]);
+  }, [post, collectionPath]);
 
   useSeo(postSeo);
 
@@ -549,11 +459,12 @@ export const BlogPostPage = () => {
       setLoading(false);
       return;
     }
-    fetchPost(slug)
+    setLoading(true);
+    fetchPost(slug, collection)
       .then(setPost)
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load article.'))
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, collection]);
 
   const markdownComponents = useMemo(() => ({
     pre: ({ children }: any) => <>{children}</>,
@@ -600,15 +511,15 @@ export const BlogPostPage = () => {
     hr: (props: any) => <hr className={`my-4 border-0 border-t ${C.border}`} {...props} />,
     table: ({ children, ...props }: any) => (
       <div className={`not-prose my-3 overflow-x-auto rounded-md border ${C.border}`}>
-        <table className="w-full min-w-[400px] border-collapse text-left text-[9px]" {...props}>{children}</table>
+        <table className="w-full min-w-[480px] border-collapse text-left text-xs md:text-sm" {...props}>{children}</table>
       </div>
     ),
     thead: ({ children, ...props }: any) => <thead className={C.tableHeader} {...props}>{children}</thead>,
     th: ({ children, ...props }: any) => (
-      <th className={`border-b px-2 py-1.5 font-semibold ${C.border}`} {...props}>{children}</th>
+      <th className={`border-b px-3 py-2 font-semibold ${C.border}`} {...props}>{children}</th>
     ),
     td: ({ children, ...props }: any) => (
-      <td className={`border-b px-2 py-1.5 align-top leading-4 ${C.border}`} {...props}>{children}</td>
+      <td className={`border-b px-3 py-2 align-top leading-5 ${C.border}`} {...props}>{children}</td>
     ),
     tr: ({ children, ...props }: any) => <tr className="last:[&>td]:border-b-0" {...props}>{children}</tr>,
     code: ({ inline, className, children, ...props }: any) => (
@@ -632,7 +543,7 @@ export const BlogPostPage = () => {
 
   const share = async () => {
     if (!post) return;
-    const url = buildPostUrl(post.slug);
+    const url = buildPostUrl(post.slug, collection);
     try {
       if (navigator.share) {
         await navigator.share({ title: post.title, text: post.excerpt, url });
@@ -647,16 +558,16 @@ export const BlogPostPage = () => {
   };
 
   return (
-    <BlogChrome>
-      <article className={`border-b ${shell.divider} px-4 md:px-6 py-8 md:py-10 ${shell.shellBase} mx-3 md:mx-6 mt-4 mb-6`}>
+    <BlogChrome sectionTitle={isWritings ? 'Writings' : 'Blogs'}>
+      <article className="mx-auto max-w-2xl">
         <div className="mb-6">
           <Link
-            to="/blogs"
+            to={collectionPath}
             className={`inline-flex items-center gap-1.5 text-xs uppercase tracking-widest transition-colors ${shell.subtleText} ${
               shell.isDark ? 'hover:text-zinc-100' : 'hover:text-zinc-900'
             }`}
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> All posts
+            <ArrowLeft className="h-3.5 w-3.5" /> All {isWritings ? 'writings' : 'posts'}
           </Link>
         </div>
 
@@ -665,15 +576,11 @@ export const BlogPostPage = () => {
 
         {!loading && post && (
           <>
-            <header className="space-y-4 border-b border-inherit pb-6 mb-8">
-              <h1 className="font-serif-display text-2xl md:text-4xl font-bold leading-tight tracking-tight">{post.title}</h1>
+            <header className={`mb-9 space-y-4 border-b pb-7 ${shell.divider}`}>
+              <h1 className="font-serif-display text-3xl leading-tight tracking-tight md:text-5xl">{post.title}</h1>
               {post.excerpt && <p className={`text-sm md:text-base leading-relaxed max-w-2xl ${shell.mutedText}`}>{post.excerpt}</p>}
 
               <div className={`flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-widest ${shell.subtleText}`}>
-                <span className="inline-flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {format(new Date(post.publishedAt), 'MMM d, yyyy')}
-                </span>
                 <span className="inline-flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
                   {post.readingTimeMinutes || readingTime(post.body || post.excerpt)} min read
@@ -691,7 +598,7 @@ export const BlogPostPage = () => {
               )}
             </header>
 
-            <div className={`prose max-w-none ${C.prose}`}>
+            <div className={`prose prose-sm max-w-none md:prose-base prose-headings:scroll-mt-24 prose-headings:font-semibold prose-p:leading-8 prose-li:leading-7 prose-pre:my-5 prose-img:my-0 prose-img:rounded-xl prose-img:border ${theme === 'dark' ? 'prose-img:border-zinc-800' : 'prose-img:border-black/10'} prose-figure:my-8 prose-figcaption:mt-2 prose-figcaption:text-center prose-figcaption:text-xs prose-figcaption:opacity-60 prose-table:text-sm prose-th:whitespace-nowrap prose-td:align-top ${C.prose}`}>
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]} components={markdownComponents as any}>
                 {post.body || post.excerpt || 'No content available.'}
               </ReactMarkdown>
@@ -708,7 +615,7 @@ export const BlogPostPage = () => {
               <button
                 type="button"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(buildPostUrl(post.slug));
+                  await navigator.clipboard.writeText(buildPostUrl(post.slug, collection));
                   setCopied(true);
                   window.setTimeout(() => setCopied(false), 1200);
                 }}
@@ -718,23 +625,25 @@ export const BlogPostPage = () => {
                 {copied ? 'Copied' : 'Copy link'}
               </button>
               <Link
-                to="/blogs"
+                to={collectionPath}
                 className={`inline-flex h-9 items-center gap-1.5 rounded-sm border px-3 text-xs font-semibold uppercase tracking-wider transition-colors ${shell.filterInactive}`}
               >
-                <ArrowLeft className="h-3.5 w-3.5" /> All articles
+                <ArrowLeft className="h-3.5 w-3.5" /> All {isWritings ? 'writings' : 'articles'}
               </Link>
             </div>
 
-            <section className={`mt-8 rounded-sm border p-5 md:p-6 ${shell.cardBg}`}>
-              <AskAIPanel
-                prompt={aiPrompt}
-                darkMode={theme === 'dark'}
-                variant="blog"
-                title="Discuss with AI"
-                subtitle="Open an assistant with this article already in context."
-                showExtraProviders
-              />
-            </section>
+            {!isWritings && (
+              <section className={`mt-10 border-t pt-8 ${shell.divider}`}>
+                <AskAIPanel
+                  prompt={aiPrompt}
+                  darkMode={theme === 'dark'}
+                  variant="blog"
+                  title="Discuss with AI"
+                  subtitle="Open an assistant with this article already in context."
+                  showExtraProviders
+                />
+              </section>
+            )}
           </>
         )}
       </article>

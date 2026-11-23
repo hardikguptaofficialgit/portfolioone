@@ -12,7 +12,6 @@ export const readPortfolioFromDisk = () => {
     skills: readJson<PortfolioContentParts['skills']>(contentDir, 'skills.json'),
     projects: readJson<PortfolioContentParts['projects']>(contentDir, 'projects.json'),
     experience: readJson<PortfolioContentParts['experience']>(contentDir, 'experience.json'),
-    blogs: readJson<PortfolioContentParts['blogs']>(contentDir, 'blogs.json'),
     photos: readJson<PortfolioContentParts['photos']>(contentDir, 'photos.json'),
   });
 };

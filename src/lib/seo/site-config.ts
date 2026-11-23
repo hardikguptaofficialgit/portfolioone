@@ -9,7 +9,7 @@ export const DEFAULT_DESCRIPTION =
   'Portfolio of Hardik Gupta (Stryker): full-stack software engineer building AI systems, developer tools, and products. Projects, resume, blog, and interactive desktop experience.';
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/logoimage.png`;
 export const AUTHOR_NAME = 'Hardik Gupta';
-export const AUTHOR_X = 'https://x.com/stryker_inside';
+export const AUTHOR_X = 'https://x.com/strykerin';
 export const AUTHOR_GITHUB = 'https://github.com/hardikguptaofficialgit';
 export const AUTHOR_LINKEDIN = 'https://www.linkedin.com/in/hardik-gupta-b528072b3/';
 export const CONTACT_EMAIL = 'hardikgupta8792@gmail.com';
@@ -17,6 +17,8 @@ export const CONTACT_EMAIL = 'hardikgupta8792@gmail.com';
 export const STATIC_ROUTES = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/blogs', changefreq: 'weekly', priority: '0.9' },
+  { path: '/writing', changefreq: 'weekly', priority: '0.8' },
+  { path: '/writings', changefreq: 'weekly', priority: '0.8' },
   { path: '/desktop', changefreq: 'monthly', priority: '0.7' },
   { path: '/dooms', changefreq: 'monthly', priority: '0.4' },
 ] as const;

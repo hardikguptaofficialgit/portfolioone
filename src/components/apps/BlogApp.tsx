@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Interfaces, Files } from 'doodle-icons';
-import { format } from 'date-fns';
 import { fetchBlogPostsList } from '@/lib/portfolio/fetch-portfolio';
 
 interface BlogPost {
@@ -15,8 +14,6 @@ interface BlogPost {
   excerpt: string;
   featured_image?: string;
   tags: string[];
-  published_at: string;
-  created_at: string;
   views: number;
 }
 
@@ -37,8 +34,6 @@ export const BlogApp = () => {
             excerpt: post.excerpt || 'No description.',
             featured_image: post.coverImage || undefined,
             tags: post.tags || [],
-            published_at: post.publishedAt,
-            created_at: post.publishedAt,
             views: post.readingTimeMinutes || 1,
           })),
         );
@@ -107,9 +102,6 @@ export const BlogApp = () => {
                       <h3 className="font-semibold text-sm text-white truncate">{post.title}</h3>
                       <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{post.excerpt}</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] text-zinc-500">
-                          {format(new Date(post.published_at), 'MMM d, yyyy')}
-                        </span>
                         {post.tags.slice(0, 2).map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-[9px] px-1.5 py-0">
                             {tag}

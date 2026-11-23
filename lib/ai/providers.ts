@@ -101,6 +101,6 @@ export const buildBlogPostPrompt = (post: BlogPost, postUrl: string) =>
     `Let's discuss this article in detail.`,
     `Title: ${post.title}`,
     `Summary: ${post.excerpt || 'No summary provided.'}`,
-    `URL: ${post.sourceUrl || postUrl}`,
+    `URL: ${postUrl}`,
     `I want key takeaways, critique, practical next steps, and production-grade implementation ideas.`,
   ].join('\n');

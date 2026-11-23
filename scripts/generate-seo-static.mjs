@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import YAML from 'yaml';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'public');
@@ -10,12 +11,39 @@ if (fs.existsSync(siteMetricsSrc)) {
   fs.copyFileSync(siteMetricsSrc, siteMetricsDest);
 }
 const readContentJson = (file) => JSON.parse(fs.readFileSync(path.join(root, 'content', file), 'utf8'));
+const readMarkdownCollection = (directory, { excludeWritings = false } = {}) => {
+  const walk = (folder) => fs.readdirSync(folder, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name.startsWith('.') || entry.name === 'Templates') return [];
+    const fullPath = path.join(folder, entry.name);
+    if (excludeWritings && path.relative(directory, fullPath).split(path.sep).includes('Writings')) return [];
+    if (entry.isDirectory()) return walk(fullPath);
+    if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.md')) return [];
+    const source = fs.readFileSync(fullPath, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
+    const match = source.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+    if (!match) throw new Error(`${path.relative(root, fullPath)}: invalid YAML frontmatter`);
+    const metadata = YAML.parse(match[1]) || {};
+    const body = match[2].trim();
+    const words = body.replace(/```[\s\S]*?```/g, ' ').split(/\s+/).filter(Boolean).length;
+    const firstParagraph = body.split(/\n\s*\n/).find((part) => part.trim() && !part.trim().startsWith('#')) || '';
+    const slug = String(metadata.slug || path.basename(entry.name, '.md'));
+    if (!metadata.title) throw new Error(`${path.relative(root, fullPath)}: frontmatter needs a title`);
+    return [{
+      slug,
+      title: String(metadata.title),
+      excerpt: String(metadata.excerpt || firstParagraph.replace(/[`*_>#\[\]!]/g, '').replace(/\s+/g, ' ').trim().slice(0, 220)),
+      archived: metadata.archived === true,
+      readingTimeMinutes: Number(metadata.readingTimeMinutes) || Math.max(1, Math.ceil(words / 220)),
+    }];
+  });
+  return walk(directory).filter((post) => !post.archived);
+};
 const site = readContentJson('site.json');
 const skills = readContentJson('skills.json');
 const projects = readContentJson('projects.json');
 const experience = readContentJson('experience.json');
-const blogs = readContentJson('blogs.json');
 const photos = readContentJson('photos.json');
+const blogs = readMarkdownCollection(path.join(root, 'content', 'blogs'), { excludeWritings: true });
+const writings = readMarkdownCollection(path.join(root, 'content', 'blogs', 'Writings'));
 
 const portfolioDocument = {
   version: site.version ?? 1,
@@ -30,7 +58,6 @@ const portfolioDocument = {
   projects: projects.projects,
   experience: experience.experience,
   simplifiedExperience: experience.simplifiedExperience ?? [],
-  blogPosts: blogs.blogPosts ?? [],
   photoEvents: photos.photoEvents ?? [],
 };
 
@@ -48,15 +75,20 @@ const github = site.socialLinks?.find((l) => l.id === 'github')?.url || '';
 const linkedin = site.socialLinks?.find((l) => l.id === 'linkedin')?.url || '';
 const x = site.socialLinks?.find((l) => l.id === 'twitter')?.url || '';
 
-const posts = (blogs.blogPosts || []).filter((p) => !p.archived);
+const posts = blogs;
+const writingPosts = writings;
 
-const staticPaths = ['/', '/resume', '/projects', '/github', '/photos', '/writing', '/blogs', '/desktop'];
+const staticPaths = ['/', '/resume', '/projects', '/github', '/photos', '/writing', '/blogs', '/writings', '/desktop'];
 
 const urls = [
   ...staticPaths.map((p) => ({ loc: `${SITE_URL}${p === '/' ? '' : p}`, changefreq: 'weekly', priority: p === '/' ? '1.0' : '0.8' })),
   ...posts.map((p) => ({
     loc: `${SITE_URL}/blogs/${p.slug}`,
-    lastmod: p.publishedAt?.slice(0, 10),
+    changefreq: 'monthly',
+    priority: '0.7',
+  })),
+  ...writingPosts.map((p) => ({
+    loc: `${SITE_URL}/writings/${p.slug}`,
     changefreq: 'monthly',
     priority: '0.7',
   })),
@@ -102,12 +134,17 @@ Canonical site: ${SITE_URL}
 - Photos: ${SITE_URL}/photos
 - Writing: ${SITE_URL}/writing
 - Technical blog index: ${SITE_URL}/blogs
+- Personal writings: ${SITE_URL}/writings
 - Interactive desktop experience: ${SITE_URL}/desktop
 - Resume PDF: ${SITE_URL}/files/hardikresume.pdf
 
 ## Blog posts
 
 ${posts.map((p) => `- ${p.title}: ${SITE_URL}/blogs/${p.slug}`).join('\n')}
+
+## Writings
+
+${writingPosts.map((p) => `- ${p.title}: ${SITE_URL}/writings/${p.slug}`).join('\n')}
 
 ## Topics
 

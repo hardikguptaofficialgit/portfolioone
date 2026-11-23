@@ -6,13 +6,12 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         Maximize2, Pin, Github, Linkedin, Instagram,
         Link as LinkIcon, Star, GitFork, Download, ArrowUpRight, Clock,
         Home, BriefcaseBusiness, FolderKanban, Images, BookOpen, Mail, Sun, Moon,
-        MapPin, Calendar, Eye, Globe, Code2
+        MapPin, Eye, Globe, Code2
     } from 'lucide-react';
     import { GitHubActivityChart } from '@/components/portfolio/GitHubActivityChart';
     import { MonkeytypeStats } from '@/components/portfolio/MonkeytypeStats';
     import { SkillIcon } from '@/components/portfolio/SkillIcon';
     import { transitionPortfolioTheme } from '@/lib/theme-transition';
-    import { format } from 'date-fns';
     import { useDesktopStore } from '@/store/desktopStore';
     import { usePortfolio } from '@/hooks/usePortfolio';
     import { LaunchWelcomeModal } from '@/components/auth/LaunchWelcomeModal';
@@ -597,6 +596,18 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                         backgroundAttachment: 'fixed',
                     }}
                 >
+                    {/* Paper grain shared by every section rendered by the portfolio shell. */}
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 z-0"
+                        style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper-grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper-grain)' opacity='.72'/%3E%3C/svg%3E")`,
+                            backgroundRepeat: 'repeat',
+                            backgroundSize: '160px 160px',
+                            opacity: isDark ? 0.22 : 0.28,
+                            mixBlendMode: isDark ? 'soft-light' : 'multiply',
+                        }}
+                    />
                     <div className="relative z-10 mx-auto w-full max-w-5xl px-5 pb-32 pt-3 sm:px-10 sm:pt-4 md:pb-36 md:pt-5">
                         <motion.div
                             variants={containerVariants}
@@ -664,73 +675,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                             <motion.section key="resume" variants={childVariants} id="resume" className="space-y-8 scroll-mt-20 pb-10 pt-2 md:pb-12">
 
                                 {/* Header */}
-                                <header className={`space-y-6 pb-8 border-b ${divider}`}>
-                                    <div className={`flex items-center justify-end gap-1.5 text-xs ${subtleText}`}>
+                                <header className="flex justify-end pb-2">
+                                    <div className={`flex items-center gap-1.5 text-xs ${subtleText}`} aria-label="Resume page views">
                                         <Eye size={14} aria-hidden />
                                         <span>{portfolioViews === null ? '-' : portfolioViews.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                                        <div className="flex gap-4">
-                                            <img
-                                                src="/logoimage.png"
-                                                alt={profile.name}
-                                                className={`h-24 w-24 shrink-0 rounded-sm border object-cover ${divider}`}
-                                            />
-                                        <div className="space-y-3 min-w-0">
-                                            <motion.h1
-                                                className="font-serif-display text-5xl md:text-6xl leading-none"
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.55, duration: 0.7, ease: EASE_SMOOTH }}
-                                            >
-                                                {profile.name}
-                                            </motion.h1>
-                                            <motion.div
-                                                className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${subtleText}`}
-                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.72 }}
-                                            >
-                                                <span className="flex items-center gap-1.5"><MapPin size={12} /> {profile.location}</span>
-                                                <span>·</span>
-                                                <a href="https://strykerinside.vercel.app" target="_blank" rel="noopener noreferrer"
-                                                    className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">Portfolio</a>
-                                                <span>·</span>
-                                                <a href="mailto:hardikgupta8792@gmail.com"
-                                                    className="hover:text-zinc-100 transition-colors underline decoration-zinc-400 underline-offset-4">hardikgupta8792@gmail.com</a>
-                                            </motion.div>
-                                        </div>
-                                        </div>
-
-                                        <motion.div
-                                            className="flex flex-col gap-4 items-start lg:items-end shrink-0"
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.7, duration: 0.6 }}
-                                        >
-                                            <motion.a
-                                                href={resumeDownloadUrl}
-                                                download="Hardik-Gupta-Resume.pdf"
-                                                className={`inline-flex items-center gap-2 px-5 py-2.5 border ${accentBorder} text-sm tracking-wider uppercase rounded-sm ${accentHover} transition-all duration-300`}
-                                            >
-                                                <Download size={14} /> Download CV
-                                            </motion.a>
-                                            <div className="flex gap-4">
-                                                {[
-                                                    { href: 'https://github.com/hardikguptaofficialgit', icon: <Github size={18} /> },
-                                                    { href: 'https://www.linkedin.com/in/hardik-gupta-b528072b3/', icon: <Linkedin size={18} /> },
-                                                    { href: 'https://www.instagram.com/stryker.inside/', icon: <Instagram size={18} /> },
-                                                    { href: 'https://x.com/stryker_inside', icon: <XBrandIcon size={18} /> },
-                                                    { href: 'https://linkitapp.in/stryker', icon: <LinkIcon size={18} /> },
-                                                ].map(({ href, icon }, i) => (
-                                                    <motion.a
-                                                        key={href} href={href} target="_blank" rel="noopener noreferrer"
-                                                        className={`${subtleText} hover:${isDark ? 'text-zinc-100' : 'text-zinc-900'} transition-colors duration-300`}
-                                                        initial={{ opacity: 0, y: 10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        transition={{ delay: 0.8 + i * 0.06 }}
-                                                    >{icon}</motion.a>
-                                                ))}
-                                            </div>
-                                        </motion.div>
                                     </div>
                                 </header>
 
@@ -1067,11 +1015,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                                         <div className="min-w-0 flex flex-col justify-center">
                                                             <div className={`flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-widest ${subtleText}`}>
                                                                 <span className="inline-flex items-center gap-1">
-                                                                    <Calendar size={11} />
-                                                                    {format(new Date(article.publishedAt), 'MMM d, yyyy')}
-                                                                </span>
-                                                                <span>·</span>
-                                                                <span className="inline-flex items-center gap-1">
                                                                     <Clock size={11} />
                                                                     {article.readingTimeMinutes || 1} min read
                                                                 </span>
@@ -1151,7 +1094,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                             <p className={`text-center text-[11px] sm:text-xs leading-relaxed ${subtleText}`}>
                                 Designed &amp; developed by{' '}
                                 <a
-                                    href="https://x.com/stryker_inside"
+                                    href="https://x.com/strykerin"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`font-semibold tracking-wide ${isDark ? 'text-zinc-200 hover:text-white' : 'text-zinc-800 hover:text-black'} transition-colors`}
@@ -1160,13 +1103,13 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                 </a>
                                 <span className="mx-2 opacity-40" aria-hidden>·</span>
                                 <a
-                                    href="https://x.com/stryker_inside"
+                                    href="https://x.com/strykerin"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`inline-flex items-center gap-1 font-medium ${isDark ? 'text-zinc-300 hover:text-white' : 'text-zinc-700 hover:text-black'} transition-colors`}
                                 >
                                     <XBrandIcon size={12} />
-                                    @stryker_inside
+                                    @strykerin
                                 </a>
                             </p>
                         </motion.footer>

@@ -13,7 +13,7 @@ Canonical site: https://strykerinside.vercel.app
 - Email: hardikgupta8792@gmail.com
 - GitHub: https://github.com/hardikguptaofficialgit
 - LinkedIn: https://www.linkedin.com/in/hardik-gupta-b528072b3/
-- X: https://x.com/stryker_inside
+- X: https://x.com/strykerin
 
 ## Primary pages
 
@@ -24,14 +24,20 @@ Canonical site: https://strykerinside.vercel.app
 - Photos: https://strykerinside.vercel.app/photos
 - Writing: https://strykerinside.vercel.app/writing
 - Technical blog index: https://strykerinside.vercel.app/blogs
+- Personal writings: https://strykerinside.vercel.app/writings
 - Interactive desktop experience: https://strykerinside.vercel.app/desktop
 - Resume PDF: https://strykerinside.vercel.app/files/hardikresume.pdf
 
 ## Blog posts
 
-- Inside the Engineering of Linkit: https://strykerinside.vercel.app/blogs/inside-the-engineering-of-linkit-3g2n
-- How SigNoz Helped Me Debug Linkit Before 200+ Creators Noticed the Problem: https://strykerinside.vercel.app/blogs/how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl
 - Bloom Filters for AI Agents: The Small Cache Trick That Saved My Retrieval Pipeline: https://strykerinside.vercel.app/blogs/bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4
+- How SigNoz Helped Me Debug Linkit Before 200+ Creators Noticed the Problem: https://strykerinside.vercel.app/blogs/how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl
+- Inside the Engineering of Linkit: https://strykerinside.vercel.app/blogs/inside-the-engineering-of-linkit-3g2n
+- What Actually Happens Inside a RAG Pipeline? From Raw Files to Grounded Answers: https://strykerinside.vercel.app/blogs/what-actually-happens-inside-a-rag-pipeline
+
+## Writings
+
+
 
 ## Topics
 

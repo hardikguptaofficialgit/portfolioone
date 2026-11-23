@@ -1,5 +1,6 @@
 import { defaultPortfolio } from '@/content/defaults';
 import type { PortfolioDocument } from '@/content/types';
+import { fetchMarkdownPosts } from './markdown-posts';
 
 export const PORTFOLIO_STATIC_URL = '/portfolio.json';
 
@@ -17,19 +18,13 @@ export async function fetchPortfolioDocument(): Promise<PortfolioDocument> {
   return defaultPortfolio;
 }
 
-export async function fetchBlogPostBySlug(slug: string) {
-  const doc = await fetchPortfolioDocument();
-  const post = (doc.blogPosts ?? []).find((item) => item.slug === slug && !item.archived);
+export async function fetchBlogPostBySlug(slug: string, collection: 'blogs' | 'writings' = 'blogs') {
+  const posts = await fetchMarkdownPosts(collection);
+  const post = posts.find((item) => item.slug === slug && !item.archived);
   if (!post) throw new Error('Post not found.');
   return post;
 }
 
-export async function fetchBlogPostsList() {
-  const doc = await fetchPortfolioDocument();
-  return [...(doc.blogPosts ?? [])]
-    .filter((post) => !post.archived)
-    .sort((a, b) => {
-      const sort = (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
-      return sort || +new Date(b.publishedAt) - +new Date(a.publishedAt);
-    });
+export async function fetchBlogPostsList(collection: 'blogs' | 'writings' = 'blogs') {
+  return fetchMarkdownPosts(collection);
 }

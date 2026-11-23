@@ -34,7 +34,6 @@ write('experience.json', {
   experience: portfolio.experience,
   simplifiedExperience: portfolio.simplifiedExperience ?? [],
 });
-write('blogs.json', { blogPosts: portfolio.blogPosts ?? [] });
 write('photos.json', { photoEvents: portfolio.photoEvents ?? [] });
 
-console.log('Split content/portfolio.json into site, skills, projects, experience, blogs, photos.');
+console.log('Split content/portfolio.json into site, skills, projects, experience, and photos.');

@@ -33,12 +33,10 @@ export const blogPostSchema = z.object({
   body: z.string().default(''),
   coverImage: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
-  publishedAt: z.string().min(1),
   readingTimeMinutes: z.number().optional(),
   featured: z.boolean().optional(),
   archived: z.boolean().optional(),
   sortOrder: z.number().optional(),
-  sourceUrl: z.string().optional(),
 });
 
 export const experienceSchema = z.object({
@@ -85,6 +83,7 @@ export const portfolioDocumentSchema = z.object({
   projects: z.array(projectSchema),
   photoEvents: z.array(photoEventSchema).default([]),
   blogPosts: z.array(blogPostSchema).default([]),
+  writingPosts: z.array(blogPostSchema).default([]),
   experience: z.array(experienceSchema),
   education: z.array(
     z.object({

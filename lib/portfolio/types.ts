@@ -44,12 +44,10 @@ export type BlogPost = {
   body: string;
   coverImage?: string | null;
   tags: string[];
-  publishedAt: string;
   readingTimeMinutes?: number;
   featured?: boolean;
   archived?: boolean;
   sortOrder?: number;
-  sourceUrl?: string;
 };
 
 export type Experience = {
@@ -134,6 +132,7 @@ export type PortfolioDocument = {
   projects: Project[];
   photoEvents: PhotoEvent[];
   blogPosts: BlogPost[];
+  writingPosts: BlogPost[];
   experience: Experience[];
   simplifiedExperience?: SimplifiedExperienceCard[];
   education: Education[];
