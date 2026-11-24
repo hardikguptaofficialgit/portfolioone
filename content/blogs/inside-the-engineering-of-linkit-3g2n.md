@@ -1,4 +1,4 @@
-﻿---
+---
 id: inside-the-engineering-of-linkit-3g2n
 slug: inside-the-engineering-of-linkit-3g2n
 tags:
@@ -6,12 +6,11 @@ tags:
   - webdev
   - saas
 title: Inside the Engineering of Linkit
-excerpt: I built Linkit - a link-in-bio SaaS for creators, freelancers, and
-  small businesses. It started as a...
+excerpt: I built Linkit - a link-in-bio SaaS for creators, freelancers, and small businesses. It started as a...
 archived: false
-featured: true
+featured: false
 sortOrder: 999
-coverImage: null
+coverImage:
 readingTimeMinutes: 7
 ---
 
@@ -41,22 +40,19 @@ I chose **Firebase** so I could ship Auth + DB + Storage fast. I added an **Expr
 
 Linkit is a **dual-path** system:
 
-1. **Browser ? Firebase** for user-owned CRUD (profiles, links, forms, orders), enforced by security rules
-2. **Browser ? Express** for secrets, AI, OAuth, crawling, and anything I can't safely do on the client
+1. **Browser -> Firebase** for user-owned CRUD (profiles, links, forms, orders), enforced by security rules
+2. **Browser -> Express** for secrets, AI, OAuth, crawling, and anything I can't safely do on the client
 
 ```text
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     axios + ID token      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  React SPA  â”‚ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–ºâ”‚  Express API    â”‚
-â”‚  (Vite)     â”‚                           â”‚  api.linkitapp  â”‚
-â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜                           â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-       â”‚                                           â”‚
-       â”‚ Firebase client SDK                       â”‚ Firebase Admin
-       â–¼                                           â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚           Firebase Auth Â· Firestore Â· Storage            â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-       â–²
-       â”‚ PostHog (analytics)
+[React SPA (Vite)] -- axios + ID token --> [Express API]
+       |                                      |
+       | Firebase client SDK                  | Firebase Admin
+       v                                      v
+       +----------- Firebase Auth ------------+
+       +----------- Firestore ----------------+
+       +----------- Storage ------------------+
+       ^
+       | PostHog analytics
 ```
 
 | Surface | URL |
@@ -81,7 +77,7 @@ Linkit is a **dual-path** system:
 Provider order in `App.tsx`:
 
 ```text
-QueryClient ? Auth ? Profile ? Currency ? UI ? Cart ? Router ? App
+QueryClient -> Auth -> Profile -> Currency -> UI -> Cart -> Router -> App
 ```
 
 **Important routing rule:** the public profile catch-all `/:username` must stay near the end of the route table. Put a new route after it and you break every public profile.
@@ -113,8 +109,8 @@ Express ESM app. Thin routes, logic in `services/`, auth in middleware.
 /ai            Lynki + public chat + helpers
 /social        OAuth, refresh, metrics
 /cloudinary    authenticated upload/delete
-/payment       ? HTTP 410 (removed)
-/order-payment ? HTTP 410 (removed)
+/payment       -> HTTP 410 (removed)
+/order-payment -> HTTP 410 (removed)
 ```
 
 Auth middleware is simple:
@@ -140,13 +136,13 @@ Social refresh can run **inline** in the API process (serverless-friendly) or as
 Firestore is the primary DB. Rules are **default deny**, then explicit allows.
 
 ```text
-users â”€â”€â–º profiles â”€â”€â–º links
-                â”‚
-                â”œâ”€â”€ forms â”€â”€â–º form_submissions
-                â”œâ”€â”€ catalogs â”€â”€â–º products
-                â”œâ”€â”€ orders
-                â”œâ”€â”€ audience_threads â”€â”€â–º messages
-                â””â”€â”€ social_* / public_profile_cache
+users --> profiles --> links
+             |
+             +--> forms --> form_submissions
+             +--> catalogs --> products
+             +--> orders
+             +--> audience_threads --> messages
+             +--> social_* / public_profile_cache
 
 usernames          (unique handle reservation)
 user_integrations  (OAuth tokens - server-oriented)
@@ -166,18 +162,18 @@ I almost used Supabase early - the dependency is still in `package.json` as a fo
 
 ```text
 User signs in (email / Google / GitHub)
-        â”‚
-        â–¼
+        |
+        v
 Firebase Auth session
-        â”‚
-        â”œâ”€â”€ ProtectedRoute ? dashboard
-        â””â”€â”€ api.ts interceptor ? Authorization: Bearer <idToken>
-                                        â”‚
-                                        â–¼
+        |
+        +--> ProtectedRoute -> dashboard
+        +--> api.ts interceptor -> Authorization: Bearer <idToken>
+                                      |
+                                      v
                               Express verifyIdToken
-                                        â”‚
-                                        â–¼
-                                   req.uid set
+                                      |
+                                      v
+                                  req.uid set
 ```
 
 I harden redirects with `buildAuthHref()` so a `?redirect=` query can't become an open redirect.
@@ -220,9 +216,9 @@ I had previously built Cashfree flows, shop gates, and payment settings. Then th
 
 ```text
 Git push
-   â”œâ”€â”€ Vercel frontend (SPA ? index.html)
-   â”œâ”€â”€ Vercel backend (serverless Express)
-   â””â”€â”€ Firebase (rules + indexes + storage rules)
+   +--> Vercel frontend (SPA -> index.html)
+   +--> Vercel backend (serverless Express)
+   +--> Firebase (rules + indexes + storage rules)
 
 Optional: Redis + social worker on a small VPS
 ```
@@ -270,21 +266,21 @@ Still imperfect: public profile docs can expose more fields than a minimal DTO. 
 **Dashboard API call**
 
 ```text
-UI ? api.get('/â€¦') ? attach ID token ? Express ? verifyToken ? service ? JSON
+UI -> api.get('/...') -> attach ID token -> Express -> verifyToken -> service -> JSON
 ```
 
 **Public profile**
 
 ```text
-/:username ? query profile by username ? load links/products
-          ? PostHog view event
-          ? optional /ai/public-chat
+/:username -> query profile by username -> load links/products
+          -> PostHog view event
+          -> optional /ai/public-chat
 ```
 
 **Social refresh**
 
 ```text
-trigger ? enqueue job ? crawler ? write cache/crawl state
+trigger -> enqueue job -> crawler -> write cache/crawl state
         (never scrape live on the hot request path)
 ```
 
@@ -336,7 +332,7 @@ I saw a write spike on the order of **~20k** that looked like traffic, but was m
 
 **Fixes that became architecture:**
 
-1. Analytics writes ? **owner-only** in rules
+1. Analytics writes -> **owner-only** in rules
 2. `VITE_ENABLE_FIRESTORE_ANALYTICS=false` by default
 3. Prefer **PostHog** for public metrics
 4. Replace most `onSnapshot` with **shared polling**

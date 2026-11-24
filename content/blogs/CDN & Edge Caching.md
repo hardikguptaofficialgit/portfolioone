@@ -4,7 +4,7 @@ slug: system-design-simply-tp1
 title: Edge Caching & CDN ( Netflix )
 excerpt: SSD tp1
 tags:
-featured: false
+featured: true
 archived: false
 coverImage:
 ---

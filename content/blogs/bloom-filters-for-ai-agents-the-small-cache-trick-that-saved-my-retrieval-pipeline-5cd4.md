@@ -31,15 +31,15 @@ Not certainty. A strong enough signal to avoid redundant work.
 
 The agent repeatedly:
 
-- revisited identical document IDs  
-- re-triggered the same tool calls  
-- reprocessed items already handled minutes earlier  
+- revisited identical document IDs
+- re-triggered the same tool calls
+- reprocessed items already handled minutes earlier
 
 This created:
 
-- unnecessary latency  
-- increased compute cost  
-- degraded pipeline efficiency  
+- unnecessary latency
+- increased compute cost
+- degraded pipeline efficiency
 
 A lightweight pre-check layer was required.
 
@@ -49,13 +49,13 @@ A lightweight pre-check layer was required.
 
 Introduce a Bloom filter as a front-line gate:
 
-- If **definitely new** ? process  
-- If **possibly seen** ? verify via authoritative store  
+- If **definitely new** -> process
+- If **possibly seen** -> verify via authoritative store
 
 Properties leveraged:
 
-- No false negatives  
-- Acceptable false positives  
+- No false negatives
+- Acceptable false positives
 
 ---
 
@@ -66,17 +66,17 @@ Properties leveraged:
 
 A Bloom filter consists of:
 
-- a fixed-size bit array  
-- multiple hash functions  
-- a probabilistic membership check  
+- a fixed-size bit array
+- multiple hash functions
+- a probabilistic membership check
 
 **Insert**
-- hash value multiple times  
-- set corresponding bits to `1`  
+- hash value multiple times
+- set corresponding bits to `1`
 
 **Query**
-- if any bit is `0` ? **definitely not present**  
-- if all bits are `1` ? **possibly present**  
+- if any bit is `0` -> **definitely not present**
+- if all bits are `1` -> **possibly present**
 
 ---
 
@@ -128,7 +128,7 @@ While scanning candidate documents, I skip anything that has likely been seen be
 
 This was the biggest win.
 
-Agents tend to repeat tool calls when context becomes messy. A Bloom filter doesn?t fix reasoning, but it stops the system from wasting cycles on the same targets again and again.
+Agents tend to repeat tool calls when context becomes messy. A Bloom filter doesn't fix reasoning, but it stops the system from wasting cycles on the same targets again and again.
 
 ---
 
@@ -138,13 +138,13 @@ Agents tend to repeat tool calls when context becomes messy. A Bloom filter does
 
 
 
-I don?t use Bloom filters when I need certainty.
+I don't use Bloom filters when I need certainty.
 
 I use them when I need:
 
-- speed  
-- low memory usage  
-- a fast first-pass filter  
+- speed
+- low memory usage
+- a fast first-pass filter
 
 They are not a source of truth.
 
@@ -156,12 +156,12 @@ They are a guardrail.
 
 Bloom filters work best as a front-line defense against wasted effort.
 
-They don?t fix reasoning.  
-They don?t improve intelligence.  
+They don't fix reasoning.
+They don't improve intelligence.
 
 What they do is enforce discipline in the system - quietly, efficiently, and at scale.
 
-In agent pipelines, that?s often exactly what is missing.
+In agent pipelines, that's often exactly what is missing.
 
 ---
 
@@ -169,7 +169,7 @@ In agent pipelines, that?s often exactly what is missing.
 
 How do you handle deduplication in your AI workflows?
 
-- Redis / Postgres with exact checks?  
-- Probabilistic structures like Bloom or Cuckoo filters?  
+- Redis / Postgres with exact checks?
+- Probabilistic structures like Bloom or Cuckoo filters?
 - Something hybrid?
 

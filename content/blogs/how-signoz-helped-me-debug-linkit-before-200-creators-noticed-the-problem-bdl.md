@@ -1,4 +1,4 @@
-﻿---
+---
 id: how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl
 slug: how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl
 tags:
@@ -7,10 +7,9 @@ tags:
   - startup
   - webdev
 title: How SigNoz Helped Me Debug Linkit Before 200+ Creators Noticed the Problem
-excerpt: When you're building a product that's actually being used, debugging
-  changes completely.  Console...
+excerpt: When you're building a product that's actually being used, debugging changes completely.  Console...
 archived: false
-featured: true
+featured: false
 sortOrder: 999
 coverImage: /images/blogs/78e9d60500.webp
 readingTimeMinutes: 4
@@ -22,7 +21,7 @@ Console logs work when you're the only user.
 
 They don't work when hundreds of people are creating pages, scanning QR codes, uploading products, and opening links from different devices at the same time.
 
-I ran into exactly that while building **Linkit**, a creator platform that lets creators, caf?s, and businesses build customizable link-in-bio pages with product catalogs, digital menus, forms, and AI-powered tools.
+I ran into exactly that while building **Linkit**, a creator platform that lets creators, cafes, and businesses build customizable link-in-bio pages with product catalogs, digital menus, forms, and AI-powered tools.
 As usage grew, I started noticing an annoying issue.
 
 Some users said their pages opened instantly.
@@ -116,22 +115,22 @@ The traces immediately proved me wrong.
 
 Typical request:
 
-```plaintext
+```text
 Incoming Request
-        â”‚
-        â–¼
+    |
+    v
 Authentication (12 ms)
-        â”‚
-        â–¼
+    |
+    v
 Database Query (24 ms)
-        â”‚
-        â–¼
+    |
+    v
 Generate Components (430 ms)
-        â”‚
-        â–¼
+    |
+    v
 Cloudinary Lookup (280 ms)
-        â”‚
-        â–¼
+    |
+    v
 Response
 ```
 
@@ -165,7 +164,7 @@ That wasn't obvious from logs.
 
 Adding a small Redis cache reduced page generation time from:
 
-**920 ms ? 310 ms**
+**920 ms -> 310 ms**
 
 No frontend changes.
 
@@ -208,31 +207,25 @@ Not exactly useful.
 
 The trace showed something completely different.
 
-```plaintext
+```text
 Frontend
-
-â†“
-
+   |
+   v
 Authentication
-
-â†“
-
+   |
+   v
 Generate Upload Signature
-
-â†“
-
+   |
+   v
 Cloudinary API
-
-â†“
-
+   |
+   v
 Timeout
-
-â†“
-
+   |
+   v
 Retry
-
-â†“
-
+   |
+   v
 Success
 ```
 

@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         Maximize2, Pin, Github, Linkedin, Instagram,
         Link as LinkIcon, Star, GitFork, Download, ArrowUpRight, Clock,
         Home, BriefcaseBusiness, FolderKanban, Images, BookOpen, Mail, Sun, Moon,
-        MapPin, Eye, Globe, Code2
+        MapPin, Globe, Code2
     } from 'lucide-react';
     import { GitHubActivityChart } from '@/components/portfolio/GitHubActivityChart';
     import { MonkeytypeStats } from '@/components/portfolio/MonkeytypeStats';
@@ -280,7 +280,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
     ];
 
     const LAUNCH_MODAL_DISMISSED_KEY = 'portfolio_launch_modal_dismissed_v1';
-    const PORTFOLIO_VIEW_SESSION_KEY = 'portfolio_view_session_v1';
     const PROJECTS_PAGE_SIZE = 4;
     const REPOS_PAGE_SIZE = 8;
     const BLOG_PAGE_SIZE = 4;
@@ -326,7 +325,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
         const [projectControlsCollapsed, setProjectControlsCollapsed] = useState(false);
         const [projectControlsPos, setProjectControlsPos] = useState({ x: 16, y: 16 });
         const [isDraggingProjectControls, setIsDraggingProjectControls] = useState(false);
-        const [portfolioViews, setPortfolioViews] = useState<number | null>(null);
         const [homeIntroTyped, setHomeIntroTyped] = useState(false);
         const handleHomeIntroComplete = useCallback(() => setHomeIntroTyped(true), []);
         const [showLaunchModal, setShowLaunchModal] = useState(
@@ -341,51 +339,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
             window.scrollTo({ top: 0, behavior: 'auto' });
         }, [location.pathname]);
 
-
-        useEffect(() => {
-            let cancelled = false;
-            const applyCount = (count: number, markSeen: boolean) => {
-                if (cancelled || !Number.isFinite(count)) return;
-                setPortfolioViews(count);
-                if (markSeen) sessionStorage.setItem(PORTFOLIO_VIEW_SESSION_KEY, '1');
-            };
-            const loadStaticFallback = async () => {
-                try {
-                    const res = await fetch('/site-metrics.json', { cache: 'no-store' });
-                    if (!res.ok) return;
-                    const payload = (await res.json()) as { portfolioViews?: number };
-                    if (typeof payload.portfolioViews === 'number') {
-                        applyCount(payload.portfolioViews, false);
-                    }
-                } catch {
-                    // ignore
-                }
-            };
-            const loadViews = async () => {
-                const seen = sessionStorage.getItem(PORTFOLIO_VIEW_SESSION_KEY) === '1';
-                try {
-                    const {
-                        isExternalPortfolioViewsEnabled,
-                        hitExternalPortfolioViews,
-                        peekExternalPortfolioViews,
-                    } = await import('@/lib/portfolio/external-views');
-                    if (isExternalPortfolioViewsEnabled()) {
-                        const count = seen ? await peekExternalPortfolioViews() : await hitExternalPortfolioViews();
-                        if (typeof count === 'number') {
-                            applyCount(count, !seen);
-                            return;
-                        }
-                    }
-                } catch {
-                    // ignore
-                }
-                await loadStaticFallback();
-            };
-            loadViews();
-            return () => {
-                cancelled = true;
-            };
-        }, []);
 
         const popularArticles = blogPosts.filter((post) => post.featured !== false).slice(0, 6);
 
@@ -673,14 +626,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                             {/* ══ EXPERIENCE / RESUME ══ */}
                             {currentPage === 'resume' && (
                             <motion.section key="resume" variants={childVariants} id="resume" className="space-y-8 scroll-mt-20 pb-10 pt-2 md:pb-12">
-
-                                {/* Header */}
-                                <header className="flex justify-end pb-2">
-                                    <div className={`flex items-center gap-1.5 text-xs ${subtleText}`} aria-label="Resume page views">
-                                        <Eye size={14} aria-hidden />
-                                        <span>{portfolioViews === null ? '-' : portfolioViews.toLocaleString()}</span>
-                                    </div>
-                                </header>
 
                                 {/* Experience */}
                                 <RevealSection delay={0.05}>

@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4.md",
+                "file": "inside-the-engineering-of-linkit-3g2n.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4"
+              "title": "inside-the-engineering-of-linkit-3g2n"
             }
           }
         ],
@@ -206,6 +206,8 @@
   "active": "3e31272f436ff808",
   "lastOpenFiles": [
     "CDN & Edge Caching.md",
+    "how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl.md",
+    "bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4.md",
     "Attachments/Pasted image 20261124180404.png",
     "Attachments/Pasted image 20261124174124.png",
     "Attachments/Pasted image 20261124173644.png",
@@ -220,12 +222,10 @@
     "Attachments",
     "what-actually-happens-inside-a-rag-pipeline.md",
     "inside-the-engineering-of-linkit-3g2n.md",
-    "how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl.md",
     "Templates/Blog-template.md",
     "Writings/Writing-template 1.md",
     "Writings/Untitled.md",
     "Templates/Writing-template.md",
-    "bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4.md",
     "Writings/first.md",
     "Writings"
   ]
