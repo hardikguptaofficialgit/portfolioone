@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { GradientBackdrop } from '@/components/dooms/GradientBackdrop';
 import { cn } from '@/lib/utils';
+import { VisitorCounter } from '@/components/portfolio/VisitorCounter';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -238,6 +239,9 @@ export default function DoomsWaitlist() {
             </div>
           </motion.div>
         </div>
+        <footer className="flex justify-center pb-2">
+          <VisitorCounter />
+        </footer>
       </div>
     </div>
   );

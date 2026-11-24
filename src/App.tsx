@@ -11,7 +11,6 @@ import DoomsWaitlist from "./pages/DoomsWaitlist";
 import NotFound from "./pages/NotFound";
 import { SeoManager } from "@/components/seo/SeoManager";
 import WritingHub from "./pages/WritingHub";
-import { VisitorCounter } from "@/components/portfolio/VisitorCounter";
 
 const queryClient = new QueryClient();
 
@@ -22,7 +21,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <SeoManager />
-        <VisitorCounter />
         <Routes>
           <Route path="/" element={<SimplifiedResume />} />
           <Route path="/resume" element={<SimplifiedResume />} />

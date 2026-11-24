@@ -13,6 +13,7 @@ import { useDesktopStore } from '@/store/desktopStore';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getPinnedApps, getIconComponent, getAppById } from '@/utils/apps';
+import { VisitorCounter } from '@/components/portfolio/VisitorCounter';
 
 // --- Improved Tooltip Component ---
 const Tooltip = ({ children, text }: { children: React.ReactNode; text: string }) => {
@@ -237,6 +238,9 @@ export const Taskbar = () => {
 
         {/* --- RIGHT: Tray --- */}
         <div className="flex items-center gap-1 pr-1">
+          <div className="hidden lg:block">
+            <VisitorCounter />
+          </div>
           <div className={cn(
             "flex h-9 items-center gap-3 px-3 rounded-lg transition-colors",
             settings.darkMode ? "hover:bg-white/5" : "hover:bg-black/5"

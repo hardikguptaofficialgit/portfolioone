@@ -11,6 +11,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
     import { GitHubActivityChart } from '@/components/portfolio/GitHubActivityChart';
     import { MonkeytypeStats } from '@/components/portfolio/MonkeytypeStats';
     import { SkillIcon } from '@/components/portfolio/SkillIcon';
+    import { VisitorCounter } from '@/components/portfolio/VisitorCounter';
     import { transitionPortfolioTheme } from '@/lib/theme-transition';
     import { useDesktopStore } from '@/store/desktopStore';
     import { usePortfolio } from '@/hooks/usePortfolio';
@@ -1057,6 +1058,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
                                     @strykerin
                                 </a>
                             </p>
+                            <div className="flex justify-center pt-1">
+                                <VisitorCounter />
+                            </div>
                         </motion.footer>
                     </div>
 

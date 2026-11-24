@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDesktopStore } from '@/store/desktopStore';
 import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
 import { transitionPortfolioTheme } from '@/lib/theme-transition';
+import { VisitorCounter } from '@/components/portfolio/VisitorCounter';
 
 const WritingHub = () => {
   const { settings, updateSettings } = useDesktopStore();
@@ -55,6 +56,9 @@ const WritingHub = () => {
         </section>
 
         <p className={`mt-8 text-xs ${muted}`}>Written in Markdown, one thought at a time.</p>
+        <footer className={`mt-12 flex justify-center border-t py-6 ${divider}`}>
+          <VisitorCounter />
+        </footer>
       </div>
     </main>
   );

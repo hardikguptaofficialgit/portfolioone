@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { useDesktopStore } from '@/store/desktopStore';
 import type { BlogPost } from '@/content/types';
 import { PixelThemeToggle } from '@/components/portfolio/PixelThemeToggle';
+import { VisitorCounter } from '@/components/portfolio/VisitorCounter';
 import { transitionPortfolioTheme } from '@/lib/theme-transition';
 import { useSeo } from '@/hooks/useSeo';
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/seo/site-config';
@@ -162,6 +163,9 @@ const BlogChrome = ({ children, sectionTitle = 'Blogs' }: { children: React.Reac
         </button>
         {children}
       </main>
+      <footer className={`mx-auto flex max-w-3xl justify-center border-t px-5 py-6 ${divider}`}>
+        <VisitorCounter />
+      </footer>
     </div>
   );
 };
