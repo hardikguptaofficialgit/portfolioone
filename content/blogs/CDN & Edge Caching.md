@@ -1,12 +1,12 @@
 ---
-id: system-design-simply-day6
-slug: system-design-simply-day6
+id: system-design-simply-tp1
+slug: system-design-simply-tp1
 title: Edge Caching & CDN ( Netflix )
-excerpt: SSD Day 6
+excerpt: SSD tp1
 tags:
 featured: false
 archived: false
-coverImage: /images/blogs/78e9d60500.webp
+coverImage:
 ---
 CDN (Content Delivery Network)
 
