@@ -1,4 +1,4 @@
-﻿---
+---
 id: bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4
 slug: bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4
 tags:
@@ -6,12 +6,10 @@ tags:
   - agents
   - typescript
   - performance
-title: "Bloom Filters for AI Agents: The Small Cache Trick That Saved My
-  Retrieval Pipeline"
-excerpt: Bloom filters felt like a purely academic data structure - until an
-  agent pipeline started repeating...
+title: "Bloom Filters for AI Agents: The Small Cache Trick That Saved My Retrieval Pipeline"
+excerpt: Bloom filters felt like a purely academic data structure - until an agent pipeline started repeating...
 archived: false
-featured: true
+featured: false
 coverImage: /images/blogs/77f80620ab.webp
 readingTimeMinutes: 2
 ---
