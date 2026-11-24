@@ -28,7 +28,7 @@ Write normal Markdown directly in the file. The site renders GitHub-flavoured Ma
 
 ## Images inside a post
 
-Obsidian is configured to save pasted or attached images under `public/images/blogs/`. Pasting an image into a note automatically copies it there. Both Obsidian embeds and regular Markdown image links work:
+Obsidian is configured to save pasted or attached images under `content/blogs/Attachments/`. The Vite dev server and production build copy those files into the generated `public/images/blogs/obsidian/` folder, so they work in published posts. Both Obsidian embeds and regular Markdown image links work:
 
 ```markdown
 ![[my-screenshot.png]]
@@ -41,8 +41,8 @@ Obsidian is configured to save pasted or attached images under `public/images/bl
 1. Open `content/blogs/` as a vault in Obsidian.
 2. Create a technical article using `Templates/Blog-template`, or a personal piece using `Templates/Writing-template` inside the `Writings` folder.
 3. Write and save your Markdown post. Give each post a unique filename/slug within its collection.
-4. Run `npm run dev` and open `/blogs/your-slug` to preview it. Markdown files are loaded directly by Vite; no sync command is needed.
-5. Commit and push the Markdown file (and any images) to GitHub. The production build reads the Markdown files and generates SEO metadata automatically.
+4. Run `npm run dev` and open `/blogs/your-slug` to preview it. Saving, creating, or deleting a Markdown file refreshes the local portfolio automatically; pasted attachments are synced before refresh.
+5. When ready, run `git status`, then `git add content/blogs`, `git commit -m "Add or update blog posts"`, and `git push origin main`. Commit the vault originals; generated copies under `public/images/blogs/obsidian/` are ignored. The production build reads the Markdown files and generates SEO metadata automatically.
 
 Existing technical blogs are date-free. There are no generated `blogs.json` or `writings.json` files.
 

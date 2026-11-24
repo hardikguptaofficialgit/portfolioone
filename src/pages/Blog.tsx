@@ -293,6 +293,17 @@ export const BlogListPage = () => {
       .finally(() => setLoading(false));
   }, [collection]);
 
+  useEffect(() => {
+    if (!import.meta.hot) return;
+    const refreshPosts = () => {
+      fetchPosts(collection)
+        .then(setPosts)
+        .catch((err) => setError(err instanceof Error ? err.message : 'Unable to refresh posts.'));
+    };
+    import.meta.hot.on('portfolio:markdown-updated', refreshPosts);
+    return () => import.meta.hot?.off('portfolio:markdown-updated', refreshPosts);
+  }, [collection]);
+
   const tagStats = useMemo(() => {
     const map = new Map<string, number>();
     posts.forEach((post) => post.tags.forEach((tag) => map.set(tag, (map.get(tag) || 0) + 1)));
@@ -464,6 +475,20 @@ export const BlogPostPage = () => {
       .then(setPost)
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load article.'))
       .finally(() => setLoading(false));
+  }, [slug, collection]);
+
+  useEffect(() => {
+    if (!import.meta.hot || !slug) return;
+    const refreshPost = () => {
+      fetchPost(slug, collection)
+        .then((nextPost) => {
+          setPost(nextPost);
+          setError(null);
+        })
+        .catch((err) => setError(err instanceof Error ? err.message : 'Unable to refresh article.'));
+    };
+    import.meta.hot.on('portfolio:markdown-updated', refreshPost);
+    return () => import.meta.hot?.off('portfolio:markdown-updated', refreshPost);
   }, [slug, collection]);
 
   const markdownComponents = useMemo(() => ({

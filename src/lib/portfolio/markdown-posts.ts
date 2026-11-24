@@ -18,10 +18,23 @@ const getExcerpt = (body: string) => body
 
 const resolveImage = (source: string) => {
   const clean = source.trim().replace(/^<|>$/g, '');
-  if (!clean || /^(https?:|data:|blob:|\/)/i.test(clean)) return clean;
+  if (!clean || /^(https?:|data:|blob:)/i.test(clean)) return clean;
+  // Decode first so this resolver stays idempotent when an Obsidian embed is
+  // converted to Markdown and then passes through the regular Markdown image
+  // normalizer immediately afterwards.
+  const encodePath = (path: string) => {
+    try {
+      return encodeURI(decodeURI(path));
+    } catch {
+      return encodeURI(path);
+    }
+  };
+  if (clean.startsWith('/')) return encodePath(clean);
   const publicImage = clean.replace(/\\/g, '/').match(/(?:^|\/)public\/(images\/blogs\/.*)$/i);
-  if (publicImage) return `/${publicImage[1]}`;
-  return `/images/blogs/${clean.replace(/^\.\//, '').replace(/^\.\.\//, '').split('/').pop()}`;
+  if (publicImage) return encodePath(`/${publicImage[1]}`);
+  const relative = clean.replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\.\.\//, '');
+  const attachmentPath = relative.replace(/^Attachments\//i, '');
+  return encodePath(`/images/blogs/obsidian/${attachmentPath}`);
 };
 
 const prepareMarkdown = (body: string) => body
@@ -66,10 +79,16 @@ const parsePost = (filePath: string, source: string): BlogPost => {
 
 export const fetchMarkdownPosts = async (collection: 'blogs' | 'writings'): Promise<BlogPost[]> => {
   const writingCollection = collection === 'writings';
-  const posts = Object.entries(markdownFiles)
-    .filter(([path]) => !path.includes('/Templates/') && !path.includes('/.obsidian/'))
-    .filter(([path]) => path.includes('/Writings/') === writingCollection)
-    .map(([path, source]) => parsePost(path, source))
+  const sources = import.meta.env.DEV
+    ? await fetch('/api/markdown-posts', { cache: 'no-store' }).then(async (response) => {
+      if (!response.ok) throw new Error('Unable to read Markdown files from the Obsidian vault.');
+      return await response.json() as Array<{ path: string; source: string }>;
+    })
+    : Object.entries(markdownFiles).map(([path, source]) => ({ path, source }));
+  const posts = sources
+    .filter(({ path }) => !/(^|\/)Templates\//.test(path) && !/(^|\/)\.obsidian\//.test(path))
+    .filter(({ path }) => /(^|\/)Writings\//.test(path.replace(/\\/g, '/')) === writingCollection)
+    .map(({ path, source }) => parsePost(path.replace(/\\/g, '/'), source))
     .filter((post) => !post.archived);
 
   const slugs = new Set<string>();

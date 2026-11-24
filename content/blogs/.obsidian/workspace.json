@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Templates/Writing-template.md",
+                "file": "bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Writing-template"
+              "title": "bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4"
+            }
+          },
+          {
+            "id": "3e31272f436ff808",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "CDN & Edge Caching.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CDN & Edge Caching"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -83,7 +98,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "1fa375e46f3726db",
@@ -188,12 +204,31 @@
       "bases:Create new base": false
     }
   },
-  "active": "1bdb7d381b7a2d61",
+  "active": "3e31272f436ff808",
   "lastOpenFiles": [
-    "Writings/first.md",
-    "Templates/Writing-template.md",
+    "Attachments/Pasted image 20261124180404.png",
+    "Attachments/Pasted image 20261124174124.png",
+    "Attachments/Pasted image 20261124173644.png",
+    "Attachments/Pasted image 20261124173340.png",
+    "Attachments/Pasted image 20261124173309.png",
+    "Attachments/Pasted image 20261124171904.png",
+    "Attachments/Pasted image 20261124154558.png",
+    "Attachments/Pasted image 20261124153029.png",
+    "Attachments/Pasted image 20261124152743.png",
+    "__live-refresh-check.md",
+    "Attachments/Pasted image 20261124145915.png",
+    "Attachments/Screenshot_2026-08-11-04-38-45-756_com.linkedin.android.png",
+    "Attachments",
     "what-actually-happens-inside-a-rag-pipeline.md",
+    "inside-the-engineering-of-linkit-3g2n.md",
+    "how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl.md",
+    "CDN & Edge Caching.md",
+    "Templates/Blog-template.md",
+    "Writings/Writing-template 1.md",
+    "Writings/Untitled.md",
+    "Templates/Writing-template.md",
     "bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4.md",
+    "Writings/first.md",
     "Writings"
   ]
 }

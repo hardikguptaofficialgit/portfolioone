@@ -14,4 +14,4 @@ coverImage: null
 
 Write your article here using Markdown. Headings, lists, tables, quotes, links, images, Mermaid diagrams, and fenced code blocks are supported.
 
-Paste an image into Obsidian or drag it into the note. Obsidian saves it to the shared image folder automatically. You can also embed it with `![[image-name.png]]`.
+Paste an image into Obsidian or drag it into the note. Obsidian saves it in `Attachments/`; the portfolio syncs it to the published image folder automatically. You can also embed it with `![[image-name.png]]`.

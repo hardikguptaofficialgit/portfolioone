@@ -31,13 +31,13 @@ Canonical site: https://strykerinside.vercel.app
 ## Blog posts
 
 - Bloom Filters for AI Agents: The Small Cache Trick That Saved My Retrieval Pipeline: https://strykerinside.vercel.app/blogs/bloom-filters-for-ai-agents-the-small-cache-trick-that-saved-my-retrieval-pipeline-5cd4
+- Simple Design Simply Day 6: https://strykerinside.vercel.app/blogs/simple-design-simply-day6
 - How SigNoz Helped Me Debug Linkit Before 200+ Creators Noticed the Problem: https://strykerinside.vercel.app/blogs/how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl
 - Inside the Engineering of Linkit: https://strykerinside.vercel.app/blogs/inside-the-engineering-of-linkit-3g2n
-- What Actually Happens Inside a RAG Pipeline? From Raw Files to Grounded Answers: https://strykerinside.vercel.app/blogs/what-actually-happens-inside-a-rag-pipeline
 
 ## Writings
 
-
+- System Design Simply: https://strykerinside.vercel.app/writings/system-design-blogs
 
 ## Topics
 

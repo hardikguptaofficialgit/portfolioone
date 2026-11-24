@@ -27,3 +27,6 @@ countty-worker/node_modules
 *.sw?
 
 .vercel
+
+# Obsidian attachments are committed from the vault; Vite copies are generated.
+public/images/blogs/obsidian/

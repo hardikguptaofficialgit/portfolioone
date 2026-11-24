@@ -51,6 +51,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://strykerinside.vercel.app/blogs/simple-design-simply-day6</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://strykerinside.vercel.app/blogs/how-signoz-helped-me-debug-linkit-before-200-creators-noticed-the-problem-bdl</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -61,7 +66,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://strykerinside.vercel.app/blogs/what-actually-happens-inside-a-rag-pipeline</loc>
+    <loc>https://strykerinside.vercel.app/writings/system-design-blogs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
